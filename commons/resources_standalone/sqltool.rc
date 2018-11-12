@@ -1,0 +1,5 @@
+urlid govwayDB
+url jdbc:hsqldb:file:/database/govwaydb;shutdown=true
+username govway
+password govway
+transiso TRANSACTION_READ_COMMITTED
