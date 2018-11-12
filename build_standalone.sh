@@ -54,6 +54,6 @@ fi
 cd target 
 DOCKERBUILD_OPT=()
 [ -n "$TAG" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "$TAG")
-[ -n "$VER" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-args' "govway_fullversion=$VER")
+[ -n "$VER" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=$VER")
   
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" .
