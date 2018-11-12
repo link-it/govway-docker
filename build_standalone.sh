@@ -37,11 +37,8 @@ while getopts "sht:v:" opt; do
   esac
 done
 
-if [ -d ./target ]
-then
-   rm -rf ./target
-   mkdir ./target
-fi
+[ -d ./target ] &&  rm -rf ./target
+mkdir ./target
 
 cp -rp ./commons/resources_standalone ./commons/catalina_wrapper.sh ./target
 if [ -z "$DA_SORGENTI" ]
