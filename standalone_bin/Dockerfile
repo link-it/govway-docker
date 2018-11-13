@@ -30,13 +30,13 @@ WORKDIR /opt/govway-installer-${GOVWAY_FULLVERSION}
 COPY resources_standalone/ant.install.properties.template /var/tmp/
 RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-config.xml \
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
-&& ./install.sh text-auto > /tmp/govway_installer_log.html 2>&1
+&& ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
 
 COPY resources_standalone/sqltool.rc /root
 RUN mkdir /database \
-&& java -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay.sql  > /tmp/database_creation_log.html 2>&1 \
-&& java -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay_init.sql > /tmp/database_population_log.html 2>&1 
+&& cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql \
+&& java -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation_log.txt 2>&1 
 
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 COPY catalina_wrapper.sh ${CATALINA_HOME}/bin/
@@ -53,6 +53,7 @@ RUN groupadd -r tomcat \
 
 WORKDIR ${CATALINA_HOME}
 USER tomcat
+ENV PATH=${CATALINA_HOME}/bin:${PATH}
 ENV SKIP_DB_CHECK=TRUE
 CMD ["bin/catalina_wrapper.sh","run"]
 
