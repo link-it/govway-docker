@@ -54,11 +54,41 @@ then
 	fi
 fi
 
-coproc TOMCAT { catalina.sh $@; }
 
 
+export PKI_DIR=/etc/govway/pki
+if [ -d ${PKI_DIR} ]
+then
+
+	chown tomcat.tomcat ${PKI_DIR}
+	if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*' ]
+	then
+		bash -x ${CATALINA_HOME}/bin/genera_certs.sh 2> /tmp/debug_certificate.log
+	fi
+	xsltproc ${CATALINA_HOME}/conf/ConnectorTLS_in_server.xslt ${CATALINA_HOME}/conf/server.xml > /var/tmp/server.xml 
+	mv /var/tmp/server.xml ${CATALINA_HOME}/conf/server.xml
+	if [ -f ${PKI_DIR}/INFO.txt ]
+	then
+        	. ${PKI_DIR}/INFO.txt
+	else
+        	FQDN='govway_server.test.it'
+	fi
+
+        chmod 400 ${PKI_DIR}/CA_*/ca/private/ee_${FQDN}.README.txt
+        chmod 400 ${PKI_DIR}/keystore_server.README.txt
+
+	cat - >> ${CATALINA_HOME}/conf/catalina.properties <<EOPROPERTIES
+tls.keystorepass=$(cat ${PKI_DIR}/keystore_server.README.txt)
+tls.keypass=$(cat ${PKI_DIR}/CA_*/ca/private/ee_${FQDN}.README.txt)
+EOPROPERTIES
+        chmod 400 ${PKI_DIR}/CA_*/ca/private/ee_${FQDN}.README.txt
+        chmod 400 ${PKI_DIR}/keystore_server.README.txt
 
 
+fi
+
+
+coproc TOMCAT { /usr/local/bin/gosu tomcat catalina.sh $@; }
 
 ## Main
 if [ "${SKIP_STARTUP_CHECK}" != "TRUE" ]

@@ -33,8 +33,8 @@ RUN mkdir /database \
 && cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
 
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
-COPY catalina_wrapper.sh ${CATALINA_HOME}/bin/
-COPY resources_compose/server.xml resources_compose/context.xml resources_compose/Resource_in_server.xml.xslt resources_compose/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/
+COPY catalina_wrapper.sh genera_certs.sh  openssl_conf.tmpl ${CATALINA_HOME}/bin/
+COPY ConnectorTLS_in_server.xslt resources_compose/server.xml resources_compose/context.xml resources_compose/Resource_in_server.xml.xslt resources_compose/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/
 
 RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/conf/server.xml > /var/tmp/server.xml  \
 && mv /var/tmp/server.xml ${CATALINA_HOME}/conf/server.xml \
