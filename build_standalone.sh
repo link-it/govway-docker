@@ -6,7 +6,7 @@ echo
 echo "Options
 -s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 -t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
--v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1.rc1)
+-v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1.rc2)
 -h : Mostra questa pagina di aiuto
 "
 }
