@@ -37,7 +37,7 @@ while getopts "sht:v:" opt; do
   esac
 done
 
-[ -d ./target ] &&  rm -rf ./target
+[ -d ./target ] && rm -rf ./target
 mkdir ./target
 
 cp -rp ./commons/resources_standalone ./commons/catalina_wrapper.sh ./commons/ConnectorTLS_in_server.xslt ./commons/genera_certs.sh  ./commons/openssl_conf.tmpl ./target

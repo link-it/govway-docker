@@ -44,7 +44,7 @@ ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 COPY catalina_wrapper.sh genera_certs.sh  openssl_conf.tmpl ${CATALINA_HOME}/bin/
 COPY ConnectorTLS_in_server.xslt resources_standalone/server.xml resources_standalone/context.xml ${CATALINA_HOME}/conf/
 
-RUN groupadd -r -g 1000 tomcat \ 
+RUN groupadd -r -g 1000 tomcat \
 && useradd -r --uid 1000 --create-home -g tomcat tomcat \
 && mkdir ${GOVWAY_HOME} ${GOVWAY_LOGDIR} \
 && rm -rf ${CATALINA_HOME}/webapps/* \

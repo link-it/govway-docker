@@ -4,8 +4,10 @@ ARG govway_fullversion=3.0.1.rc1
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root 
-RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk-headless \
+RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk-headless openssl \
 && yum clean all \
+&& wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
+&& chmod +x /usr/local/bin/gosu \
 && rm -rf /var/cache/yum
 
 ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk
@@ -25,8 +27,7 @@ WORKDIR /opt/govway-installer-${GOVWAY_FULLVERSION}
 COPY resources_compose/ant.install.properties.template /var/tmp/
 RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-config.xml \
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
-&& ./install.sh text-auto > /tmp/govway_installer_log.html 2>&1
-
+&& ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
 
 RUN mkdir /database \
@@ -42,8 +43,8 @@ RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/
 && mv /var/tmp/context.xml ${CATALINA_HOME}/conf/context.xml
 
 ENV POSTGRES_JDBC_VERSION=42.2.5
-RUN groupadd -r tomcat \
-&& useradd -r --create-home -g tomcat tomcat \
+RUN groupadd -r -g 1000  tomcat \
+&& useradd -r --uid 1000 --create-home -g tomcat tomcat \
 && mkdir ${GOVWAY_HOME} ${GOVWAY_LOGDIR} \
 && rm -rf ${CATALINA_HOME}/webapps/* \
 && cp dist/cfg/*.properties ${GOVWAY_HOME} \
@@ -52,8 +53,11 @@ RUN groupadd -r tomcat \
 && chown -R tomcat.tomcat ${GOVWAY_HOME} ${GOVWAY_LOGDIR} ${CATALINA_HOME} /database
 
 WORKDIR ${CATALINA_HOME}
-USER tomcat
+
+
+# USER tomcat # rilascio privilegi utenza root tramite gosu in catalina_wrapper.sh
 ENV PATH=${CATALINA_HOME}/bin:${PATH}
 ENV SKIP_DB_CHECK=FALSE
+EXPOSE 8080 8443
 CMD ["bin/catalina_wrapper.sh","run"]
 

@@ -1,11 +1,12 @@
 version: '2'
 services:
   govway:
-    container_name: govway_301rc1
+    container_name: govway_301rc2
     build:
       context: .
       args:
-        govway_fullversion: 3.0.1.rc1
+        govway_fullversion: 3.0.1.rc2
+    image: govway_compose:3.0.1.rc2
     ports:
         - 8080:8080
     volumes:
