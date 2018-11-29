@@ -7,7 +7,7 @@ user.country=IT
 javax.net.debug=${JAVA_SSL_DEBUG}
 EOPROPERTIES
 
-echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC\"" > ${CATALINA_HOME}/bin/setenv.sh
+echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC -Dfile.encoding=UTF-8\"" > ${CATALINA_HOME}/bin/setenv.sh
 
 
 

@@ -4,7 +4,7 @@ ARG govway_fullversion=3.0.1.rc2
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root 
-RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk-headless openssl \
+RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
 && chmod +x /usr/local/bin/gosu \
@@ -14,7 +14,10 @@ ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk
 ENV PATH=$JAVA_HOME/bin:$PATH
 RUN echo "export LANG=${LANG}" >> /etc/profile \
 && echo "export JAVA_HOME=${JAVA_HOME}" >> /etc/profile \
-&& echo "export PATH=${JAVA_HOME}/bin:$PATH" >> /etc/profile
+&& echo "export PATH=${JAVA_HOME}/bin:$PATH" >> /etc/profile \
+&& rm -f /etc/localtime \
+&& ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
+
 
 ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.12
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt 
