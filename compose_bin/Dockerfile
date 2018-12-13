@@ -18,11 +18,10 @@ RUN echo "export LANG=${LANG}" >> /etc/profile \
 && rm -f /etc/localtime \
 && ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
-
 ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.12
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt 
 
-ENV GOVWAY_HOME=/etc/govway/ GOVWAY_LOGDIR=/var/log/govway GOVWAY_FULLVERSION=${govway_fullversion}
+ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_fullversion}
 RUN wget -qO - https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt 
 
 
@@ -32,12 +31,12 @@ RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-co
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
 && ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
-
 RUN mkdir /database \
-&& cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
+&& cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay.sql /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
+VOLUME /database
 
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
-COPY catalina_wrapper.sh genera_certs.sh  openssl_conf.tmpl ${CATALINA_HOME}/bin/
+COPY catalina_wrapper.sh genera_certs.sh ${CATALINA_HOME}/bin/
 COPY ConnectorTLS_in_server.xslt resources_compose/server.xml resources_compose/context.xml resources_compose/Resource_in_server.xml.xslt resources_compose/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/
 
 RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/conf/server.xml > /var/tmp/server.xml  \
@@ -46,14 +45,8 @@ RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/
 && mv /var/tmp/context.xml ${CATALINA_HOME}/conf/context.xml
 
 ENV POSTGRES_JDBC_VERSION=42.2.5
-RUN groupadd -r -g 1000  tomcat \
-&& useradd -r --uid 1000 --create-home -g tomcat tomcat \
-&& mkdir ${GOVWAY_HOME} ${GOVWAY_LOGDIR} \
-&& rm -rf ${CATALINA_HOME}/webapps/* \
-&& cp dist/cfg/*.properties ${GOVWAY_HOME} \
-&& cp dist/archivi/*.war ${CATALINA_HOME}/webapps \
-&& wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar \
-&& chown -R tomcat.tomcat ${GOVWAY_HOME} ${GOVWAY_LOGDIR} ${CATALINA_HOME} /database
+RUN wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar 
+
 
 WORKDIR ${CATALINA_HOME}
 

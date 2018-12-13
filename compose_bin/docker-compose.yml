@@ -9,7 +9,9 @@ services:
     image: govway_compose:3.0.1.rc2
     ports:
         - 8080:8080
+        - 8443:8443
     volumes:
+        - ./govway_home:/var/govway
         - govway-sql:/database
     depends_on:
         - database
@@ -19,6 +21,14 @@ services:
         - GOVWAY_DATABASE_NAME=govwaydb
         - GOVWAY_DATABASE_USERNAME=govway
         - GOVWAY_DATABASE_USERPASSWD=govway
+#
+# Per valorizzare correttamente variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
+# e' possibile lasciarle non specificate ed in questo caso verranno usati i valori di default
+#
+#        - USERID=$(id -u $USER)
+#        - GROUPID=$(id -g $USER)
+#        - FQDN=$(hostname -f)
+#
   database:
     container_name: PG95 
     image: postgres:9.5

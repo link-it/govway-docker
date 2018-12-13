@@ -19,27 +19,58 @@ Options
 -h : Mostra questa pagina di aiuto
 ```
 
-Quando viene eseguito il build in modalità compose, gli script SQL necessari ad inizializzare il database possono essere recuperati direttamente dall'immagine nella directory /database; ad esempio utilizzando il seguente comando:
+ I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esmpio, il databse HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
+ 
+ Il container tomcat utilizzato per il deploy di govway rimane in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**HTTPS**_ sulla porta **8443**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine
 
+Lo script SQL necessario ad inizializzare il database si trova nell'immagine alla directory standard **/database**; Per recuperalo si possono utilizzare i seguenti comandi :
 
 ```
-docker cp <Container ID>:/database/GovWay_setup.sql . 
+docker run govway_standalone:3.0.1.rc2 true
+docker cp <Container ID>:/database/GovWay_setup.sql .
 ```
-
 ## Avvio immagine Docker
 
-Una volta eseguito il build dell'immagine tramite uno degli script forniti, l'immagine puo essere eseguita con i normali comandi di run docker; Ad esempio:
+Una volta eseguito il build dell'immagine tramite uno degli script forniti, l'immagine puo essere eseguita con i normali comandi di run docker:
 ```
 ./build_standalone.sh -t govway_standalone:3.0.1.rc2
-docker run -p 8080:8080 govway_standalone:3.0.1.rc2
+docker run -v ~/govway_home/var/govway -p 8080:8080 -p 8443:8443 govway_standalone:3.0.1.rc2
 ```
 
-oppure in modalità compose
+In modalità compose
 
 ```
 ./build_compose.sh -t govway_compose:3.0.1.rc2
 cd target 
 docker-compose up
+```
+
+In questa modalita' la personalizzazione dei volumi e la pubblicazione delle porte non puo' essere fatta a linea di comando ma deve essere fatta necessariamente editando il file **docker-compose.yml** che si trova nella directory target generata dallos cript di build.
+Nel caso che il file non venga editato, per default verranno pubblicate le porte _**8080**_ e _**8443**_, mentre la directory /var/govway sara' montata dentro la directory **./govway_home**
+
+
+### Personalizzazioni
+Attraverso l'impostazione di alcune variabili d'ambiente note e' possibile personalizzare alcuni aspetti del funzionamento del container. Le variabili supportate al momento sono queste:
+* FQDN: utilizzato per per personalizzare il campo CN del subject dei certificati generati; se non specificato viene usato il valore di default **test.govway.org**
+* USERID: utilizzato per impostare l'id di sistema dell'utente tomcat
+* GROUPID: utilizzato per impostare l'id di sistema dell'utente tomcat
+
+L'avvio tipico in modalita' standalone e' il seguente:
+```
+docker run \
+ -v ./govway_home:/var/govway \
+ -p 8080:8080 -p 8443:8443 \
+ -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
+ govway_standalone:3.0.1.rc2
+```
+
+in modalita' compose si deve editare la sezione "_**environment**_" del file docker-compose.yml e valorizzare le variabili eseguendo prima i comandi sulla shell del sistema host e sostituendo i rispettivi risultati. Ad esempio
+```
+...
+    - USERID=1234
+    - GROUPID=1234
+    - FQDN=docker_instance.govway.org
+...
 ```
 
 ## Accessi standard
@@ -62,42 +93,31 @@ Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
 ```
 
 ### Configurazione HTTPS
-Oltre all´accesso standard in HTTP le immagini consentono di configurare dinamicamente un connettore HTTPS in ascolto sulla porta 8443; il connettore generato utilizzerà un keystore ed un truststore contenente dei certificati generati all`avvio del server.
-Per avviare la generazione di chiavi RSA e certificati si deve montare, all´avvio del container, un volume vuoto sulla directory standard **/etc/govway/pki**; ad esempio:
+Oltre all´accesso standard in HTTP le immagini consentono di configurare dinamicamente un connettore HTTPS in ascolto sulla porta 8443; il connettore generato utilizzerà un keystore ed un truststore contenente dei certificati generati all`avvio del server. Tutti i files relativi alla comunicazione HTTPSvengono posizionate nella directory standard **/var/govway/pki**
 
-```
-mkdir ~/certificati_govway
-docker run -v ~/certificati_govway:/etc/govway/pki -p 8080:8080 -p 8443:8443 govway_standalone:3.0.1.rc2
-```
 Un volta avviato il container tutte gli accessi descritti in precedenza saranno disponibili su protocollo HTTPS ed il server si presentera con un certificato server col subject: 
-**_CN=govway_server.test.it,O=govway.org,C=it_** 
+**_CN=test.govway.org,O=govway.org,C=it_** 
 
 emesso dalla Certification Authority:
 **_CN=GovWay CA,O=govway.org,C=it_** .
 
-Tutti i files generati all`avvio sono disponibili nella directory **_~/certificati_govway/CA_govway_server/ca_** ; in particolare sarà possibile trovare: i certificati Server e Client, le relative chiavi private e le password utilizzate per porteggerle. Di seguito una breve descrizione dei files generati:
+La certification Authority utilizzata per generare tutti i files si trova nella sottodirectory **_CA_test/ca_** ; in particolare sarà possibile trovare: i certificati Server e Client, le relative chiavi private e le password utilizzate per porteggerle. 
 
-Nella sottodirectory _certs/_
-- **ca_govway_server.cert.pem** : Certificato x509 della CA comune a tutti i certificati
-- **ee_govway_server.test.it.cert.pem** : Certificato server utilizzato dal connettore HTTPS
-- **ee_govway_server_Client_1.cert.pem** : Certificato client numero 1 da utilizzare per test della piattaforma
-- **ee_govway_server_Client_2.cert.pem** : Certificato client numero 2 da utilizzare per test della piattaforma
+Nella sottodirectory _**esempi/**_ sono disponibili i certificati e le chiavi private di esempio, organizzate per funzione (client e server)
+- esempi/test_Client_1 e esempi/test_Client_2 e 
+**ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
+**ee_test_Client_X.cert.pem** : Certificato client numero 1 da utilizzare per test della piattaforma
+**ee_test_Client_X.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
+**ee_test_Client_X.README.txt** : password utilizzata per la protezione della chiave privata del certificato
 
-Nella sottodirectory _private/_
-- **ca_govway_server.key.pem** : Chiave privata RSA da accoppiare al certificato della CA comune
-- **ca_govway_server.README.txt** :  password utilizzata per la protezione della chiave privata della CA
-- **ee_govway_server.test.it.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
-- **ee_govway_server.test.it.README.txt** : password utilizzata per la protezione della chiave privata del certificato server
-- **ee_govway_server_Client_1.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
-- **ee_govway_server_Client_1.README.txt** : password utilizzata per la protezione della chiave privata del certificato client numero 1
-- **ee_govway_server_Client_2.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
-- **ee_govway_server_Client_2.README.txt** : password utilizzata per la protezione della chiave privata del certificato client numero 2
+- esempi/test.govway.org
+**ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
+**ee_test.govway.org.cert.pem** : Certificato server relativo al FQDN
+**ee_test.govway.org.key.pem** : Chiave privata RSA da accoppiare al certificato server
+**ee_test_.govway.org.README.txt** : password utilizzata per la protezione della chiave privata del certificato
 
-Utilizzando i files descritti in precedenza vengono generati un keystore ed un truststore di tipo JKS; questi sono riferiti nella definizione del connettore HTTPS utilizzato dal server. I keystores sono i seguenti :
-
-- **_~/certificati_govway/keystore_server.jks_**
-- **_~/certificati_govway/truststore_server.jks_**
-
-
-
+Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore utilizzati dal server tomcat per configurare il connettore HTTPS
+**keystore_server.jks** : Contiene chiave privata e certificato relativo al FQDN
+**truststore_server.jks**: Contiene il certifica della CA emettitrice di tutti i certificati di esempio
+**keystore_server.README.txt**: Password del keystore e della chiave privata
 

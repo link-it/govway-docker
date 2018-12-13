@@ -26,7 +26,7 @@ RUN wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net
 && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
 && rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
 
-ENV GOVWAY_HOME=/etc/govway/ GOVWAY_LOGDIR=/var/log/govway GOVWAY_FULLVERSION=${govway_fullversion}
+ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_fullversion}
 RUN wget -qO - https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt 
 
 
@@ -36,24 +36,13 @@ RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-co
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
 && ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
-
-COPY resources_standalone/sqltool.rc /root
 RUN mkdir /database \
-&& cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql \
-&& java -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation_log.txt 2>&1 
+&& cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay.sql /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
+
 
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
-COPY catalina_wrapper.sh genera_certs.sh  openssl_conf.tmpl ${CATALINA_HOME}/bin/
+COPY catalina_wrapper.sh genera_certs.sh ${CATALINA_HOME}/bin/
 COPY ConnectorTLS_in_server.xslt resources_standalone/server.xml resources_standalone/context.xml ${CATALINA_HOME}/conf/
-
-RUN groupadd -r -g 1000 tomcat \
-&& useradd -r --uid 1000 --create-home -g tomcat tomcat \
-&& mkdir ${GOVWAY_HOME} ${GOVWAY_LOGDIR} \
-&& rm -rf ${CATALINA_HOME}/webapps/* \
-&& cp dist/cfg/*.properties ${GOVWAY_HOME} \
-&& cp dist/archivi/*.war ${CATALINA_HOME}/webapps \
-&& cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/ \
-&& chown -R tomcat.tomcat ${GOVWAY_HOME} ${GOVWAY_LOGDIR} ${CATALINA_HOME} /database
 
 WORKDIR ${CATALINA_HOME}
 
