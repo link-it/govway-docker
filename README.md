@@ -1,7 +1,6 @@
 # Immagine docker per GovWay
 
-Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker
-L'ambiente è reso disponible in due modalità:
+Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'ambiente è reso disponible in due modalità:
 - **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
 - **compose** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database Potsgres esterno
 
