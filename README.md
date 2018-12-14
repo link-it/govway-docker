@@ -100,22 +100,21 @@ La certification Authority utilizzata per generare tutti i files si trova nella 
 
 Nella sottodirectory _**esempi/**_ sono disponibili i certificati e le chiavi private di esempio, organizzate per funzione (client e server)
 - esempi/test_Client_1 e esempi/test_Client_2 e 
-**ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
-**ee_test_Client_X.cert.pem** : Certificato client numero 1 da utilizzare per test della piattaforma
-**ee_test_Client_X.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
-**ee_test_Client_X.README.txt** : password utilizzata per la protezione della chiave privata del certificato
+  - **ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
+  - **ee_test_Client_X.cert.pem** : Certificato client numero 1 da utilizzare per test della piattaforma
+  - **ee_test_Client_X.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
+  - **ee_test_Client_X.README.txt** : password utilizzata per la protezione della chiave privata del certificato
 
 - esempi/test.govway.org
-**ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
-**ee_test.govway.org.cert.pem** : Certificato server relativo al FQDN
-**ee_test.govway.org.key.pem** : Chiave privata RSA da accoppiare al certificato server
-**ee_test_.govway.org.README.txt** : password utilizzata per la protezione della chiave privata del certificato
+  - **ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
+  - **ee_test.govway.org.cert.pem** : Certificato server relativo al FQDN
+  - **ee_test.govway.org.key.pem** : Chiave privata RSA da accoppiare al certificato server
+  - **ee_test_.govway.org.README.txt** : password utilizzata per la protezione della chiave privata del certificato
 
-Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore, utilizzati dal server tomcat per configurare il connettore HTTPS
-
-**keystore_server.jks** : Contiene chiave privata e certificato relativo al FQDN
-**truststore_server.jks**: Contiene il certifica della CA emettitrice di tutti i certificati di esempio
-**keystore_server.README.txt**: Password del keystore e della chiave privata
+Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore utilizzati dal server tomcat per configurare il connettore HTTPS
+  - **keystore_server.jks** : Contiene chiave privata e certificato relativo al FQDN
+  - **truststore_server.jks**: Contiene il certifica della CA emettitrice di tutti i certificati di esempio
+  - **keystore_server.README.txt**: Password del keystore e della chiave privata
 
 ### Script SQL
 Lo script SQL necessario ad inizializzare il database si trova nell'immagine alla directory standard **/database**; Per recuperalo si possono utilizzare i seguenti comandi :
@@ -124,4 +123,5 @@ Lo script SQL necessario ad inizializzare il database si trova nell'immagine all
 docker run govway_compose:3.0.1 true
 docker cp <Container ID>:/database/GovWay_setup.sql .
 ```
+
 
