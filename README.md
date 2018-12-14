@@ -7,7 +7,7 @@ L'ambiente è reso disponible in due modalità:
 
 ## Build immagine Docker
 Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto sono presenti due script di shell che si occupano di prepare tutti i files necessari al build dell'immagine e ad avviare il processo di build. 
-Gli script possono essere avviati senza parametri per ottenere il build dell'immagine di defult; in alternativa è possibile fare alcune personalizzazioni impostando oopportunamente i parametri, come descritti qui di seguito:
+Gli script possono essere avviati senza parametri per ottenere il build dell'immagine di default; in alternativa è possibile fare alcune personalizzazioni impostando opportunamente i parametri, come descritti qui di seguito:
 
 ```
 Usage build_[ standalone | compose ].sh [ -t <tagname> | -v <versione> | -h ]
@@ -18,11 +18,11 @@ Options
 -h : Mostra questa pagina di aiuto
 ```
 
-I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esmpio, il database HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
+I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
  
  Il container tomcat utilizzato per il deploy di govway rimane in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**HTTPS**_ sulla porta **8443**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine
 
-Il database viene inizializato all'avvio del container, sia in modalià standalone che in modaliatà compose; comunque è possibile esaminare lo script SQL, o riutilizzarlo per un'altro database, recuperandolo dall'immagine alla directory standard  **/database**.
+Il database viene inizializzato all'avvio del container, sia in modalià standalone che in modaliatà compose; comunque è possibile esaminare lo script SQL, o riutilizzarlo per un'altro database, recuperandolo dall'immagine alla directory standard  **/database**.
 
 ## Avvio immagine Docker
 
@@ -90,7 +90,7 @@ Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
 ### Configurazione HTTPS
 Oltre all´accesso standard in HTTP le immagini consentono di configurare dinamicamente un connettore HTTPS in ascolto sulla porta 8443; il connettore generato utilizzerà un keystore ed un truststore contenente dei certificati generati all`avvio del server. Tutti i files relativi alla comunicazione HTTPS vengono posizionate nella directory standard **/var/govway/pki**
 
-Un volta avviato il container tutte gli accessi descritti in precedenza saranno disponibili su protocollo HTTPS ed il server si presentera con un certificato server col subject: 
+Un volta avviato il container tutte gli accessi descritti in precedenza saranno disponibili su protocollo HTTPS ed il server si presenterà con un certificato server col subject: 
 **_CN=test.govway.org,O=govway.org,C=it_** 
 
 emesso dalla Certification Authority:
@@ -111,7 +111,8 @@ Nella sottodirectory _**esempi/**_ sono disponibili i certificati e le chiavi pr
 **ee_test.govway.org.key.pem** : Chiave privata RSA da accoppiare al certificato server
 **ee_test_.govway.org.README.txt** : password utilizzata per la protezione della chiave privata del certificato
 
-Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore utilizzati dal server tomcat per configurare il connettore HTTPS
+Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore, utilizzati dal server tomcat per configurare il connettore HTTPS
+
 **keystore_server.jks** : Contiene chiave privata e certificato relativo al FQDN
 **truststore_server.jks**: Contiene il certifica della CA emettitrice di tutti i certificati di esempio
 **keystore_server.README.txt**: Password del keystore e della chiave privata
@@ -120,7 +121,7 @@ Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystor
 Lo script SQL necessario ad inizializzare il database si trova nell'immagine alla directory standard **/database**; Per recuperalo si possono utilizzare i seguenti comandi :
 
 ```
-docker run govway_standalone:3.0.1 true
+docker run govway_compose:3.0.1 true
 docker cp <Container ID>:/database/GovWay_setup.sql .
 ```
 
