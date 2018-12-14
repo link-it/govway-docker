@@ -1,6 +1,7 @@
-#!/bin/bash -x 
+#!/bin/bash 
 exec 6<> /tmp/catalina_wrapper_debug.log
 exec 2>&6 
+set -x 
 
 USERID=${USERID:=1234}
 GROUPID=${GROUPID:=${USERID}}
@@ -155,7 +156,7 @@ then
 		grep -qE "${STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
 		GOVWAY_READY=$?
 		NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
-		if [  ${GOVWAY_READY} -ne 1 ]
+		if [  ${GOVWAY_READY} -ne 0 ]
                 then
 			echo "INFO: Attendo avvio di GovWay ..."
 			sleep ${STARTUP_CHECK_SLEEP_TIME}s

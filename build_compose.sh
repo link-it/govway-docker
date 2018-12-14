@@ -1,12 +1,13 @@
 #!/bin/bash
 
 function printHelp() {
-echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
+#echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
+echo "Usage $(basename $0) [ -t <tagname> | -v <versione> | -h ]"
 echo 
+#-s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 echo "Options
--s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 -t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
--v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1.rc2)
+-v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1)
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -51,7 +52,9 @@ if [ -z "$DA_SORGENTI" ]
 then
    cp -rp compose_bin/* ./target/
 else
-   cp -rp compose_src/* ./target/
+   echo "Funzionalità di build a partire dai sorgenti non implementata."
+   exit 1
+   #cp -rp compose_src/* ./target/
 fi
 
 cd target
