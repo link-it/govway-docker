@@ -2,7 +2,7 @@
 
 Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker
 L'ambiente è reso disponible in due modalità:
-- **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HyperSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
+- **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
 - **compose** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database Potsgres esterno
 
 ## Build immagine Docker
@@ -10,16 +10,15 @@ Per semplificare il più possibile la preparazione dell'ambiente, sulla root del
 Gli script possono essere avviati senza parametri per ottenere il build dell'immagine di defult; in alternativa è possibile fare alcune personalizzazioni impostando oopportunamente i parametri, come descritti qui di seguito:
 
 ```
-Usage build_[ standalone | compose ].sh [ -s | -h | -t <tagname> | -v <versione> ]
+Usage build_[ standalone | compose ].sh [ -t <tagname> | -v <versione> | -h ]
 
 Options
--s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 -t : Imposta il nome del TAG che verrà utilizzato per l'immagine prodotta 
 -v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1)
 -h : Mostra questa pagina di aiuto
 ```
 
- I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esmpio, il database HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
+I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esmpio, il database HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
  
  Il container tomcat utilizzato per il deploy di govway rimane in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**HTTPS**_ sulla porta **8443**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine
 
