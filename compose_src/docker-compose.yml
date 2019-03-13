@@ -1,0 +1,44 @@
+version: '2'
+services:
+  govway:
+    container_name: govway_master
+    build:
+      context: .
+      args:
+        govway_branch: master
+    image: govway_compose:master
+    ports:
+        - 8080:8080
+        - 8443:8443
+    volumes:
+        - ./govway_home:/var/govway
+        - sql-govway_master:/database
+    depends_on:
+        - database
+    environment:
+        - GOVWAY_DATABASE_SERVER=PG95
+        - GOVWAY_DATABASE_PORT=5432
+        - GOVWAY_DATABASE_NAME=govwaydb
+        - GOVWAY_DATABASE_USERNAME=govway
+        - GOVWAY_DATABASE_USERPASSWD=govway
+#
+# Per valorizzare correttamente variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
+# e' possibile lasciarle non specificate ed in questo caso verranno usati i valori di default
+#
+#        - USERID=$(id -u $USER)
+#        - GROUPID=$(id -g $USER)
+#        - FQDN=$(hostname -f)
+#
+  database:
+    container_name: PG95 
+    image: postgres:9.5
+    volumes:
+        - sql-govway_master:/docker-entrypoint-initdb.d:ro
+    environment:
+        - POSTGRES_DB=govwaydb
+        - POSTGRES_USER=govway
+        - POSTGRES_PASSWORD=govway
+
+volumes:
+  sql-govway_master:
+
