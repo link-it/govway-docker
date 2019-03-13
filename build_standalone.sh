@@ -2,12 +2,12 @@
 
 function printHelp() {
 #echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
-echo "Usage $(basename $0) [ -t <tagname> | -v <versione> | -h ]"
+echo "Usage $(basename $0) [ -t <tagname> | [ -v <versione> | -b <branch> ] | -h ]"
 echo 
-#-s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 echo "Options
 -t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
--v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1)
+-v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.0.1)
+-b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -20,14 +20,15 @@ then
 fi
 
 
-DA_SORGENTI=
+
 TAG=
+BRANCH=
 VER=
-while getopts "sht:v:" opt; do
+while getopts "b:ht:v:" opt; do
   case $opt in
-    s) DA_SORGENTI=TRUE ;;
-    t) TAG="$OPTARG" ;;
-    v) VER="$OPTARG" ;;
+    b) BRANCH="$OPTARG"; [ -n "$VER" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    t) TAG="$OPTARG";;
+    v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     h) printHelp
        exit 0
        ;;
@@ -42,18 +43,20 @@ done
 mkdir ./target
 
 cp -rp ./commons/resources_standalone ./commons/catalina_wrapper.sh ./commons/ConnectorTLS_in_server.xslt ./commons/genera_certs.sh  ./target
-if [ -z "$DA_SORGENTI" ]
+DOCKERBUILD_OPT=()
+[ -n "$TAG" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "$TAG")
+if [ -n "$VER" ] 
 then
-   cp -rp standalone_bin/* ./target/
+	cp -rp standalone_bin/* ./target/
+	DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=$VER")
+elif [ -n "$BRANCH" ]
+then
+	cp -rp standalone_src/* ./target/
+	DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_branch=$BRANCH")
 else
-   echo "Funzionalità di build a partire dai sorgenti non implementata."
-   exit 1
-#  cp -rp standalone_src/* ./target/
+	# Per default eseguo un build delle immagini binarie
+        cp -rp standalone_bin/* ./target/
 fi
 
 cd target 
-DOCKERBUILD_OPT=()
-[ -n "$TAG" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "$TAG")
-[ -n "$VER" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=$VER")
-  
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" .

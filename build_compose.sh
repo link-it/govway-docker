@@ -2,12 +2,12 @@
 
 function printHelp() {
 #echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
-echo "Usage $(basename $0) [ -t <tagname> | -v <versione> | -h ]"
+echo "Usage $(basename $0) [ -t <tagname> | [ -v <versione> | -b <branch> ] | -h ]"
 echo 
-#-s : Esegue build a partire dai sorgenti presenti nel repository GitHub
 echo "Options
 -t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
--v : Imposta la versione di govway da utilizzare per il build al posto di quella di default (3.0.1)
+-v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.0.1)
+-b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -26,14 +26,14 @@ then
 fi
 
 
-DA_SORGENTI=
 TAG=
+BRANCH=
 VER=
-while getopts "sht:v:" opt; do
+while getopts "b:ht:v:" opt; do
   case $opt in
-    s) DA_SORGENTI=TRUE ;;
-    t) TAG="$OPTARG" ;;
-    v) VER="$OPTARG" ;;
+    b) BRANCH="$OPTARG"; [ -n "$VER" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    t) TAG="$OPTARG";;
+    v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     h) printHelp
        exit 0
        ;;
@@ -48,30 +48,41 @@ done
 mkdir ./target
 
 cp -rp ./commons/resources_compose ./commons/catalina_wrapper.sh ./commons/ConnectorTLS_in_server.xslt ./commons/genera_certs.sh  ./target
-if [ -z "$DA_SORGENTI" ]
+
+if [ -n "$VER" ] 
 then
-   cp -rp compose_bin/* ./target/
+	cp -rp compose_bin/* ./target/
+	CONTAINER_NAME=govway_${VER//\./}
+	IMAGE_NAME=govway_compose:${VER}
+	BUILD_ARG='govway_fullversion'
+	BUILD_ARG_VALUE="$VER"
+
+elif [ -n "$BRANCH" ]
+then
+	cp -rp compose_src/* ./target/
+	CONTAINER_NAME=govway_${BRANCH}
+	IMAGE_NAME=govway_compose:${BRANCH}
+	BUILD_ARG='govway_branch'
+	BUILD_ARG_VALUE="$BRANCH"
+
 else
-   echo "Funzionalità di build a partire dai sorgenti non implementata."
-   exit 1
-   #cp -rp compose_src/* ./target/
+	# Per default eseguo un build delle immagini binarie
+        cp -rp compose_bin/* ./target/
+        CONTAINER_NAME=govway_301
+        IMAGE_NAME=govway_compose:3.0.1
+        BUILD_ARG='govway_fullversion'
+        BUILD_ARG_VALUE="3.0.1"
+
 fi
+[ -n "$TAG" ] && IMAGE_NAME=${TAG}
 
 cd target
-if [ -n "$VER" ]
-then
-
-   sed -r -e "0,/container_name:.*/{s//container_name: govway_$VER/}" \
-   -e "0,/image:.*/{s//image: govway_compose:$VER/}"  \
-   -e "0,/govway_fullversion:.*/{s//govway_fullversion: $VER/}" docker-compose.yml > .docker-compose.yml.tmp
+sed -r -e "0,/container_name:.*/{s//container_name: ${CONTAINER_NAME}/}" \
+   -e "0,/image:.*/{s//image: ${IMAGE_NAME}/}"  \
+   -e "0,/${BUILD_ARG}:.*/{s//${BUILD_ARG}: ${BUILD_ARG_VALUE}/}" \
+   -e "s/sql-govway[^:]*:(.*)/sql-${CONTAINER_NAME}:\1/" \
+docker-compose.yml > .docker-compose.yml.tmp
    /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
-fi
-if [ -n "$TAG" ]
-then
-
-   sed -r -e "0,/image:.*/{s//image: $TAG/}" docker-compose.yml > .docker-compose.yml.tmp
-   /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
-fi
 
 
 "${DOCKERCOMPOSEBIN}" build

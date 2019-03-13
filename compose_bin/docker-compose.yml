@@ -12,7 +12,7 @@ services:
         - 8443:8443
     volumes:
         - ./govway_home:/var/govway
-        - govway-sql:/database
+        - sql-govway_301:/database
     depends_on:
         - database
     environment:
@@ -33,12 +33,12 @@ services:
     container_name: PG95 
     image: postgres:9.5
     volumes:
-        - govway-sql:/docker-entrypoint-initdb.d:ro
+        - sql-govway_301:/docker-entrypoint-initdb.d:ro
     environment:
         - POSTGRES_DB=govwaydb
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 
 volumes:
-  govway-sql:
+  sql-govway_301:
 

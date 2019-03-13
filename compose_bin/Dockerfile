@@ -32,8 +32,8 @@ RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-co
 && ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
 RUN mkdir /database \
-&& cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay.sql /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
-VOLUME /database
+&& cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
+#VOLUME /database
 
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 COPY catalina_wrapper.sh genera_certs.sh ${CATALINA_HOME}/bin/
@@ -46,7 +46,6 @@ RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/
 
 ENV POSTGRES_JDBC_VERSION=42.2.5
 RUN wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar 
-
 
 WORKDIR ${CATALINA_HOME}
 
