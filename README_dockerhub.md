@@ -11,25 +11,34 @@
 
 ## Avviare l'immagine
 
-L'avvio minimo deve essere fatto nella seguente maniera:
+Eseguire il _run_ dell'immagine:
 
-docker run -p 8080:8080 linkitaly/govway
+```console 
+docker run linkitaly/govway
+```
 
-Attraverso la porta 8080 e' possible accedere ai servizi ed alle interfacce di configurazione e monitoraggio:
-
-* __*http://localhost:8080/govway/api/in*__ (o http://host-ip:8080/govway/api/in)
-* __*http://localhost:8080/govway/api/out*__ (o http://host-ip:8080/govway/api/out)
-* __*http://localhost:8080/pddConsole*__ (o http://host-ip:8080/pddConsole)
-* __*http://localhost:8080/pddMonitor*__ (o http://host-ip:8080/pddMonitor)
-
-Per maggiori informazioni sull'utilizzo fare riferimento alla documentazione del progetto [Govway-Docker][3] e alla manualistica presente su [Govway.org](https://govway.org/download).
+I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo HTTPS sulle porte 8080 e 8443 rispettivamente:
 
 
-I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL ed i file di log, sono posizionati tutti sotto la directory standard /var/govway; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory
+```console 
+docker run -p 8080:8080 \
+-p 8443:8443 \
+linkitaly/govway
+```
 
-```console
+Per maggiori informazioni sull'accesso e l'utilizzo  fare riferimento alla documentazione del progetto [Govway-Docker][3] e alla manualistica presente su [Govway.org](https://govway.org/download).
+
+
+I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL ed i file di log, sono posizionati tutti sotto la directory standard /var/govway; si possono quindi rendere tutti persistenti montando un volume su questa directory
+
+
+```console 
 mkdir ~/govway_home
-docker run -v ~/govway_home:/var/govway -p 8080:8080 linkitaly/govway
+
+docker run -p 8080:8080 \
+ -p 8443:8443 \
+ -v ~/govway_home:/var/govway \
+linkitaly/govway
 ```
 
 ## Personalizzare l'avvio
@@ -38,4 +47,15 @@ E' possibile personalizzare l'immagine all'avvio impostando alcune variabili d'a
 * __**USERID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
 * __**GROUPID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
 
+
+```console 
+mkdir ~/govway_home
+
+docker run -p 8080:8080 \
+ -p 8443:8443 \
+ -v ~/govway_home:/var/govway \
+ -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
+ govway_standalone:3.0.1
+linkitaly/govway
+```
 [3]: https://github.com/link-it/govway-docker "Progetto Govway-Docker"
