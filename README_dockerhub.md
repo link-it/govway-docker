@@ -23,29 +23,28 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 Eseguire il _run_ dell'immagine:
 
 ```console 
-docker run linkitaly/govway
+$ docker run linkitaly/govway
 ```
 
 I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo HTTPS sulle porte 8080 e 8443 rispettivamente:
 
 
 ```console 
-docker run -p 8080:8080 \
--p 8443:8443 \
+$ docker run \
+ -p 8080:8080 -p 8443:8443 \
 linkitaly/govway
 ```
 
 Per maggiori informazioni sull'accesso e l'utilizzo  fare riferimento alla documentazione del progetto [GovWay-Docker][3] e alla manualistica presente su [GovWay.org](https://govway.org/download).
 
 
-I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL ed i file di log, sono posizionati tutti sotto la directory standard /var/govway; si possono quindi rendere tutti persistenti montando un volume su questa directory
+I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL ed i file di log, sono posizionati tutti sotto la directory standard /var/govway; si possono quindi rendere tutti persistenti montando un volume su questa directory:
 
 
 ```console 
-mkdir ~/govway_home
-
-docker run -p 8080:8080 \
- -p 8443:8443 \
+$ mkdir ~/govway_home
+$ docker run \
+ -p 8080:8080 -p 8443:8443 \
  -v ~/govway_home:/var/govway \
 linkitaly/govway
 ```
@@ -58,13 +57,11 @@ E' possibile personalizzare l'immagine all'avvio impostando alcune variabili d'a
 
 
 ```console 
-mkdir ~/govway_home
-
-docker run -p 8080:8080 \
- -p 8443:8443 \
+$ mkdir ~/govway_home
+$ docker run \
+ -p 8080:8080 -p 8443:8443 \
  -v ~/govway_home:/var/govway \
- -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
- govway_standalone:3.0.1
+ -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`" \
 linkitaly/govway
 ```
 [3]: https://github.com/link-it/govway-docker "Progetto Govway-Docker"
