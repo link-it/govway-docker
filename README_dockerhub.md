@@ -13,6 +13,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Conforme alle specifiche per la fatturazione elettronica sul canale SdiCoop (profilo Fatturazione Elettronica)
 * Retrocompatibile con il paradigma di cooperazione applicativa (profilo SPCoop)
 * Connettori preconfigurati (GovLet) per l’accesso ai principali servizi pubblici italiani
+
 ![Logo GovWay](https://govway.org/assets/images/gway_logo.svg "L'API gateway per la pubblica amministrazione italiana")
 
 # Come utilizzare l'immagine
