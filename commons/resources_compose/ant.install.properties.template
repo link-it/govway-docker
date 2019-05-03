@@ -49,3 +49,5 @@ antinstaller_as4_jms_password=
 antinstaller_as4_backend=
 antinstaller_tiposoggetto_trasparente=gw
 antinstaller_as4_jms_username=
+antinstaller_rs_config=true
+antinstaller_rs_monitor=true
