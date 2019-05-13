@@ -32,9 +32,9 @@ RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERS
 
 
 ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_branch}
-RUN git clone https://github.com/link-it/GovWay.git /opt/GovWay  
-RUN cd /opt/GovWay \ 
-&& git checkout ${GOVWAY_FULLVERSION} \
+ADD https://api.github.com/repos/link-it/govway/git/refs/heads/${GOVWAY_FULLVERSION} version.json
+RUN git clone -b ${GOVWAY_FULLVERSION} https://github.com/link-it/GovWay.git /opt/GovWay  \
+&& cd /opt/GovWay \ 
 && sed -i -e 's#UPDATE_DOC=true#UPDATE_DOC=false#g' ./distrib/distrib.sh \
 && sed -i -e 's#AS_VERSION=wildfly10,tomcat7#AS_VERSION=tomcat7#g' \
  -e 's#DB_VERSION=postgresql,mysql,oracle,hsql,sqlserver,db2#DB_VERSION=hsql#g' \

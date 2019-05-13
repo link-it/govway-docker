@@ -2,10 +2,11 @@
 
 function printHelp() {
 #echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
-echo "Usage $(basename $0) [ -t <tagname> | [ -v <versione> | -b <branch> ] | -h ]"
+echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -b <branch> ] | -h ]"
 echo 
 echo "Options
--t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
+-t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
+     NOTA: deve essere rispettata la sintassi <repository>:<tagname>
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.0.1)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
@@ -26,9 +27,10 @@ BRANCH=
 VER=
 while getopts "b:ht:v:" opt; do
   case $opt in
-    b) BRANCH="$OPTARG"; [ -n "$VER" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
-    t) TAG="$OPTARG";;
-    v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -t e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    b) BRANCH="$OPTARG"; [ -n "$VER" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
+	[ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
+    v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     h) printHelp
        exit 0
        ;;

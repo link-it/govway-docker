@@ -9,10 +9,11 @@ Per semplificare il più possibile la preparazione dell'ambiente, sulla root del
 Gli script possono essere avviati senza parametri per ottenere il build dell'immagine di default; in alternativa è possibile fare alcune personalizzazioni impostando opportunamente i parametri, come descritti qui di seguito:
 
 ```
-Usage build_standalone.sh [ -t <tagname> | [ -v <versione> | -b <branch> ] | -h ]
+Usage build_standalone.sh [ -t <repository>:<tagname> | [ -v <versione> | -b <branch> ] | -h ]
 
 Options
--t : Imposta il nome del TAG che verra' utilizzato per l'immagine prodotta 
+-t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
+     NOTA: deve essere rispettata la sintassi <repository>:<tagname>
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.0.1)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
