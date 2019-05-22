@@ -42,8 +42,8 @@ docker-compose up
 ```
 
 In questa modalità la personalizzazione dei volumi e la pubblicazione delle porte non può essere fatta a linea di comando ma deve essere fatta necessariamente editando il file **docker-compose.yml** che si trova nella directory target generata dallo script di build.
-Nel caso che il file non venga editato, per default verranno pubblicate le porte _**8080**_ e _**8443**_, mentre la directory /var/govway sarà montata dentro la directory **./govway_home**
-
+Nel caso che il file non venga editato, per default verranno pubblicate le porte _**8080**_ e _**8443**_.
+Inoltre nella directory corrente verra' creata la sottodirectory **govway_home**, su cui il container montera' il path _**/var/govway**_
 
 ### Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento del container. Le variabili supportate al momento sono queste:
@@ -54,7 +54,7 @@ Attraverso l'impostazione di alcune variabili d'ambiente note è possibile perso
 L'avvio tipico in modalità standalone è il seguente:
 ```
 docker run \
- -v ./govway_home:/var/govway \
+ -v ~/govway_home:/var/govway \
  -p 8080:8080 -p 8443:8443 \
  -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
  govway_standalone:3.0.1
