@@ -1,5 +1,6 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.0.1`, `latest` (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.1.0`, `latest` (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.0.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
 
 # Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
