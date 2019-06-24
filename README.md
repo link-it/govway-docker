@@ -50,13 +50,14 @@ Attraverso l'impostazione di alcune variabili d'ambiente note è possibile perso
 * FQDN: utilizzato per personalizzare il campo CN del subject dei certificati generati; se non specificato viene usato il valore di default **test.govway.org**
 * USERID: utilizzato per impostare l'id di sistema dell'utente tomcat
 * GROUPID: utilizzato per impostare l'id di sistema dell'utente tomcat
+* SSH_PUBLIC_KEY: utilizzato per registrare una chiave pubblica ,tra gli host autorizzati a collegarsi al server SSH interno
 
 L'avvio tipico in modalità standalone è il seguente:
 ```
 docker run \
  -v ~/govway_home:/var/govway \
- -p 8080:8080 -p 8443:8443 \
- -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
+ -p 8080:8080 -p 8443:8443 -p 2222:22 \
+ -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`" -e "SSH_PUBLIC_KEY=$(cat ~/.ssh/id_rsa.pub)" \
  govway_standalone:3.1.0
 ```
 
@@ -66,6 +67,7 @@ in modalità compose si deve editare la sezione "_**environment**_" del file doc
     - USERID=1234
     - GROUPID=1234
     - FQDN=docker_instance.govway.org
+    - SSH_PUBLIC_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAABI......"
 ...
 ```
 
