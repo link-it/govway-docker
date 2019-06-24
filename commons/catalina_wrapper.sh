@@ -88,7 +88,48 @@ EOPROPERTIES
 
 fi
 
+## Avvio server ssh
+if [ -n "${SSH_PUBLIC_KEY}" ]
+then
+	echo "${SSH_PUBLIC_KEY}" > /tmp/pubkey
+	if ! ssh-keygen -l -f /tmp/pubkey >/dev/null 2>&1
+	then
 
+                for formato in RFC4716 PKCS8 PEM
+                do
+                        ssh-keygen -i -m ${formato} -f /tmp/pubkey > /tmp/openssh_pubkey 2>/dev/null
+                        [ $? -eq 0 ] && break
+                done
+	else
+		mv -f /tmp/pubkey /tmp/openssh_pubkey
+	fi
+
+	if ssh-keygen -l -f /tmp/openssh_pubkey >/dev/null 2>&1
+	then
+		echo "INFO: Inizio configurazione server SSH ..."
+		sshd-keygen >/dev/null 2>&1
+		cat - << EOSSHD > /etc/ssh/sshd_config
+X11Forwarding no
+IgnoreRhosts yes
+PermitEmptyPasswords no
+MaxAuthTries 3
+PubkeyAuthentication yes
+PasswordAuthentication no
+EOSSHD
+		mkdir ~/.ssh
+		cp /tmp/openssh_pubkey ~/.ssh/authorized_keys
+		chmod 600 ~/.ssh/authorized_keys
+		coproc SSHD { /usr/sbin/sshd -D; }
+		echo "INFO: Configurazione server SSH completata"
+		echo "WARN: Accesso al server consentito esclusivamente alla chiave '$(ssh-keygen -l -f /tmp/openssh_pubkey)'"
+	else
+		
+		echo "ERROR: La chiave pubblica non e' valida"
+		echo "INFO: Impossibile procedere con la configurazione del server SSH"
+	fi
+
+	rm -f /tmp/pubkey  /tmp/openssh_pubkey
+fi
 
 ## Const
 STARTUP_CHECK_FIRST_SLEEP_TIME=20
@@ -115,7 +156,7 @@ then
 	sleep ${DB_CHECK_FIRST_SLEEP_TIME}s
 	DB_READY=1
 	NUM_RETRY=0
-	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -le ${DB_CHECK_MAX_RETRY} ]
+	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${DB_CHECK_MAX_RETRY} ]
 	do
 		nc  -w "$DB_CHECK_CONNECT_TIMEOUT" -z "$GOVWAY_DATABASE_SERVER" "$GOVWAY_DATABASE_PORT"
 	        DB_READY=$?

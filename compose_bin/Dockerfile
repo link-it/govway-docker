@@ -4,7 +4,7 @@ ARG govway_fullversion=3.1.0
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root 
-RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl \
+RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl openssh openssh-server\
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
 && chmod +x /usr/local/bin/gosu \
