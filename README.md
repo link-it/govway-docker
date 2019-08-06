@@ -14,7 +14,7 @@ Usage build_standalone.sh [ -t <repository>:<tagname> | [ -v <versione> | -b <br
 Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.1.0)
+-v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.1.1)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
 ```
@@ -29,14 +29,14 @@ Il database viene inizializzato all'avvio del container, sia in modalià standal
 
 Una volta eseguito il build dell'immagine tramite uno degli script forniti, l'immagine puo essere eseguita con i normali comandi di run docker:
 ```
-./build_standalone.sh -t govway_standalone:3.1.0
-docker run -v ~/govway_home:/var/govway -p 8080:8080 -p 8443:8443 govway_standalone:3.1.0
+./build_standalone.sh -t govway_standalone:3.1.1
+docker run -v ~/govway_home:/var/govway -p 8080:8080 -p 8443:8443 govway_standalone:3.1.1
 ```
 
 In modalità compose
 
 ```
-./build_compose.sh -t govway_compose:3.1.0
+./build_compose.sh -t govway_compose:3.1.1
 cd target 
 docker-compose up
 ```
@@ -57,7 +57,7 @@ docker run \
  -v ~/govway_home:/var/govway \
  -p 8080:8080 -p 8443:8443 \
  -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`"
- govway_standalone:3.1.0
+ govway_standalone:3.1.1
 ```
 
 in modalità compose si deve editare la sezione "_**environment**_" del file docker-compose.yml e valorizzare le variabili eseguendo prima i comandi sulla shell del sistema host e sostituendo i rispettivi risultati. Ad esempio
@@ -121,7 +121,7 @@ Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystor
 Lo script SQL necessario ad inizializzare il database si trova nell'immagine alla directory standard **/database**; Per recuperalo si possono utilizzare i seguenti comandi :
 
 ```
-docker run govway_compose:3.1.0 true
+docker run govway_compose:3.1.1 true
 docker cp <Container ID>:/database/GovWay_setup.sql .
 ```
 
