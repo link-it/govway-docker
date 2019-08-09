@@ -1,6 +1,9 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.1.0`, `latest` (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
-* [`3.0.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.1.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.1.0`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/8789a3e0b65bea1f139b8de891bd6819f1daa2d3/standalone_bin/Dockerfile)
+* [`3.1.0_postgres`, (standalone_compose/Dockerfile)](https://github.com/link-it/govway-docker/blob/sshserver/compose_bin/Dockerfile)
+* [`3.0.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/53b8f6162d09a5024b0944d4b9f6809fa4a506a1/standalone_bin/Dockerfile)
+
 
 # Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -15,7 +18,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Retrocompatibile con il paradigma di cooperazione applicativa (profilo SPCoop)
 * Connettori preconfigurati (GovLet) per l’accesso ai principali servizi pubblici italiani
 
-![Logo GovWay](https://govway.org/assets/images/gway_logo.svg "L'API gateway per la pubblica amministrazione italiana")
+<img height="50px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
 
 # Come utilizzare l'immagine
 
