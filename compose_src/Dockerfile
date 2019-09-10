@@ -10,7 +10,7 @@ RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl git
 && chmod +x /usr/local/bin/gosu \
 && rm -rf /var/cache/yum
 
-ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk ANT_VERSION=1.10.5 MAVEN_VERSION=3.6.0
+ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk ANT_VERSION=1.10.6 MAVEN_VERSION=3.6.2
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV MVN_HOME=/opt/apache-maven-${MAVEN_VERSION}/
 ENV PATH=$JAVA_HOME/bin:$ANT_HOME/bin:$MVN_HOME/bin:$PATH
