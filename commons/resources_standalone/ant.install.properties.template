@@ -51,3 +51,5 @@ antinstaller_tiposoggetto_trasparente=gw
 antinstaller_as4_jms_username=
 antinstaller_rs_config=true
 antinstaller_rs_monitor=true
+antinstaller_protocollo_modipa=true
+antinstaller_tiposoggetto_modipa=modipa
