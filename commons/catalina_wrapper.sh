@@ -41,7 +41,7 @@ then
 		      mkdir -p ${GOVWAY_HOME}/database
         	if [ ! -f ${GOVWAY_HOME}/database/govwaydb.properties ]
 	        then
-			            echo -n "INFO: Preparazione base dati HSQL ..."
+		        echo -n "INFO: Preparazione base dati HSQL ..."
         	        cat - <<EOSQLTOOL > /root/sqltool.rc
 urlid govwayDB
 url jdbc:hsqldb:file:${GOVWAY_HOME}/database/govwaydb;shutdown=true
@@ -50,16 +50,18 @@ password govway
 transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
-									java -Dfile.encoding=UTF-8 -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation.log 2>&1
-									echo " Ok."
-        					cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
-					fi
-  else
-          wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
-          && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
-          && rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
-          echo "INFO: Preparazione accesso base dati PGSQL ..."
-          cat - <<EOSQLTOOL > /root/sqltool.rc
+			java -Dfile.encoding=UTF-8 -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation.log 2>&1
+			echo " Ok."
+        		cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
+		fi
+	else
+                #TODO: portare questo download direttamente nell'immagine
+	        wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
+		&& unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
+		&& rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
+
+		echo "INFO: Preparazione accesso base dati PGSQL ..."
+		cat - <<EOSQLTOOL > /root/sqltool.rc
 urlid govwayDB
 url jdbc:postgresql://${GOVWAY_DATABASE_SERVER}:${GOVWAY_DATABASE_PORT}/${GOVWAY_DATABASE_NAME}
 username ${GOVWAY_DATABASE_USERNAME}
@@ -68,7 +70,7 @@ driver org.postgresql.Driver
 transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
-  fi
+	fi
 
 	###################################################
 	## Preparazione certificati per connettore https ##
@@ -117,13 +119,57 @@ EOPROPERTIES
 
 fi
 
+## Avvio server ssh
+if [ -n "${SSH_PUBLIC_KEY}" ]
+then
+	echo "${SSH_PUBLIC_KEY}" > /tmp/pubkey
+	if ! ssh-keygen -l -f /tmp/pubkey >/dev/null 2>&1
+	then
+
+                for formato in RFC4716 PKCS8 PEM
+                do
+                        ssh-keygen -i -m ${formato} -f /tmp/pubkey > /tmp/openssh_pubkey 2>/dev/null
+                        [ $? -eq 0 ] && break
+                done
+	else
+		mv -f /tmp/pubkey /tmp/openssh_pubkey
+	fi
+
+	if ssh-keygen -l -f /tmp/openssh_pubkey >/dev/null 2>&1
+	then
+		echo "INFO: Inizio configurazione server SSH ..."
+		sshd-keygen >/dev/null 2>&1
+		cat - << EOSSHD > /etc/ssh/sshd_config
+X11Forwarding no
+IgnoreRhosts yes
+PermitEmptyPasswords no
+MaxAuthTries 3
+PubkeyAuthentication yes
+PasswordAuthentication no
+EOSSHD
+		mkdir ~/.ssh
+		cp /tmp/openssh_pubkey ~/.ssh/authorized_keys
+		chmod 600 ~/.ssh/authorized_keys
+		coproc SSHD { /usr/sbin/sshd -D; }
+		echo "INFO: Configurazione server SSH completata"
+		echo "WARN: Accesso al server consentito esclusivamente alla chiave '$(ssh-keygen -l -f /tmp/openssh_pubkey)'"
+	else
+		
+		echo "ERROR: La chiave pubblica non e' valida"
+		echo "INFO: Impossibile procedere con la configurazione del server SSH"
+	fi
+
+	rm -f /tmp/pubkey  /tmp/openssh_pubkey
+fi
+
+
 if [ "${SKIP_DB_CHECK}" != "TRUE" ]
 then
 	echo "INFO: Attendo avvio della base dati ..."
 	sleep ${DB_CHECK_FIRST_SLEEP_TIME}s
 	DB_READY=1
 	NUM_RETRY=0
-	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -le ${DB_CHECK_MAX_RETRY} ]
+	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${DB_CHECK_MAX_RETRY} ]
 	do
 		   #POSTGRES_JDBC_VERSION non e' valorizzata quando il container e' in modalita standalone
 			 EXIST="$(java -Dfile.encoding=UTF-8 -cp ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool \
