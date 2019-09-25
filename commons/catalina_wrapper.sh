@@ -1,30 +1,47 @@
-#!/bin/bash 
+#!/bin/bash
 exec 6<> /tmp/catalina_wrapper_debug.log
-exec 2>&6 
-set -x 
+exec 2>&6
+set -x
 
+
+## Const
+STARTUP_CHECK_FIRST_SLEEP_TIME=20
+STARTUP_CHECK_SLEEP_TIME=5
+STARTUP_CHECK_MAX_RETRY=60
+STARTUP_CHECK_REGEX='GovWay/.* \(www.govway.org\) avviata correttamente in .* secondi'
+
+DB_CHECK_FIRST_SLEEP_TIME=10
+DB_CHECK_SLEEP_TIME=5
+DB_CHECK_MAX_RETRY=60
+DB_CHECK_CONNECT_TIMEOUT=2
+
+
+## Var
+SKIP_STARTUP_CHECK=${SKIP_STARTUP_CHECK:=FALSE}
+SKIP_DB_CHECK=${SKIP_DB_CHECK:=TRUE}
 USERID=${USERID:=1234}
 GROUPID=${GROUPID:=${USERID}}
+
 
 ##########################################
 # configurazione tomcat e deploy archivi #
 ##########################################
-if ! id -u tomcat 
+if ! id -u tomcat
 then
-	groupadd -r -g ${GROUPID} tomcat 
-	useradd -r --uid ${USERID} --create-home -g tomcat tomcat 
+	groupadd -r -g ${GROUPID} tomcat
+	useradd -r --uid ${USERID} --create-home -g tomcat tomcat
 
 	mkdir -p ${GOVWAY_HOME}/etc ${GOVWAY_HOME}/pki ${GOVWAY_LOGDIR}
 
-	##############################################
-	## Preparazione database Hsql se installato ##
-	##############################################
+	################################################
+	## Preparazione database (Hsql se installato) ##
+	################################################
 	if [ -d /opt/hsqldb-${HSQLDB_FULLVERSION} ]
 	then
-		mkdir -p ${GOVWAY_HOME}/database
+		      mkdir -p ${GOVWAY_HOME}/database
         	if [ ! -f ${GOVWAY_HOME}/database/govwaydb.properties ]
 	        then
-			echo -n "INFO: Preparazione base dati HSQL ..."
+			            echo -n "INFO: Preparazione base dati HSQL ..."
         	        cat - <<EOSQLTOOL > /root/sqltool.rc
 urlid govwayDB
 url jdbc:hsqldb:file:${GOVWAY_HOME}/database/govwaydb;shutdown=true
@@ -33,18 +50,29 @@ password govway
 transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
-	                java -Dfile.encoding=UTF-8 -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation.log 2>&1
-			echo " Ok."
-	        fi
-        	cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/ 
-
-	fi
-
-	echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC -Dfile.encoding=UTF-8\"" > ${CATALINA_HOME}/bin/setenv.sh
+									java -Dfile.encoding=UTF-8 -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation.log 2>&1
+									echo " Ok."
+        					cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
+					fi
+  else
+          wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
+          && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
+          && rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
+          echo "INFO: Preparazione accesso base dati PGSQL ..."
+          cat - <<EOSQLTOOL > /root/sqltool.rc
+urlid govwayDB
+url jdbc:postgresql://${GOVWAY_DATABASE_SERVER}:${GOVWAY_DATABASE_PORT}/${GOVWAY_DATABASE_NAME}
+username ${GOVWAY_DATABASE_USERNAME}
+password ${GOVWAY_DATABASE_USERPASSWD}
+driver org.postgresql.Driver
+transiso TRANSACTION_READ_COMMITTED
+charset UTF-8
+EOSQLTOOL
+  fi
 
 	###################################################
 	## Preparazione certificati per connettore https ##
-	###################################################	
+	###################################################
 	export PKI_DIR=${GOVWAY_HOME}/pki
         FQDN="${FQDN:=test.govway.org}"
         if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*' ]
@@ -57,6 +85,7 @@ EOSQLTOOL
 	###########################
 	## configurazione tomcat ##
 	##########################
+	echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC -Dfile.encoding=UTF-8\"" > ${CATALINA_HOME}/bin/setenv.sh
 	cat - >> ${CATALINA_HOME}/conf/catalina.properties <<EOPROPERTIES
 $(env |grep -E 'GOVWAY')
 user.language=it
@@ -78,36 +107,15 @@ EOPROPERTIES
 	########################################
 	sed -i  -e "s#\${catalina.base}/logs#${GOVWAY_LOGDIR}/tomcat_logs#" ${CATALINA_HOME}/conf/logging.properties
 	ln -s ${GOVWAY_LOGDIR}/tomcat_logs ${CATALINA_HOME}/logs
-	
+
 	####################
 	## Deploy archivi ##
 	####################
-	rm -rf ${CATALINA_HOME}/webapps/* 
-	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/*.properties ${GOVWAY_HOME}/etc 
-	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/*.war ${CATALINA_HOME}/webapps 
+	rm -rf ${CATALINA_HOME}/webapps/*
+	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/*.properties ${GOVWAY_HOME}/etc
+	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/*.war ${CATALINA_HOME}/webapps
 
 fi
-
-
-
-## Const
-STARTUP_CHECK_FIRST_SLEEP_TIME=20
-STARTUP_CHECK_SLEEP_TIME=5
-STARTUP_CHECK_MAX_RETRY=60
-STARTUP_CHECK_REGEX='GovWay/.* \(www.govway.org\) avviata correttamente in .* secondi'
-
-DB_CHECK_FIRST_SLEEP_TIME=10
-DB_CHECK_SLEEP_TIME=5
-DB_CHECK_MAX_RETRY=60
-DB_CHECK_CONNECT_TIMEOUT=2
-
-WARMUP_CONNECT_TIMEOUT=2
-
-## Var
-SKIP_STARTUP_CHECK=${SKIP_STARTUP_CHECK:=FALSE}
-SKIP_DB_CHECK=${SKIP_DB_CHECK:=TRUE}
-SKIP_WARMUP=${SKIP_WARMUP:=TRUE}
-
 
 if [ "${SKIP_DB_CHECK}" != "TRUE" ]
 then
@@ -117,13 +125,18 @@ then
 	NUM_RETRY=0
 	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -le ${DB_CHECK_MAX_RETRY} ]
 	do
-		nc  -w "$DB_CHECK_CONNECT_TIMEOUT" -z "$GOVWAY_DATABASE_SERVER" "$GOVWAY_DATABASE_PORT"
-	        DB_READY=$?
-        	NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
+		   #POSTGRES_JDBC_VERSION non e' valorizzata quando il container e' in modalita standalone
+			 EXIST="$(java -Dfile.encoding=UTF-8 -cp ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool \
+				--continueOnErr=false \
+				--sql='SELECT count(*) from db_info;' \
+				govwayDB 2> /dev/null |tr -d ' ')"
+							[[ $EXIST  > 0 ]]
+							DB_READY=$?
+							NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
 		if [  ${DB_READY} -ne 0 ]
 		then
-	        	echo "INFO: Attendo disponibilita' della base dati ..."
-		        sleep ${DB_CHECK_SLEEP_TIME}s
+						echo "INFO: Attendo disponibilita' della base dati .."
+						sleep ${DB_CHECK_SLEEP_TIME}s
 		fi
 	done
 	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${DB_CHECK_MAX_RETRY} ]
@@ -136,11 +149,11 @@ fi
 
 
 
-
 # correggo i diritti
 chown -R tomcat.tomcat ${GOVWAY_HOME} ${GOVWAY_LOGDIR} ${CATALINA_HOME}
 export UMASK=0002
-coproc TOMCAT { /usr/local/bin/gosu tomcat catalina.sh $@; }
+exec  /usr/local/bin/gosu tomcat catalina.sh "$@" &
+TOMCAT_PID="$!"
 
 ## Main
 if [ "${SKIP_STARTUP_CHECK}" != "TRUE" ]
@@ -168,52 +181,6 @@ then
 		echo "FATAL: GovWay NON avviato dopo $((${DB_CHECK_SLEEP_TIME=} * ${DB_CHECK_MAX_RETRY})) secondi ... Uscita"
 		kill -15 ${TOMCAT_PID}
 	else
-		if [ "${SKIP_WARMUP}" != "TRUE" ]
-		then
-			PROBE_INVOCATIONS_TOTAL=3
-			CONCURRENT_INVOCATION=FALSE
-			CONCURRENT_PROBE_INVOCATIONS=10
-			CURL_OPTIONS="--noproxy 127.0.0.1 -s -w %{http_code} --connect-timeout "${WARMUP_CONNECT_TIMEOUT}" --max-time 5"
-			CURL_PROBE_URL="http://127.0.0.1:8080/govway/check"
-		
-			echo -n "INFO: Inizio riscaldamento ..."
-			if [ "${CONCURRENT_INVOCATION}" != "TRUE" ]
-			then
-	                	curl ${CURL_OPTIONS} "${CURL_PROBE_URL}" >/tmp/govway_check.log
-	        	        NUM_PROBE_INVOCATION=1
-        	        	while [ ${NUM_PROBE_INVOCATION} -le ${PROBE_INVOCATIONS_TOTAL} ]
-	        		do
-	        	                curl ${CURL_OPTIONS} "${CURL_PROBE_URL}" >/tmp/govway_check.log
-        	        	        NUM_PROBE_INVOCATION=$(( ${NUM_PROBE_INVOCATION} + 1 ))
-	        	        done
-			else
-				NUM_CONCURRENT_INVOCATION=1
-				INVOCATIONS_PIDS=
-				while [ ${NUM_CONCURRENT_INVOCATION} -le ${CONCURRENT_PROBE_INVOCATIONS} ]
-				do
-					curl ${CURL_OPTIONS} "${CURL_PROBE_URL}" >/tmp/govway_check_${NUM_CONCURRENT_INVOCATION}.log 2>&1 &
-					INVOCATIONS_PIDS="${INVOCATIONS_PIDS} $!"
-					NUM_CONCURRENT_INVOCATION=$(( ${NUM_CONCURRENT_INVOCATION} + 1 ))
-				done
-				wait ${INVOCATIONS_PIDS}
-				NUM_PROBE_INVOCATION=1
-		        	while [ ${NUM_PROBE_INVOCATION} -le ${PROBE_INVOCATIONS_TOTAL} ]
-				do
-					NUM_CONCURRENT_INVOCATION=1
-					INVOCATIONS_PIDS=
-	        			while [ ${NUM_CONCURRENT_INVOCATION} -le ${CONCURRENT_PROBE_INVOCATIONS} ]
-        	        		do
-	                       			curl ${CURL_OPTIONS} "${CURL_PROBE_URL}" >>/tmp/govway_check_${NUM_CONCURRENT_INVOCATION}.log 2>&1 &
-						INVOCATIONS_PIDS="${INVOCATIONS_PIDS} $!"
-						NUM_CONCURRENT_INVOCATION=$(( ${NUM_CONCURRENT_INVOCATION} + 1 ))
-					done
-					wait ${INVOCATIONS_PIDS}
-					NUM_PROBE_INVOCATION=$(( ${NUM_PROBE_INVOCATION} + 1 ))
-				done
-			fi
-			echo " Ok."
-		fi
-
 		touch /tmp/govway_ready
 		echo "INFO: GovWay avviato "
 	fi

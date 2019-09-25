@@ -3,7 +3,7 @@ ARG govway_branch=master
 
 MAINTAINER Andrea Manca <manca@link.it>
 
-USER root 
+USER root
 RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl git java-1.8.0-openjdk-devel.x86_64 \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
@@ -27,12 +27,12 @@ RUN echo "export LANG=${LANG}" >> /etc/profile \
 && ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
 
 ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.12
-RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt 
+RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt
 
 ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_branch}
 ADD https://api.github.com/repos/link-it/govway/git/refs/heads/${GOVWAY_FULLVERSION} version.json
 RUN git clone -b ${GOVWAY_FULLVERSION} https://github.com/link-it/GovWay.git /opt/GovWay  \
-&& cd /opt/GovWay \ 
+&& cd /opt/GovWay \
 && sed -i -e 's#UPDATE_DOC=true#UPDATE_DOC=false#g' ./distrib/distrib.sh \
 && sed -i -e 's#AS_VERSION=wildfly10,tomcat7#AS_VERSION=tomcat7#g' \
  -e 's#DB_VERSION=postgresql,mysql,oracle,hsql,sqlserver,db2#DB_VERSION=postgresql#g' \
@@ -60,8 +60,8 @@ RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/
 && xsltproc ${CATALINA_HOME}/conf/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/context.xml > /var/tmp/context.xml \
 && mv /var/tmp/context.xml ${CATALINA_HOME}/conf/context.xml
 
-ENV POSTGRES_JDBC_VERSION=42.2.5
-RUN wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar 
+ENV POSTGRES_JDBC_VERSION=42.2.5 HSQLDB_FULLVERSION=2.4.1
+RUN wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar
 
 WORKDIR ${CATALINA_HOME}
 
@@ -70,5 +70,5 @@ WORKDIR ${CATALINA_HOME}
 ENV PATH=${CATALINA_HOME}/bin:${PATH}
 ENV SKIP_DB_CHECK=FALSE
 EXPOSE 8080 8443
-CMD ["bin/catalina_wrapper.sh","run"]
-
+ENTRYPOINT ["bin/catalina_wrapper.sh"]
+CMD ["run"]

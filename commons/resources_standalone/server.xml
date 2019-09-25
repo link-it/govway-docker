@@ -20,7 +20,11 @@
 
       <Host name="localhost"  appBase="webapps"
             unpackWARs="true" autoDeploy="true">
-
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               protocolHeader="x-forwarded-proto"
+               protocolHeaderHttpsValue="https" />
+        <!--Valve className="org.apache.catalina.valves.SSLValve"
+               sslClientCertHeader="x-forwarded-tls-client-cert"/-->
         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
                prefix="localhost_access_log" suffix=".txt"
                pattern="%h %l %u %t &quot;%r&quot; %s %b" />

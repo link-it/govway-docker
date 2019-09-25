@@ -1,18 +1,18 @@
 version: '2'
 services:
   govway:
-    container_name: govway_310
+    container_name: govway_320
     build:
       context: .
       args:
-        govway_fullversion: 3.1.0
-    image: govway_compose:3.1.0
+        govway_fullversion: 3.2.0
+    image: govway_compose:3.2.0
     ports:
         - 8080:8080
         - 8443:8443
     volumes:
         - ./govway_home:/var/govway
-        - sql-govway_310:/database
+        - sql-govway_320:/database
     depends_on:
         - database
     environment:
@@ -33,12 +33,12 @@ services:
     container_name: PG95 
     image: postgres:9.5
     volumes:
-        - sql-govway_310:/docker-entrypoint-initdb.d:ro
+        - sql-govway_320:/docker-entrypoint-initdb.d:ro
     environment:
         - POSTGRES_DB=govwaydb
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 
 volumes:
-  sql-govway_310:
+  sql-govway_320:
 
