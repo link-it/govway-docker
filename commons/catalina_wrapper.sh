@@ -38,7 +38,7 @@ then
 	################################################
 	if [ -d /opt/hsqldb-${HSQLDB_FULLVERSION} ]
 	then
-		      mkdir -p ${GOVWAY_HOME}/database
+		mkdir -p ${GOVWAY_HOME}/database
         	if [ ! -f ${GOVWAY_HOME}/database/govwaydb.properties ]
 	        then
 		        echo -n "INFO: Preparazione base dati HSQL ..."
@@ -77,7 +77,9 @@ EOSQLTOOL
 	###################################################
 	export PKI_DIR=${GOVWAY_HOME}/pki
         FQDN="${FQDN:=test.govway.org}"
-        if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*' ]
+	# evito di rigenerare i certificati se gia esistenti
+	#if [ ! -f "${PKI_DIR}"/stores/keystore_server.jks ]
+        if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*'] 
         then
 		echo -n "INFO: Generazione certificati SSL ..."
                 bash -x ${CATALINA_HOME}/bin/genera_certs.sh 2> /tmp/debug_certificate.log
@@ -113,8 +115,12 @@ EOPROPERTIES
 	####################
 	## Deploy archivi ##
 	####################
+		# evito di sovrascrivere i files di properties gia esistenti
+	if [ "$(echo ${GOVWAY_HOME}/etc/*.properties)" == "${GOVWAY_HOME}"'/etc/*.properties' ]
+	then
+		cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/*.properties ${GOVWAY_HOME}/etc
+	fi
 	rm -rf ${CATALINA_HOME}/webapps/*
-	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/*.properties ${GOVWAY_HOME}/etc
 	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/*.war ${CATALINA_HOME}/webapps
 
 fi
@@ -171,18 +177,18 @@ then
 	NUM_RETRY=0
 	while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${DB_CHECK_MAX_RETRY} ]
 	do
-		   #POSTGRES_JDBC_VERSION non e' valorizzata quando il container e' in modalita standalone
-			 EXIST="$(java -Dfile.encoding=UTF-8 -cp ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool \
-				--continueOnErr=false \
-				--sql='SELECT count(*) from db_info;' \
-				govwayDB 2> /dev/null |tr -d ' ')"
-							[[ $EXIST  > 0 ]]
-							DB_READY=$?
-							NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
+		#POSTGRES_JDBC_VERSION non e' valorizzata quando il container e' in modalita standalone
+		EXIST="$(java -Dfile.encoding=UTF-8 -cp ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool \
+			--continueOnErr=false \
+			--sql='SELECT count(*) from db_info;' \
+			govwayDB 2> /dev/null |tr -d ' ')"
+		[[ $EXIST  > 0 ]]
+		DB_READY=$?
+		NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
 		if [  ${DB_READY} -ne 0 ]
 		then
-						echo "INFO: Attendo disponibilita' della base dati .."
-						sleep ${DB_CHECK_SLEEP_TIME}s
+			echo "INFO: Attendo disponibilita' della base dati .."
+			sleep ${DB_CHECK_SLEEP_TIME}s
 		fi
 	done
 	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${DB_CHECK_MAX_RETRY} ]
