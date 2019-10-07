@@ -1,8 +1,10 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.1.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.2.0`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.2.0_postgres`, (standalone_compose/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/compose_bin/Dockerfile)
+* [`3.1.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/891d372a25cd55991cf34cde412223f41ee5638c/standalone_bin/Dockerfile)
+* [`3.1.1_postgres`, (standalone_compose/Dockerfile)](https://github.com/link-it/govway-docker/blob/891d372a25cd55991cf34cde412223f41ee5638c/compose_bin/Dockerfile)
 * [`3.1.0`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/8789a3e0b65bea1f139b8de891bd6819f1daa2d3/standalone_bin/Dockerfile)
-* [`3.1.0_postgres`, (standalone_compose/Dockerfile)](https://github.com/link-it/govway-docker/blob/sshserver/compose_bin/Dockerfile)
-* [`3.0.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/53b8f6162d09a5024b0944d4b9f6809fa4a506a1/standalone_bin/Dockerfile)
+* [`3.1.0_postgres`, (standalone_compose/Dockerfile)](https://github.com/link-it/govway-docker/blob/0521e6f4467df94837fa3fe33f024faa93be2a5a/compose_bin/Dockerfile)
 
 
 # Riferimenti al progetto
@@ -18,7 +20,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Retrocompatibile con il paradigma di cooperazione applicativa (profilo SPCoop)
 * Connettori preconfigurati (GovLet) per l’accesso ai principali servizi pubblici italiani
 
-<img height="50px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
+<img height="70px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
 
 # Come utilizzare l'immagine
 
@@ -58,14 +60,16 @@ E' possibile personalizzare l'immagine all'avvio impostando alcune variabili d'a
 * __**FQDN**__: utilizzato per personalizzare il campo *CN* del subject dei certificati generati; se non specificato viene usato il valore di default *test.govway.org*
 * __**USERID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
 * __**GROUPID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
-
+* __**SSH_PUBLIC_KEY**__: utilizzato per registrare una chiave pubblica, tra gli host autorizzati a collegarsi al server SSH interno
 
 ```console 
 $ mkdir ~/govway_home
 $ docker run \
  -p 8080:8080 -p 8443:8443 \
  -v ~/govway_home:/var/govway \
- -e "FQDN=`hostname -f`" -e "USERID=`$(id -u $USER)`" -e "GROUPID=`$(id -g $USER)`" \
+ -e "FQDN=$(hostname -f)" \ 
+ -e "USERID=$(id -u $USER)" -e "GROUPID=$(id -g $USER)" \
+ -e "SSH_PUBLIC_KEY=$(cat ~/.ssh/id_rsa.pub)" \
 linkitaly/govway
 ```
 [3]: https://github.com/link-it/govway-docker "Progetto Govway-Docker"
