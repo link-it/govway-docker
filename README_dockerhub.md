@@ -14,11 +14,11 @@
 
 # Cosa è GovWay
 Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle normative della Pubblica Amministrazione:
-* Conforme alle nuove linee guida AGID per l’interoperabilità ModI 2018 (profilo API Gateway)
-* Conforme alle specifiche per l’interoperabilità europea (profilo eDelivery)
-* Conforme alle specifiche per la fatturazione elettronica sul canale SdiCoop (profilo Fatturazione Elettronica)
-* Retrocompatibile con il paradigma di cooperazione applicativa (profilo SPCoop)
-* Connettori preconfigurati (GovLet) per l’accesso ai principali servizi pubblici italiani
+
+* Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
+* Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI PA). Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
+* Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
+* Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
 <img height="70px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
 
