@@ -79,10 +79,10 @@ fi
 [ -n "$TAG" ] && IMAGE_NAME=${TAG}
 
 cd target
-sed -r -e "0,/container_name:.*/{s//container_name: ${CONTAINER_NAME}/}" \
-   -e "0,/image:.*/{s//image: ${IMAGE_NAME}/}"  \
-   -e "0,/${BUILD_ARG}:.*/{s//${BUILD_ARG}: ${BUILD_ARG_VALUE}/}" \
-   -e "s/sql-govway[^:]*:(.*)/sql-${CONTAINER_NAME}:\1/" \
+sed -r -e "0,/container_name:.*/{s%%container_name: ${CONTAINER_NAME}%}" \
+   -e "0,/image:.*/{s%%image: ${IMAGE_NAME}%}"  \
+   -e "0,/${BUILD_ARG}:.*/{s%%${BUILD_ARG}: ${BUILD_ARG_VALUE}%}" \
+   -e "s%sql-govway[^:]*:(.*)%sql-${CONTAINER_NAME}:\1%" \
 docker-compose.yml > .docker-compose.yml.tmp
    /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
 

@@ -79,7 +79,7 @@ EOSQLTOOL
         FQDN="${FQDN:=test.govway.org}"
 	# evito di rigenerare i certificati se gia esistenti
 	#if [ ! -f "${PKI_DIR}"/stores/keystore_server.jks ]
-        if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*'] 
+        if [ "$(echo ${PKI_DIR}/CA_*)" == "${PKI_DIR}"'/CA_*' ] 
         then
 		echo -n "INFO: Generazione certificati SSL ..."
                 bash -x ${CATALINA_HOME}/bin/genera_certs.sh 2> /tmp/debug_certificate.log
@@ -122,6 +122,19 @@ EOPROPERTIES
 	fi
 	rm -rf ${CATALINA_HOME}/webapps/*
 	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/*.war ${CATALINA_HOME}/webapps
+
+#	if [ ${GOVWAY_INTERFACE,,} == "web" ] 
+#	then
+#		rm -f ${CATALINA_HOME}/webapps/govwayAPIMonitor.war ${CATALINA_HOME}/webapps/govwayAPIConf.war
+#	elif [ ${GOVWAY_INTERFACE,,} == "rest" ]
+#	then
+#		rm -f ${CATALINA_HOME}/webapps/govwayMonitor.war ${CATALINA_HOME}/webapps/govwayConsole.war
+#	elif [ ${GOVWAY_INTERFACE,,} == "full" ]
+#	then
+#		:
+#	fi
+	[ ${GOVWAY_REST,,} == "false" ] && rm -f ${CATALINA_HOME}/webapps/govwayAPIMonitor.war ${CATALINA_HOME}/webapps/govwayAPIConfig.war
+
 
 fi
 
