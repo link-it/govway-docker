@@ -1,5 +1,5 @@
 FROM centos:centos7
-ARG govway_fullversion=3.2.0
+ARG govway_fullversion=3.2.1
 
 MAINTAINER Andrea Manca <manca@link.it>
 

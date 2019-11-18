@@ -5,8 +5,8 @@ services:
     build:
       context: .
       args:
-        govway_fullversion: 3.2.0
-    image: govway_compose:3.2.0
+        govway_fullversion: 3.2.1
+    image: govway_compose:3.2.1
     ports:
         - 8080:8080
         - 8443:8443
@@ -28,6 +28,9 @@ services:
 #        - USERID=$(id -u $USER)
 #        - GROUPID=$(id -g $USER)
 #        - FQDN=$(hostname -f)
+# Scegliere uno tra i valori possibili "web" o "rest" 
+# qualsiasi altro valore (o nessun valore) viene interpretato come installazione di entrabe le interfacce
+#        - GOVWAY_INTERFACE=rest / web
 #
   database:
     container_name: PG95 

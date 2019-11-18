@@ -22,12 +22,15 @@ services:
         - GOVWAY_DATABASE_USERNAME=govway
         - GOVWAY_DATABASE_USERPASSWD=govway
 #
-# Per valorizzare correttamente variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
+# Per valorizzare correttamente le variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
 # e' possibile lasciarle non specificate ed in questo caso verranno usati i valori di default
 #
 #        - USERID=$(id -u $USER)
 #        - GROUPID=$(id -g $USER)
 #        - FQDN=$(hostname -f)
+# Scegliere uno tra i valori possibili "web" o "rest" 
+# qualsiasi altro valore (o nessun valore) viene interpretato come installazione di entrabe le interfacce
+#        - GOVWAY_INTERFACE=rest / web
 #
   database:
     container_name: PG95 
