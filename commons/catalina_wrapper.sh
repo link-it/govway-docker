@@ -36,7 +36,7 @@ then
 	################################################
 	## Preparazione database (Hsql se installato) ##
 	################################################
-	if [ -d /opt/hsqldb-${HSQLDB_FULLVERSION} ]
+	if [ -z "${GOVWAY_DATABASE_SERVER}" ]
 	then
 		mkdir -p ${GOVWAY_HOME}/database
         	if [ ! -f ${GOVWAY_HOME}/database/govwaydb.properties ]
@@ -55,10 +55,6 @@ EOSQLTOOL
         		cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
 		fi
 	else
-                #TODO: portare questo download direttamente nell'immagine
-	        wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
-		&& unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
-		&& rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
 
 		echo "INFO: Preparazione accesso base dati PGSQL ..."
 		cat - <<EOSQLTOOL > /root/sqltool.rc
@@ -89,7 +85,7 @@ EOSQLTOOL
 	###########################
 	## configurazione tomcat ##
 	##########################
-	echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC -Dfile.encoding=UTF-8\"" > ${CATALINA_HOME}/bin/setenv.sh
+	echo "CATALINA_OPTS=\"-XX:+UseConcMarkSweepGC -Duser.language=it -Duser.country=IT -Dfile.encoding=UTF-8\"" > ${CATALINA_HOME}/bin/setenv.sh
 	cat - >> ${CATALINA_HOME}/conf/catalina.properties <<EOPROPERTIES
 $(env |grep -E 'GOVWAY')
 user.language=it

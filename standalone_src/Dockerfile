@@ -20,14 +20,16 @@ RUN wget -qO -  http://mirror.nohup.it/apache/maven/maven-3/${MAVEN_VERSION}/bin
 && rm -f /var/tmp/apache-ant-${ANT_VERSION}-bin.zip
 
 RUN echo "export LANG=${LANG}" >> /etc/profile \
+&& echo "export LC_ALL=${LANG}" >> /etc/profile \
 && echo "export JAVA_HOME=${JAVA_HOME}" >> /etc/profile \
 && echo "export ANT_HOME=${ANT_HOME}" >> /etc/profile \
 && echo "export MVN_HOME=${MVN_HOME}" >> /etc/profile \
 && echo "export PATH=$JAVA_HOME/bin:$ANT_HOME/bin:$MVN_HOME/bin:$PATH" >> /etc/profile \
 && rm -f /etc/localtime \
-&& ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime
+&& ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime \
+&& echo "LANG=${LANG}" > /etc/locale.conf
 
-ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.12
+ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.30
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt
 
 
@@ -44,19 +46,19 @@ RUN git clone -b ${GOVWAY_FULLVERSION} https://github.com/link-it/GovWay.git /op
 
 WORKDIR /opt/govway-installer-${GOVWAY_FULLVERSION}
 COPY resources_standalone/ant.install.properties.template /var/tmp/
-RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/'  installer/setup/antinstall-config.xml \
+RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/' -e "s/#GOVWAY_FULLVERSION#/${GOVWAY_FULLVERSION}/" installer/setup/antinstall-config.xml /var/tmp/ant.install.properties.template \
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
 && ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
 
 RUN mkdir /database \
 && cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
 
-ENV POSTGRES_JDBC_VERSION=42.2.5 HSQLDB_FULLVERSION=2.4.1
+ENV POSTGRES_JDBC_VERSION=42.2.10 HSQLDB_FULLVERSION=2.4.1
+ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 RUN wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
 && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
 && rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
 
-ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 COPY catalina_wrapper.sh genera_certs.sh ${CATALINA_HOME}/bin/
 COPY ConnectorTLS_in_server.xslt resources_standalone/server.xml resources_standalone/context.xml ${CATALINA_HOME}/conf/
 
