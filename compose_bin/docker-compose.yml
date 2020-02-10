@@ -5,8 +5,8 @@ services:
     build:
       context: .
       args:
-        govway_fullversion: 3.2.1
-    image: govway_compose:3.2.1
+        govway_fullversion: 3.2.2
+    image: govway_compose:3.2.2
     ports:
         - 8080:8080
         - 8443:8443

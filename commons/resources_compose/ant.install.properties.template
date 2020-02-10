@@ -53,3 +53,6 @@ antinstaller_rs_config=true
 antinstaller_rs_monitor=true
 antinstaller_protocollo_modipa=true
 antinstaller_tiposoggetto_modipa=modipa
+antinstaller_versione_attuale=#GOVWAY_FULVERSION#
+antinstaller_versione_attuale_con_p_level=#GOVWAY_FULVERSION#
+
