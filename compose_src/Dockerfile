@@ -4,18 +4,18 @@ ARG govway_branch=master
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root
-RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl git java-1.8.0-openjdk-devel.x86_64 openssh openssh-server \
+RUN yum -q -y install install unzip telnet nmap-ncat wget java-11-openjdk openssl git java-11-openjdk-devel.x86_64 openssh openssh-server \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
 && chmod +x /usr/local/bin/gosu \
 && rm -rf /var/cache/yum
 
-ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk ANT_VERSION=1.10.6 MAVEN_VERSION=3.6.2
+ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-11-openjdk ANT_VERSION=1.10.6 MAVEN_VERSION=3.6.3
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV MVN_HOME=/opt/apache-maven-${MAVEN_VERSION}/
 ENV PATH=$JAVA_HOME/bin:$ANT_HOME/bin:$MVN_HOME/bin:$PATH
 RUN wget -qO -  http://mirror.nohup.it/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar -xzf- -C /opt \
-&& wget -q http://apache.panu.it/ant/binaries/apache-ant-${ANT_VERSION}-bin.zip -O /var/tmp/apache-ant-${ANT_VERSION}-bin.zip \
+&& wget -q https://downloads.apache.org//ant/binaries/apache-ant-${ANT_VERSION}-bin.zip -O /var/tmp/apache-ant-${ANT_VERSION}-bin.zip \
 && unzip -qq -d /opt/ /var/tmp/apache-ant-${ANT_VERSION}-bin.zip \
 && rm -f /var/tmp/apache-ant-${ANT_VERSION}-bin.zip
 RUN echo "export LANG=${LANG}" >> /etc/profile \
@@ -28,7 +28,7 @@ RUN echo "export LANG=${LANG}" >> /etc/profile \
 && ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime \
 && echo "LANG=${LANG}" > /etc/locale.conf
 
-ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.30
+ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.33
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt
 
 ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_branch}
@@ -40,7 +40,7 @@ RUN git clone -b ${GOVWAY_FULLVERSION} https://github.com/link-it/GovWay.git /op
  -e 's#DB_VERSION=postgresql,mysql,oracle,hsql,sqlserver,db2#DB_VERSION=postgresql#g' \
  ./ant/setup/prepare-build.properties \
 && mvn -Dowasp=none -Dcompile=none -Dpackage=package -Dtestsuite=none package \
-&& ln -s /opt/GovWay/dist/govway-installer-MASTER /opt/govway-installer-${GOVWAY_FULLVERSION}
+&& bash -c 'archivio="$(ls -1 /opt/GovWay/dist/govway-installer-*.tgz 2>/dev/null)"; if [ -n "${archivio}" ]; then ln -s ${archivio//.tgz} '/opt/govway-installer-${GOVWAY_FULLVERSION}'; else exit 1; fi'
 
 
 WORKDIR /opt/govway-installer-${GOVWAY_FULLVERSION}

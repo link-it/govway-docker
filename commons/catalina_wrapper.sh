@@ -119,10 +119,10 @@ EOPROPERTIES
 	rm -rf ${CATALINA_HOME}/webapps/*
 	cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/*.war ${CATALINA_HOME}/webapps
 
-	if [ ${GOVWAY_INTERFACE,,} == "web" ] 
+	if [ "${GOVWAY_INTERFACE,,}" == "web" ] 
 	then
 		rm -f ${CATALINA_HOME}/webapps/govwayAPIMonitor.war ${CATALINA_HOME}/webapps/govwayAPIConfig.war
-	elif [ ${GOVWAY_INTERFACE,,} == "rest" ]
+	elif [ "${GOVWAY_INTERFACE,,}" == "rest" ]
 	then
 		rm -f ${CATALINA_HOME}/webapps/govwayMonitor.war ${CATALINA_HOME}/webapps/govwayConsole.war
 #	elif [ ${GOVWAY_INTERFACE,,} == "full" -o -z "${GOVWAY_INTERFACE,,}" ]
