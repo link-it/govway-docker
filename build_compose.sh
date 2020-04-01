@@ -70,7 +70,7 @@ then
 else
 	# Per default eseguo un build delle immagini binarie
         cp -rp compose_bin/* ./target/
-        CONTAINER_NAME=govway_322
+        CONTAINER_NAME=govway_330
         IMAGE_NAME=govway_compose:3.3.0
         BUILD_ARG='govway_fullversion'
         BUILD_ARG_VALUE="3.3.0"
@@ -82,6 +82,7 @@ cd target
 sed -r -e "0,/container_name:.*/{s%%container_name: ${CONTAINER_NAME}%}" \
    -e "0,/image:.*/{s%%image: ${IMAGE_NAME}%}"  \
    -e "0,/${BUILD_ARG}:.*/{s%%${BUILD_ARG}: ${BUILD_ARG_VALUE}%}" \
+   -e "s%PG95%PG95_${CONTAINER_NAME}%g" \
    -e "s%sql-govway[^:]*:(.*)%sql-${CONTAINER_NAME}:\1%" \
 docker-compose.yml > .docker-compose.yml.tmp
    /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
