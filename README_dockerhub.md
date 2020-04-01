@@ -1,12 +1,12 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.2.2`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw322/standalone_bin/Dockerfile)
-* [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw322/compose_bin/Dockerfile)
+* [`3.3.0`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw330/standalone_bin/Dockerfile)
+* [`3.3.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw330/compose_bin/Dockerfile)
+* [`3.2.2`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/standalone_bin/Dockerfile)
+* [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/compose_bin/Dockerfile)
 * [`3.2.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/standalone_bin/Dockerfile)
 * [`3.2.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/compose_bin/Dockerfile)
 * [`3.2.0`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.0/standalone_bin/Dockerfile)
 * [`3.2.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.0/compose_bin/Dockerfile)
-* [`3.1.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/891d372a25cd55991cf34cde412223f41ee5638c/standalone_bin/Dockerfile)
-* [`3.1.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/891d372a25cd55991cf34cde412223f41ee5638c/compose_bin/Dockerfile)
 
 
 # Riferimenti al progetto
@@ -63,7 +63,7 @@ E' possibile personalizzare l'immagine all'avvio impostando alcune variabili d'a
 * __**USERID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
 * __**GROUPID**__: utilizzato per impostare l'id di sistema dell'utente tomcat
 * __**SSH_PUBLIC_KEY**__: utilizzato per registrare una chiave pubblica, tra gli host autorizzati a collegarsi al server SSH interno
-* __**GOVWAY_INTERFACE**__: utilizato per scegliere che tipo di interfacce (rest o web), utilizzare per il monitoraggio e la configurazione di GovWay.
+* __**GOVWAY_INTERFACE**__: utilizzato per scegliere che tipo di interfacce (rest o web), utilizzare per il monitoraggio e la configurazione di GovWay.
 
 ```console 
 $ mkdir ~/govway_home

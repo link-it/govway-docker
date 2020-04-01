@@ -4,7 +4,7 @@ ARG govway_branch=master
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root
-RUN yum -q -y install install unzip telnet nmap-ncat wget java-11-openjdk openssl git java-11-openjdk-devel.x86_64 openssh openssh-server \
+RUN yum -q -y install unzip telnet nmap-ncat wget java-11-openjdk openssl git java-11-openjdk-devel.x86_64 openssh openssh-server \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
 && chmod +x /usr/local/bin/gosu \

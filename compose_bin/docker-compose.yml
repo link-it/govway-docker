@@ -1,18 +1,18 @@
 version: '2'
 services:
   govway:
-    container_name: govway_320
+    container_name: govway_330
     build:
       context: .
       args:
-        govway_fullversion: 3.2.2
-    image: govway_compose:3.2.2
+        govway_fullversion: 3.3.0
+    image: govway_compose:3.3.0
     ports:
         - 8080:8080
         - 8443:8443
     volumes:
         - ./govway_home:/var/govway
-        - sql-govway_320:/database
+        - sql-govway_330:/database
     depends_on:
         - database
     environment:
@@ -22,7 +22,7 @@ services:
         - GOVWAY_DATABASE_USERNAME=govway
         - GOVWAY_DATABASE_USERPASSWD=govway
 #
-# Per valorizzare correttamente variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
+# Per valorizzare correttamente le variabili eseguire i comandi sulla vostra shell e sostituire i rispettivi risultati
 # e' possibile lasciarle non specificate ed in questo caso verranno usati i valori di default
 #
 #        - USERID=$(id -u $USER)
@@ -36,12 +36,12 @@ services:
     container_name: PG95 
     image: postgres:9.5
     volumes:
-        - sql-govway_320:/docker-entrypoint-initdb.d:ro
+        - sql-govway_330:/docker-entrypoint-initdb.d:ro
     environment:
         - POSTGRES_DB=govwaydb
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 
 volumes:
-  sql-govway_320:
+  sql-govway_330:
 
