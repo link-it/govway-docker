@@ -263,9 +263,9 @@ certificato_EE "${SOGGETTO} Client 2" "client"
 ####################################################
 mkdir ${PKI_DIR}/stores ${PKI_DIR}/esempi
 
-keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ca_${SOGGETTO}.cert.pem -alias ca_${SOGGETTO}
-keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ee_"${SOGGETTO}_Client_1".cert.pem -alias "${SOGGETTO} Client 1"
-keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ee_"${SOGGETTO}_Client_2".cert.pem -alias "${SOGGETTO} Client 2"
+keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storetype jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ca_${SOGGETTO}.cert.pem -alias ca_${SOGGETTO}
+keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storetype jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ee_"${SOGGETTO}_Client_1".cert.pem -alias "${SOGGETTO} Client 1"
+keytool -keystore ${PKI_DIR}/stores/truststore_server.jks -storetype jks -storepass 123456 -noprompt -importcert -file ${WORK_DIR}/ca/certs/ee_"${SOGGETTO}_Client_2".cert.pem -alias "${SOGGETTO} Client 2"
 
 
 mkdir  ${PKI_DIR}/esempi/${SOGGETTO}_Client_1
@@ -300,10 +300,10 @@ openssl pkcs12 -export -passin file:${WORK_DIR}/ca/private/ee_${FQDN}.README.txt
 -in ${WORK_DIR}/ca/certs/ee_"${FQDN}".cert.pem \
 -name govway_server \
 -out ${PKI_DIR}/stores/keystore_server.p12
-keytool -importkeystore -srckeystore ${PKI_DIR}/stores/keystore_server.p12 -srcstoretype pkcs12 -destkeystore ${PKI_DIR}/stores/keystore_server.jks \
+keytool -importkeystore -srckeystore ${PKI_DIR}/stores/keystore_server.p12 -srcstoretype pkcs12 -destkeystore ${PKI_DIR}/stores/keystore_server.jks -deststoretype jks \
 -srcstorepass $(cat ${PKI_DIR}/stores/keystore_server.README.txt) -deststorepass $(cat ${PKI_DIR}/stores/keystore_server.README.txt)
 #keytool -keypasswd -keystore ${PKI_DIR}/stores/keystore_server.jks -alias govway_server -new $(cat ${WORK_DIR}/ca/private/ee_${FQDN}.README.txt) -storepass $(cat ${PKI_DIR}/stores/keystore_server.README.txt)
-keytool -keypasswd -keystore ${PKI_DIR}/stores/keystore_server.jks -alias govway_server -new $(cat ${PKI_DIR}/stores/keystore_server.README.txt) -storepass $(cat ${PKI_DIR}/stores/keystore_server.README.txt)
+keytool -keypasswd -keystore ${PKI_DIR}/stores/keystore_server.jks -srcstoretype jks -alias govway_server -new $(cat ${PKI_DIR}/stores/keystore_server.README.txt) -storepass $(cat ${PKI_DIR}/stores/keystore_server.README.txt)
 
 
         #chmod 000 ${WORK_DIR}/ca/private/ee_${FQDN}.README.txt

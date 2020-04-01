@@ -1,16 +1,16 @@
 FROM centos:centos7
-ARG govway_fullversion=3.2.2
+ARG govway_fullversion=3.3.0
 
 MAINTAINER Andrea Manca <manca@link.it>
 
 USER root
-RUN yum -q -y install unzip telnet nmap-ncat wget java-1.8.0-openjdk openssl openssh openssh-server \
+RUN yum -q -y install unzip telnet nmap-ncat wget java-11-openjdk openssl openssh openssh-server \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
 && chmod +x /usr/local/bin/gosu \
 && rm -rf /var/cache/yum
 
-ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk
+ENV LANG=it_IT.UTF-8 JAVA_HOME=/usr/lib/jvm/jre-11-openjdk
 ENV PATH=$JAVA_HOME/bin:$PATH
 RUN echo "export LANG=${LANG}" >> /etc/profile \
 && echo "export LC_ALL=${LANG}" >> /etc/profile \
@@ -20,7 +20,7 @@ RUN echo "export LANG=${LANG}" >> /etc/profile \
 && ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime \
 && echo "LANG=${LANG}" > /etc/locale.conf
 
-ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.30
+ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.33
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt
 
 
