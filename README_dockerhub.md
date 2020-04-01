@@ -1,6 +1,6 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.2.2`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
-* [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/compose_bin/Dockerfile)
+* [`3.2.2`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw322/standalone_bin/Dockerfile)
+* [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw322/compose_bin/Dockerfile)
 * [`3.2.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/standalone_bin/Dockerfile)
 * [`3.2.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/compose_bin/Dockerfile)
 * [`3.2.0`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.0/standalone_bin/Dockerfile)
