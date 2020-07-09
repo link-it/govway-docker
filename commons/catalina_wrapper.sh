@@ -52,8 +52,8 @@ charset UTF-8
 EOSQLTOOL
 			java -Dfile.encoding=UTF-8 -jar /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar --autoCommit govwayDB < /database/GovWay_setup.sql > /tmp/database_creation.log 2>&1
 			echo " Ok."
-        		cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
 		fi
+        	cp /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar ${CATALINA_HOME}/lib/
 	else
 
 		echo "INFO: Preparazione accesso base dati PGSQL ..."
