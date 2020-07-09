@@ -2,13 +2,14 @@
 
 function printHelp() {
 #echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> ]"
-echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -b <branch> ] | -h ]"
+echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -b <branch> ] | -l <path> | -h ]"
 echo 
 echo "Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.0)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
+-l : Usa un'installer binario sul filesystem locale (incompatibile con -b)
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -30,12 +31,19 @@ fi
 TAG=
 BRANCH=
 VER=
-while getopts "b:ht:v:" opt; do
+while getopts "b:ht:v:l:" opt; do
   case $opt in
-    b) BRANCH="$OPTARG"; [ -n "$VER" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    b) BRANCH="$OPTARG" 
+       [ -n "$VER" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } 
+       [ -n "${LOCALFILE}" ] && { echo "Le opzioni -l e -b sono incompatibili. Impostare solo una delle due."; exit 2; }
+       ;;
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
 		[ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
+    l) LOCALFILE="$OPTARG"
+       [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
+       [ -n "$BRANCH" ] && { echo "Le opzioni -l e -b sono incompatibili. Impostare solo una delle due."; exit 2; }
+       ;;
     h) printHelp
        exit 0
        ;;
@@ -54,6 +62,7 @@ cp -rp ./commons/resources_compose ./commons/catalina_wrapper.sh ./commons/Conne
 if [ -n "$VER" ] 
 then
 	cp -rp compose_bin/* ./target/
+	[ -n "${LOCALFILE}" ] && { cp -f "${LOCALFILE}" target; }
 	CONTAINER_NAME=govway_${VER//\./}
 	IMAGE_NAME=govway_compose:${VER}
 	BUILD_ARG='govway_fullversion'
@@ -70,6 +79,7 @@ then
 else
 	# Per default eseguo un build delle immagini binarie
         cp -rp compose_bin/* ./target/
+	[ -n "${LOCALFILE}" ] && { cp -f "${LOCALFILE}" target; }
         CONTAINER_NAME=govway_330
         IMAGE_NAME=govway_compose:3.3.0
         BUILD_ARG='govway_fullversion'
@@ -79,6 +89,7 @@ fi
 [ -n "$TAG" ] && IMAGE_NAME=${TAG}
 
 cd target
+[ -n "${LOCALFILE}" ] && sed -r -e 's%dockerfile:.*%dockerfile: Dockerfile.fromfile%' docker-compose.yml > .docker-compose.yml.tmp &&  /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
 sed -r -e "0,/container_name:.*/{s%%container_name: ${CONTAINER_NAME}%}" \
    -e "0,/image:.*/{s%%image: ${IMAGE_NAME}%}"  \
    -e "0,/${BUILD_ARG}:.*/{s%%${BUILD_ARG}: ${BUILD_ARG_VALUE}%}" \

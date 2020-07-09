@@ -3,6 +3,7 @@ services:
   govway:
     container_name: govway_330
     build:
+      dockerfile: Dockerfile
       context: .
       args:
         govway_fullversion: 3.3.0
