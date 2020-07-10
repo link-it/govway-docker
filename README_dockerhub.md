@@ -1,6 +1,8 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.3.0`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw330/standalone_bin/Dockerfile)
-* [`3.3.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw330/compose_bin/Dockerfile)
+* [`3.3.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.3.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/compose_bin/Dockerfile)
+* [`3.3.0`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.0/standalone_bin/Dockerfile)
+* [`3.3.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.0/compose_bin/Dockerfile)
 * [`3.2.2`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/standalone_bin/Dockerfile)
 * [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/compose_bin/Dockerfile)
 * [`3.2.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/standalone_bin/Dockerfile)
