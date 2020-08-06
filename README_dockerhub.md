@@ -1,6 +1,8 @@
 # Tags supportati e link ai rispettivi `Dockerfile`
-* [`3.3.1`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
-* [`3.3.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/compose_bin/Dockerfile)
+* [`3.3.2`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/standalone_bin/Dockerfile)
+* [`3.3.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/master/compose_bin/Dockerfile)
+* [`3.3.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.1/standalone_bin/Dockerfile)
+* [`3.3.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.1/compose_bin/Dockerfile)
 * [`3.3.0`, `latest`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.0/standalone_bin/Dockerfile)
 * [`3.3.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.0/compose_bin/Dockerfile)
 * [`3.2.2`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/standalone_bin/Dockerfile)
@@ -78,3 +80,4 @@ $ docker run \
 linkitaly/govway
 ```
 [3]: https://github.com/link-it/govway-docker "Progetto Govway-Docker"
+
