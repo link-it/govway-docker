@@ -7,10 +7,6 @@
 * [`3.3.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.0/compose_bin/Dockerfile)
 * [`3.2.2`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/standalone_bin/Dockerfile)
 * [`3.2.2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.2/compose_bin/Dockerfile)
-* [`3.2.1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/standalone_bin/Dockerfile)
-* [`3.2.1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.1/compose_bin/Dockerfile)
-* [`3.2.0`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.0/standalone_bin/Dockerfile)
-* [`3.2.0_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.2.0/compose_bin/Dockerfile)
 
 
 # Riferimenti al progetto
