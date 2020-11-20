@@ -7,7 +7,7 @@ echo
 echo "Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.2)
+-v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.3)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
 "

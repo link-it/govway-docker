@@ -7,7 +7,7 @@ echo
 echo "Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.2)
+-v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.3)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -l : Usa un'installer binario sul filesystem locale (incompatibile con -b)
 -h : Mostra questa pagina di aiuto
@@ -80,10 +80,10 @@ else
 	# Per default eseguo un build delle immagini binarie
         cp -rp compose_bin/* ./target/
 	[ -n "${LOCALFILE}" ] && { cp -f "${LOCALFILE}" target; }
-        CONTAINER_NAME=govway_332
-        IMAGE_NAME=govway_compose:3.3.2
+        CONTAINER_NAME=govway_333
+        IMAGE_NAME=govway_compose:3.3.3
         BUILD_ARG='govway_fullversion'
-        BUILD_ARG_VALUE="3.3.2"
+        BUILD_ARG_VALUE="3.3.3"
 
 fi
 [ -n "$TAG" ] && IMAGE_NAME=${TAG}
