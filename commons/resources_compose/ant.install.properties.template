@@ -76,6 +76,7 @@ antinstaller_tiposoggetto_trasparente=gw
 antinstaller_versione_attuale_con_p_level=#GOVWAY_FULVERSION#
 #antinstaller_versione_attuale=#GOVWAY_FULVERSION#
 antinstaller_versione_precedente=
+antinstaller_gestione_nodi=static
 Fine-targets=setup,setup_datasource,setup_sql,setup_pdd,setup_govwayConsole,setup_govwayMonitor,setup_loader,setup_apiConfig,setup_apiMonitor,setup_batchStatistiche,setup_finished
 porta-db=5432
 porta-db_as4=
