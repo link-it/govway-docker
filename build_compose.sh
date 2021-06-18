@@ -80,10 +80,10 @@ else
 	# Per default eseguo un build delle immagini binarie
         cp -rp compose_bin/* ./target/
 	[ -n "${LOCALFILE}" ] && { cp -f "${LOCALFILE}" target; }
-        CONTAINER_NAME=govway_334
-        IMAGE_NAME=govway_compose:3.3.4
+        CONTAINER_NAME=govway_334p1
+        IMAGE_NAME=govway_compose:3.3.4.p1
         BUILD_ARG='govway_fullversion'
-        BUILD_ARG_VALUE="3.3.4"
+        BUILD_ARG_VALUE="3.3.4.p1"
 
 fi
 [ -n "$TAG" ] && IMAGE_NAME=${TAG}
