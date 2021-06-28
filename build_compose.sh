@@ -10,6 +10,7 @@ echo "Options
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.4)
 -b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -l : Usa un'installer binario sul filesystem locale (incompatibile con -b)
+-j : Usa l'installerd prodotto dalla pipeline jenkin https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -31,7 +32,7 @@ fi
 TAG=
 BRANCH=
 VER=
-while getopts "b:ht:v:l:" opt; do
+while getopts "b:ht:v:l:j" opt; do
   case $opt in
     b) BRANCH="$OPTARG" 
        [ -n "$VER" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } 
@@ -43,6 +44,10 @@ while getopts "b:ht:v:l:" opt; do
     l) LOCALFILE="$OPTARG"
        [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        [ -n "$BRANCH" ] && { echo "Le opzioni -l e -b sono incompatibili. Impostare solo una delle due."; exit 2; }
+       ;;
+    j) JENKINS="true"
+       [ -n "$BRANCH" ] && { echo "Le opzioni -j e -b sono incompatibili. Impostare solo una delle due."; exit 2; }
+       [ -n "${LOCALFILE}" ] && { echo "Le opzioni -j e -l sono incompatibili. Impostare solo una delle due."; exit 2; }
        ;;
     h) printHelp
        exit 0
@@ -90,6 +95,7 @@ fi
 
 cd target
 [ -n "${LOCALFILE}" ] && sed -r -e 's%dockerfile:.*%dockerfile: Dockerfile.fromfile%' docker-compose.yml > .docker-compose.yml.tmp &&  /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
+[ -n "${JENKINS}" ] && sed -r -e 's%dockerfile:.*%dockerfile: Dockerfile.jenkins%' docker-compose.yml > .docker-compose.yml.tmp &&  /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
 sed -r -e "0,/container_name:.*/{s%%container_name: ${CONTAINER_NAME}%}" \
    -e "0,/image:.*/{s%%image: ${IMAGE_NAME}%}"  \
    -e "0,/${BUILD_ARG}:.*/{s%%${BUILD_ARG}: ${BUILD_ARG_VALUE}%}" \

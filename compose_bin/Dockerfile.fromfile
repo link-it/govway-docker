@@ -3,7 +3,7 @@ ARG govway_fullversion=3.3.4.p1
 
 MAINTAINER Andrea Manca <manca@link.it>
 
-USER root 
+USER root
 RUN yum -q -y install unzip telnet nmap-ncat wget java-11-openjdk openssl openssh openssh-server \
 && yum clean all \
 && wget -qO /usr/local/bin/gosu https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64 \
@@ -21,22 +21,23 @@ RUN echo "export LANG=${LANG}" >> /etc/profile \
 && echo "LANG=${LANG}" > /etc/locale.conf
 
 ENV TOMCAT_MAJOR_VERSION=9 TOMCAT_FULLVERSION=9.0.33
+
 RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_FULLVERSION}/bin/apache-tomcat-${TOMCAT_FULLVERSION}.tar.gz | tar -xzf- -C /opt
 
 ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_fullversion}
-COPY govway-installer-${GOVWAY_FULLVERSION}.tgz /tmp
-RUN tar -xzf /tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz -C /opt \
-&& rm -f /tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz 
 
-
-WORKDIR /opt/govway-installer-${GOVWAY_FULLVERSION}
 COPY resources_compose/ant.install.properties.template /var/tmp/
-RUN sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/' -e "s/#GOVWAY_FULLVERSION#/${GOVWAY_FULLVERSION}/" installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template \
+
+ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
+
+RUN cd /opt/govway-installer-${GOVWAY_FULLVERSION} \
+&& sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/' -e "s/#GOVWAY_FULLVERSION#/${GOVWAY_FULLVERSION}/" installer/setup/antinstall-config.xml /var/tmp/ant.install.properties.template \
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
-&& ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1
+&& ./install.sh text-auto > /tmp/govway_installer_log.txt 2>&1 \
+&& rm -rf /opt/govway-installer-${GOVWAY_FULLVERSION}/installer /opt/govway-installer-${GOVWAY_FULLVERSION}/install.* /opt/govway-installer-${GOVWAY_FULLVERSION}/doc
 
 RUN mkdir /database \
-&& cat dist/sql/GovWay.sql dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
+&& cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay.sql /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/GovWay_init.sql > /database/GovWay_setup.sql
 
 ENV POSTGRES_JDBC_VERSION=42.2.10 HSQLDB_FULLVERSION=2.4.1
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}

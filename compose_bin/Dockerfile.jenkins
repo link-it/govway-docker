@@ -1,5 +1,5 @@
 FROM centos:centos7
-ARG govway_fullversion=3.3.4.p1
+ARG govway_fullversion=3.3.4.p1.build-master
 
 MAINTAINER Andrea Manca <manca@link.it>
 
@@ -26,9 +26,16 @@ RUN wget -qO - https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERS
 
 ENV GOVWAY_HOME=/var/govway GOVWAY_LOGDIR=/var/govway/log GOVWAY_FULLVERSION=${govway_fullversion}
 
-COPY resources_standalone/ant.install.properties.template /var/tmp/
+COPY resources_compose/ant.install.properties.template /var/tmp/
 
-RUN wget -qO - https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt \
+RUN wget -qO - https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt \
+&& wget -q -O /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion \
+&& mkdir -p /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/999JENKINS/all/all/properties/add \
+&& touch /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/incremental.patch \
+&& echo "version=GovWay ${GOVWAY_FULLVERSION}.jenkins" > /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/999JENKINS/all/all/properties/add/govwayVersion.properties \
+&& echo "buildVersion=$(cat /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion | cut -d ' ' -f 5 | cut -d ')' -f 1)" >> /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/999JENKINS/all/all/properties/add/govwayVersion.properties \
+&& rm -f /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz \
+&& rm -f /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion \
 && cd /opt/govway-installer-${GOVWAY_FULLVERSION} \
 && sed -i -r -e 's/ui="(.*)"/ui="\1,text-auto"/' -e "s/#GOVWAY_FULLVERSION#/${GOVWAY_FULLVERSION}/" installer/setup/antinstall-config.xml /var/tmp/ant.install.properties.template \
 && mv /var/tmp/ant.install.properties.template installer/setup/ \
@@ -42,17 +49,24 @@ ENV POSTGRES_JDBC_VERSION=42.2.10 HSQLDB_FULLVERSION=2.4.1
 ENV CATALINA_HOME=/opt/apache-tomcat-${TOMCAT_FULLVERSION}
 RUN wget -q -O /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
 && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \
-&& rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
+&& rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip \
+&& wget -qO ${CATALINA_HOME}/lib/postgresql-${POSTGRES_JDBC_VERSION}.jar http://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar
+
 
 COPY catalina_wrapper.sh genera_certs.sh ${CATALINA_HOME}/bin/
-COPY ConnectorTLS_in_server.xslt resources_standalone/server.xml resources_standalone/context.xml ${CATALINA_HOME}/conf/
+COPY ConnectorTLS_in_server.xslt resources_compose/server.xml resources_compose/context.xml resources_compose/Resource_in_server.xml.xslt resources_compose/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/
+
+RUN xsltproc ${CATALINA_HOME}/conf/Resource_in_server.xml.xslt ${CATALINA_HOME}/conf/server.xml > /var/tmp/server.xml  \
+&& mv /var/tmp/server.xml ${CATALINA_HOME}/conf/server.xml \
+&& xsltproc ${CATALINA_HOME}/conf/ResourceLink_in_context.xml.xslt ${CATALINA_HOME}/conf/context.xml > /var/tmp/context.xml \
+&& mv /var/tmp/context.xml ${CATALINA_HOME}/conf/context.xml
 
 WORKDIR ${CATALINA_HOME}
 
 
 # USER tomcat # rilascio privilegi utenza root tramite gosu in catalina_wrapper.sh
 ENV PATH=${CATALINA_HOME}/bin:${PATH}
-ENV SKIP_DB_CHECK=TRUE
+ENV SKIP_DB_CHECK=FALSE
 EXPOSE 8080 8443
 ENTRYPOINT ["bin/catalina_wrapper.sh"]
 CMD ["run"]

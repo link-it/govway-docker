@@ -8,7 +8,7 @@ set -x
 STARTUP_CHECK_FIRST_SLEEP_TIME=20
 STARTUP_CHECK_SLEEP_TIME=5
 STARTUP_CHECK_MAX_RETRY=60
-STARTUP_CHECK_REGEX='GovWay/.* \(www.govway.org\) avviata correttamente in .* secondi'
+STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
 
 DB_CHECK_FIRST_SLEEP_TIME=10
 DB_CHECK_SLEEP_TIME=5
