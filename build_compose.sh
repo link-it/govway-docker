@@ -105,4 +105,9 @@ docker-compose.yml > .docker-compose.yml.tmp
    /bin/mv -f .docker-compose.yml.tmp docker-compose.yml
 
 
-"${DOCKERCOMPOSEBIN}" build
+if [ -n "${JENKINS}" ]
+then
+	"${DOCKERCOMPOSEBIN}" build --no-cache
+else
+	"${DOCKERCOMPOSEBIN}" build
+fi
