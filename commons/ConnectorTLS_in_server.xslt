@@ -17,7 +17,7 @@
          <xsl:attribute name="SSLEnabled">true</xsl:attribute>
          <xsl:attribute name="scheme">https</xsl:attribute>
          <xsl:attribute name="secure">true</xsl:attribute>
-         <xsl:attribute name="maxHttpHeaderSize=">65536</xsl:attribute>
+         <xsl:attribute name="maxHttpHeaderSize">65536</xsl:attribute>
          <xsl:element name="SSLHostConfig">
             <xsl:attribute name="truststoreFile">/var/govway/pki/stores/truststore_server.jks</xsl:attribute>
             <xsl:attribute name="truststorePassword">123456</xsl:attribute>
