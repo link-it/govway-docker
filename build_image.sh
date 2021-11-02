@@ -53,7 +53,7 @@ done
 
 DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
-[ -n "$DB" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "GOVWAY_DB_vendor=${DB}")
+[ -n "$DB" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
 
 
 # Build immagine installer
@@ -65,7 +65,7 @@ then
   INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"	
   cp -f "${LOCALFILE}" .
 else
-  INSTALLER_DOCKERFILE="govway/Dockerfile.installer"
+  INSTALLER_DOCKERFILE="govway/Dockerfile.github"
 fi
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
@@ -75,7 +75,7 @@ RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
 # Build imagine govway
-[ -n "$TAG" ] || TAG="linkitaly/govway_${DB}:3.3.5"
+[ -n "$TAG" ] || TAG="linkitaly/govway_${DB:-hsql}:3.3.5"
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
@@ -88,9 +88,11 @@ RET=$?
 
 if [ ${DB:-hsql} != 'hsql' ]
 then
-  mkdir target
+  mkdir -p compose/govway_{conf,log}
+  chmod 777 compose/govway_{conf,log}
+
   SHORT=${TAG#*:}
-  cat - << EOYAML > target/docker-compose.yaml
+  cat - << EOYAML > compose/docker-compose.yaml
 version: '2'
 services:
   govway:
