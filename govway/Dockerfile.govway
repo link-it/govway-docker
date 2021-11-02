@@ -1,7 +1,7 @@
 # stage sorgente da utilizzare per il build dell'immagine finale
 ARG govway_fullversion
 ARG source_image=linkitaly/govway-installer
-ARG govway_archives_type=runtime
+ARG govway_archives_type=all
 
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)

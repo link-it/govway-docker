@@ -20,13 +20,12 @@ GOVWAY_LOGDIR=/var/log/govway \
 GOVWAY_FULLVERSION=${govway_fullversion} 
 
 COPY commons/ant.install.properties.template /var/tmp/
-#ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
 
 
 ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
 RUN set -eux; \
-RUN curl -LksS  https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ; \
+curl -LksS  https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ; \
 cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
 sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_FULLVERSION#%${GOVWAY_FULLVERSION}%" \
