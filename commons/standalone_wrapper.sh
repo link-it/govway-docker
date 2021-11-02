@@ -82,7 +82,7 @@ export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*$" /etc/hosts|a
 #
 
 # Impostazione Dinamica dei limiti di memoria per container
-if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "all"]
+if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "all" ]
 then 
     export JAVA_OPTS="$JAVA_OPTS -XX:MaxRAMPercentage=50"
 else
