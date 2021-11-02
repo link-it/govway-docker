@@ -21,7 +21,7 @@ GOVWAY_LOGDIR=/var/log/govway \
 GOVWAY_FULLVERSION=${govway_fullversion} 
 
 COPY commons/ant.install.properties.template /var/tmp/
-#ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
+
 
 
 ARG govway_soggetto=Ente
