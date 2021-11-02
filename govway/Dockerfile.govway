@@ -1,0 +1,104 @@
+# stage sorgente da utilizzare per il build dell'immagine finale
+ARG govway_fullversion
+ARG source_image=linkitaly/govway-installer
+ARG govway_archives_type=runtime
+
+
+# Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
+FROM ${source_image}:${govway_fullversion} AS source_image_full
+
+
+
+FROM centos:centos7.9.2009
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
+ARG govway_fullversion
+
+
+USER root
+ENV GOVWAY_HOME=/etc/govway \
+GOVWAY_HOME_HTTPS=/etc/govway_https \
+GOVWAY_LOGDIR=/var/log/govway \
+GOVWAY_FULLVERSION=${govway_fullversion} \
+HSQLDB_FULLVERSION=2.6.1 \
+POSTGRES_JDBC_VERSION=42.3.0 \
+WILDFLY_VERSION=18.0.1.Final \
+WILDFLY_SHA1=ef0372589a0f08c36b15360fe7291721a7e3f7d9 \
+JBOSS_HOME=/opt/wildfly-18.0.1.Final \
+LAUNCH_JBOSS_IN_BACKGROUND=true
+
+RUN set -eux; \
+mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
+yum -q -y update; \
+yum -q -y install unzip fontconfig freetype nmap-ncat java-11-openjdk-headless; \
+yum clean all; \
+rm -rf /var/cache/yum; \
+curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_6/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
+unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
+rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
+curl -LfksS -o /tmp/wildfly-${WILDFLY_VERSION}.tar.gz https://download.jboss.org/wildfly/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz; \
+echo ${WILDFLY_SHA1} /tmp/wildfly-${WILDFLY_VERSION}.tar.gz | sha1sum -c -; \
+tar -C /opt -xf /tmp/wildfly-${WILDFLY_VERSION}.tar.gz; \
+useradd wildfly; \
+chown -R wildfly.0 ${JBOSS_HOME} && chmod -R g+rw ${JBOSS_HOME}; \
+rm -f /tmp/wildfly-${WILDFLY_VERSION}.tar.gz 
+
+
+# -XX:+PrintFlagsFinal \
+ENV JAVA_OPTS="-server \
+-XX:+UseContainerSupport \
+-XX:+UseG1GC \
+-XX:+DisableExplicitGC \
+-XX:+UnlockExperimentalVMOptions \
+-Djava.net.preferIPv4Stack=true \
+-Djboss.modules.system.pkgs=org.jboss.byteman \
+-Djava.awt.headless=true \
+-Duser.language=it \
+-Duser.country=IT \
+-Dfile.encoding=UTF-8 \
+-DGOVWAY_FORCE_CONFIG_FILE=true"
+
+ARG source_image
+ARG govway_archives_type
+ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
+GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
+
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${JBOSS_HOME}/standalone/deployments/
+#COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/ /tmp/
+
+COPY commons/standalone_wrapper.sh commons/initgovway.sh commons/config_datasource.sh ${JBOSS_HOME}/bin/
+ARG govway_database_vendor=hsql
+ENV GOVWAY_DB_TYPE=${govway_database_vendor}
+RUN echo -e 'embed-server --server-config=standalone.xml --std-out=echo \n\
+echo "Aggiungo Worker http" \n\
+/subsystem=io/worker=http-worker:add(task-max-threads=${env.WILDFLY_HTTP_WORKER-MAX-THREADS:50}) \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker,  value=http-worker) \n\
+echo "Aggiungo Worker ajp" \n\
+/subsystem=io/worker=ajp-worker:add(task-max-threads=${env.WILDFLY_AJP_WORKER-MAX-THREADS:50}) \n\
+/subsystem=undertow/server=default-server/ajp-listener=myListener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
+echo "Rimuovo connettore https" \n\
+/subsystem=undertow/server=default-server/https-listener=https:remove() \n\
+echo "Abilitazione Non standard wrapper" \n\
+/subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
+echo "Correggo max post size" \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+/subsystem=undertow/server=default-server/ajp-listener=myListener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+echo "Abilitazione Acces Log"\n\
+/subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
+stop-embedded-server \n\
+' > /tmp/govway_standalone_configuration.cli \
+&& chmod 750 ${JBOSS_HOME}/bin/config_datasource.sh \
+&& ${JBOSS_HOME}/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli 
+RUN ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
+&& rm -rf ${JBOSS_HOME}/standalone/tmp/${JBOSS_HOME}/standalone/{tmp,data,log,configuration/standalone_xml_history} \
+/tmp/govway_standalone_configuration.cli
+
+RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh
+USER wildfly
+EXPOSE 8080 8009
+ENTRYPOINT [ "/opt/wildfly-18.0.1.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]

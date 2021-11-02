@@ -1,0 +1,100 @@
+# GovWay installer
+FROM centos:centos7.9.2009
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
+ARG govway_fullversion
+
+# sanity check
+RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
+yum -y update \
+&& yum -q -y install zip unzip java-11-openjdk  \
+&& yum clean all \
+&& rm -rf /var/cache/yum
+
+
+ENV LANG=it_IT.UTF-8 \
+JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
+PATH=$JAVA_HOME/bin:$PATH \
+GOVWAY_HOME=/etc/govway \
+GOVWAY_HOME_HTTPS=/etc/govway_https \
+GOVWAY_LOGDIR=/var/log/govway \
+GOVWAY_FULLVERSION=${govway_fullversion} 
+
+COPY commons/ant.install.properties.template /var/tmp/
+ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
+
+
+ARG govway_soggetto=Ente
+ARG govway_database_vendor=hsql
+RUN set -eux; \
+cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
+sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
+  -e "s%#GOVWAY_FULLVERSION#%${GOVWAY_FULLVERSION}%" \
+  -e "s%#GOVWAY_SOGGETTO#%${govway_soggetto}%" \
+  -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
+  -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
+  -e "s%#GOVWAY_DATABASE_TIPO#%${govway_database_vendor}%" \
+  -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
+  installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
+mv /var/tmp/ant.install.properties.template installer/setup/; \
+./install.sh text-auto; \
+cp installer/setup/antinstall-config.xml installer/setup/antinstall-config.xml.orig; \
+sed -ire 's%^ *target=.*%target="setup_sql"/>%' installer/setup/antinstall-config.xml; \
+for dbtype in hsql postgresql; do \
+  sed -ire "s/^antinstaller_tipo_database=.*$/antinstaller_tipo_database=${dbtype}/" installer/setup/ant.install.properties.template; \
+  ./install.sh text-auto; \
+  mv installer/setup/build/sql dist/sql/${dbtype}; \
+done
+
+
+RUN set -eux;\
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \
+sed -i -r -e "s%^org.openspcoop2.pdd.connettori.inoltroBuste.http.urlHttps.repository.*%\org.openspcoop2.pdd.connettori.inoltroBuste.http.urlHttps.repository=${GOVWAY_HOME_HTTPS}/fruizioni%" \
+  -e "s%org.openspcoop2.pdd.connettori.consegnaContenutiApplicativi.http.urlHttps.repository.*\$%org.openspcoop2.pdd.connettori.consegnaContenutiApplicativi.http.urlHttps.repository=${GOVWAY_HOME_HTTPS}/erogazioni%" \
+  /tmp/properties/govway.properties; \
+cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/runtime/govway_local.properties >> /tmp/properties/govway_local.properties; \
+#cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/runtime/govway_local.classRegistry.properties >> /tmp/properties/govway_local.classRegistry.properties; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/runtime/govway_local.jcs.properties /tmp/properties/; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties; \
+rm -rf /tmp/properties
+
+
+RUN set -eux;\
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/* ; \
+cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/console_local.properties >> /tmp/WEB-INF/classes/console_local.properties; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/; \
+rm -rf /tmp/WEB-INF
+
+
+RUN set -eux;\
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/* ; \
+cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/monitor_local.properties >> /tmp/WEB-INF/classes/monitor_local.properties; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/; \
+rm -rf /tmp/WEB-INF
+
+
+RUN set -eux;\
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/* ; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-config_local.properties  /tmp/WEB-INF/classes/; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/; \
+rm -rf /tmp/WEB-INF
+
+
+RUN set -eux;\
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/* ; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-monitor_local.properties  /tmp/WEB-INF/classes/; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/; \
+rm -rf /tmp/WEB-INF
+
+
+RUN set -eux;\
+mkdir /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/; \
+for archive in /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/*.?ar /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/*.?ar; \
+do \
+ ln -s ${archive} /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/$(basename ${archive}); \
+done

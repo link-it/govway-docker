@@ -1,5 +1,0 @@
-<Context>
-  <ResourceLink name="org.govway.datasource" global="org.govway.datasource" type="javax.sql.DataSource"/>
-  <ResourceLink name="org.govway.datasource.console" global="org.govway.datasource.console" type="javax.sql.DataSource"/>
-</Context>
-
