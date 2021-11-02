@@ -1,5 +1,11 @@
 #!/bin/bash -x
-DB_CHECK_CONNECT_TIMEOUT=5
+DB_CHECK_CONNECT_TIMEOUT=${DB_CHECK_CONNECT_TIMEOUT:=5}
+DB_CHECK_FIRST_SLEEP_TIME=${DB_CHECK_FIRST_SLEEP_TIME:=0}
+DB_CHECK_SLEEP_TIME=${DB_CHECK_SLEEP_TIME:=2}
+DB_CHECK_MAX_RETRY=${DB_CHECK_MAX_RETRY:=30}
+SKIP_DB_CHECK=${SKIP_DB_CHECK:=FALSE}
+
+
 declare -A mappa_suffissi 
 mappa_suffissi[RUN]=''
 mappa_suffissi[CONF]=Configurazione
@@ -97,13 +103,29 @@ charset UTF-8
 EOSQLTOOL
 
     # Server liveness
-    if [ "${SERVER}" != "${GOVWAY_DB_SERVER}" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ] 
+    if [ "${SKIP_DB_CHECK^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
     then
-        nc  -w "${DB_CHECK_CONNECT_TIMEOUT}" -z "${SERVER_HOST}" "${SERVER_PORT}"
-        DB_READY=$?
-        [ ${DB_READY} -ne 0 ] && { echo "Server $SERVER irraggingibile."; exit ${DB_READY}; }
+    	echo "INFO: Attendo avvio della base dati ..."
+	    sleep ${DB_CHECK_FIRST_SLEEP_TIME}s
+	    DB_READY=1
+	    NUM_RETRY=0
+	    while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${DB_CHECK_MAX_RETRY} ]
+	    do
+            nc  -w "${DB_CHECK_CONNECT_TIMEOUT}" -z "${SERVER_HOST}" "${SERVER_PORT}"
+            DB_READY=$?
+            NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
+            if [  ${DB_READY} -ne 0 ]
+            then
+                echo "INFO: Attendo disponibilita' della base dati .."
+                sleep ${DB_CHECK_SLEEP_TIME}s
+            fi
+	    done
+       	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${DB_CHECK_MAX_RETRY} ]
+	    then
+		    echo "FATAL: Base dati NON disponibile dopo $((${DB_CHECK_SLEEP_TIME=} * ${DB_CHECK_MAX_RETRY})) secondi  ... Uscita."
+		    exit 1
+	    fi
     fi
-
     # Server Readyness
     ## REINIZIALIZZO VARIABILI DI CONTROLLO
     POP=0
@@ -125,7 +147,7 @@ EOSQLTOOL
     if [ -n "${POP}" -a ${POP} -eq 0 ]
     then
         SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
-        mkdir /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+        mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
         #
         # Ignoro in caso il file SQL non esista
         #
