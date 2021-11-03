@@ -2,7 +2,7 @@
 
 function printHelp() {
 #echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> | -d ( hsql* | postgresql ) ]"
-echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -j | -l <file path> ] | -d <tipo datatbase> | -h ]"
+echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -j | -l <file path> ] | -d <tipo datatbase> | -i <template path> -h ]"
 echo 
 echo "Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
@@ -10,6 +10,7 @@ echo "Options
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default: 3.3.5)
 -d : Prepara l'immagine per essere utilizzata su un particolare database  (default: hsql)
 -l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
+-i : Usa il template su filesystem per la generazione degli archivi dall'installer
 -j : Usa l'installer prodotto dalla pipeline jenkin https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 
 -h : Mostra questa pagina di aiuto
@@ -28,7 +29,7 @@ fi
 TAG=
 BRANCH=
 VER=
-while getopts "ht:v:d:jl:" opt; do
+while getopts "ht:v:d:jl:i:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -38,8 +39,11 @@ while getopts "ht:v:d:jl:" opt; do
        [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
     j) JENKINS="true"
-       [ -n "${LOCALFILE}" ] && { echo "Le opzioni -j e -l sono incompatibili. Impostare solo una delle due."; exit 2; }
+        [ -n "${LOCALFILE}" ] && { echo "Le opzioni -j e -l sono incompatibili. Impostare solo una delle due."; exit 2; }
        ;;
+    i) TEMPLATE="${OPTARG}"
+        [ ! -f "${TEMPLATE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${TMPLATE}]."; exit 3; } 
+        ;;
     h) printHelp
        exit 0
        ;;
@@ -51,9 +55,14 @@ while getopts "ht:v:d:jl:" opt; do
 done
 
 
+rm -rf target
+mkdir -p target/
+cp -fr commons target/
+
 DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
-[ -n "$DB" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
+[ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
+[ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" target/commons/
 
 
 # Build immagine installer
@@ -62,15 +71,16 @@ then
   INSTALLER_DOCKERFILE="govway/Dockerfile.jenkins"
 elif [ -n "${LOCALFILE}" ]
 then
-  INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"	
-  cp -f "${LOCALFILE}" .
+  INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"
+  cp -f "${LOCALFILE}" target/
 else
   INSTALLER_DOCKERFILE="govway/Dockerfile.github"
 fi
 
+
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   -t linkitaly/govway-installer_${DB:-hsql}:${VER:-3.3.5} \
-  -f ${INSTALLER_DOCKERFILE} .
+  -f ${INSTALLER_DOCKERFILE} target
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
@@ -81,7 +91,7 @@ DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
   --build-arg govway_archives_type=all \
-  -f govway/Dockerfile.govway .
+  -f govway/Dockerfile.govway target
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
 

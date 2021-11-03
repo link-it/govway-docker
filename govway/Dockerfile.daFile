@@ -20,6 +20,7 @@ GOVWAY_HOME_HTTPS=/etc/govway_https \
 GOVWAY_LOGDIR=/var/log/govway \
 GOVWAY_FULLVERSION=${govway_fullversion} 
 
+
 COPY commons/ant.install.properties.template /var/tmp/
 ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
 
@@ -38,10 +39,9 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
-cp installer/setup/antinstall-config.xml installer/setup/antinstall-config.xml.orig; \
-sed -ire 's%^ *target=.*%target="setup_sql"/>%' installer/setup/antinstall-config.xml; \
+sed -i -r -e 's%^ *target=.*%target="setup_sql"/>%' installer/setup/antinstall-config.xml; \
 for dbtype in hsql postgresql; do \
-  sed -ire "s/^antinstaller_tipo_database=.*$/antinstaller_tipo_database=${dbtype}/" installer/setup/ant.install.properties.template; \
+  sed -i -r -e "s/^antinstaller_tipo_database=.*$/antinstaller_tipo_database=${dbtype}/" installer/setup/ant.install.properties.template; \
   ./install.sh text-auto; \
   mv installer/setup/build/sql dist/sql/${dbtype}; \
 done
