@@ -25,7 +25,6 @@ COPY commons/ant.install.properties.template /var/tmp/
 ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
 RUN set -eux; \
-
 curl -LksS  https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ; \
 cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
 sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
@@ -38,7 +37,7 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
-mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
+mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ ; 
 
 
 RUN set -eux;\

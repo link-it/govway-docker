@@ -85,7 +85,16 @@ RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
 # Build imagine govway
-[ -n "$TAG" ] || TAG="linkitaly/govway_${DB:-hsql}:3.3.5"
+if [ -z "$TAG" ] 
+then
+  if [ ${DB:-hsql} == 'hsql' ]
+  then
+    TAG="linkitaly/govway:3.3.5"
+  else
+    TAG="linkitaly/govway:3.3.5_${DB}"
+  fi
+fi
+
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
