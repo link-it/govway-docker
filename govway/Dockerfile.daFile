@@ -1,8 +1,10 @@
 # GovWay installer
-FROM centos:centos7.9.2009
+FROM centos:centos7.9.2009 AS INSTALLER
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
+ARG runtime_custom_archives=commons/ant.install.properties.template
+ARG manager_custom_archives=commons/ant.install.properties.template
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
@@ -41,6 +43,11 @@ mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
 mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
 
+COPY ${runtime_custom_archives} /var/tmp/runtime
+RUN [ ! -f /var/tmp/runtime/ant.installer.properties ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime
+
+COPY ${manager_custom_archives} /var/tmp/manager
+RUN [ ! -f /var/tmp/manager/ant.installer.properties ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \
@@ -89,7 +96,7 @@ rm -rf /tmp/WEB-INF
 
 RUN set -eux;\
 mkdir /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/; \
-for archive in /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/*.?ar /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/*.?ar; \
+for archive in /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/*; \
 do \
  ln -s ${archive} /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/$(basename ${archive}); \
 done

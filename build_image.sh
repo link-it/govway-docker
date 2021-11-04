@@ -1,19 +1,25 @@
 #!/bin/bash
 
 function printHelp() {
-#echo "Usage $(basename $0) [ -s | -h | -t <tagname> | -v <versione> | -d ( hsql* | postgresql ) ]"
-echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -j | -l <file path> ] | -d <tipo datatbase> | -i <template path> -h ]"
+echo "Usage $(basename $0) [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | -h ]"
 echo 
 echo "Options
--a : Imposta quali archivi inserire nell'immmagine finale
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default: 3.3.5)
--d : Prepara l'immagine per essere utilizzata su un particolare database  (default: hsql)
--l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
--i : Usa il template su filesystem per la generazione degli archivi dall'installer
--j : Usa l'installer prodotto dalla pipeline jenkin https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 -h : Mostra questa pagina di aiuto
+
+Installer Sorgente:
+-v : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
+-l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
+-j : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
+
+Personalizzazioni:
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql ] , default: hsql)
+-i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
+-a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
+-r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
+-m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
+
 "
 }
 
@@ -29,14 +35,14 @@ fi
 TAG=
 BRANCH=
 VER=
-while getopts "ht:v:d:jl:i:a:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
-       [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
+        [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
     j) JENKINS="true"
         [ -n "${LOCALFILE}" ] && { echo "Le opzioni -j e -l sono incompatibili. Impostare solo una delle due."; exit 2; }
@@ -45,6 +51,12 @@ while getopts "ht:v:d:jl:i:a:" opt; do
         [ ! -f "${TEMPLATE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${TMPLATE}]."; exit 3; } 
         ;;
     a) ARCHIVI="${OPTARG}"; case "$ARCHIVI" in runtime);;manager);;all);;*) echo "Tipologia archivi da inserire non riconosciuta: ${ARCHIVI}"; exit 2;; esac ;;
+    r) CUSTOM_RUNTIME="${OPTARG}"
+        [ ! -d "${CUSTOM_RUNTIME}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_RUNTIME}]."; exit 3; }
+        ;;
+    m) CUSTOM_MANAGER="${OPTARG}"
+        [ ! -d "${CUSTOM_MANAGER}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_MANAGER}]."; exit 3; }
+        ;;
     h) printHelp
        exit 0
        ;;
@@ -64,7 +76,8 @@ DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
 [ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" target/commons/
-
+[ -n "${CUSTOM_RUNTIME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "runtime_custom_archives=${CUSTOM_RUNTIME}")
+[ -n "${CUSTOM_MANAGER}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=${CUSTOM_MANAGER}")
 
 # Build immagine installer
 if [ -n "${JENKINS}" ]

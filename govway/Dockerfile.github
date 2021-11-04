@@ -39,6 +39,11 @@ mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
 mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ ; 
 
+COPY ${runtime_custom_archives} /var/tmp/runtime
+RUN [ ! -f /var/tmp/runtime/ant.installer.properties ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime
+
+COPY ${manager_custom_archives} /var/tmp/manager
+RUN [ ! -f /var/tmp/manager/ant.installer.properties ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \
@@ -91,3 +96,4 @@ for archive in /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/
 do \
  ln -s ${archive} /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/$(basename ${archive}); \
 done
+
