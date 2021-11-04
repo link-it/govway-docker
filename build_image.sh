@@ -53,9 +53,11 @@ while getopts "ht:v:d:jl:i:a:r:m:" opt; do
     a) ARCHIVI="${OPTARG}"; case "$ARCHIVI" in runtime);;manager);;all);;*) echo "Tipologia archivi da inserire non riconosciuta: ${ARCHIVI}"; exit 2;; esac ;;
     r) CUSTOM_RUNTIME="${OPTARG}"
         [ ! -d "${CUSTOM_RUNTIME}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_RUNTIME}]."; exit 3; }
+        [ -z "$(ls -A ${CUSTOM_RUNTIME})" ] && { echo "la directory [${CUSTOM_RUNTIME}] e' vuota."; exit 3; }
         ;;
     m) CUSTOM_MANAGER="${OPTARG}"
         [ ! -d "${CUSTOM_MANAGER}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_MANAGER}]."; exit 3; }
+        [ -z "$(ls -A ${CUSTOM_MANAGER})" ] && { echo "la directory [${CUSTOM_MANAGER}] e' vuota."; exit 3; }
         ;;
     h) printHelp
        exit 0
@@ -68,16 +70,24 @@ while getopts "ht:v:d:jl:i:a:r:m:" opt; do
 done
 
 
-rm -rf target
-mkdir -p target/
-cp -fr commons target/
+rm -rf buildcontext
+mkdir -p buildcontext/
+cp -fr commons buildcontext/
 
 DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
 [ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
-[ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" target/commons/
-[ -n "${CUSTOM_RUNTIME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "runtime_custom_archives=${CUSTOM_RUNTIME}")
-[ -n "${CUSTOM_MANAGER}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=${CUSTOM_MANAGER}")
+[ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
+if [ -n "${CUSTOM_RUNTIME}" ]
+then
+  cp -r ${CUSTOM_RUNTIME}/ buildcontext/runtime
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "runtime_custom_archives=runtime")
+fi
+if [ -n "${CUSTOM_MANAGER}" ]
+then
+  cp -r ${CUSTOM_MANAGER}/ buildcontext/manager
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=manager")
+fi
 
 # Build immagine installer
 if [ -n "${JENKINS}" ]
@@ -86,7 +96,7 @@ then
 elif [ -n "${LOCALFILE}" ]
 then
   INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"
-  cp -f "${LOCALFILE}" target/
+  cp -f "${LOCALFILE}" buildcontext/
 else
   INSTALLER_DOCKERFILE="govway/Dockerfile.github"
 fi
@@ -94,7 +104,7 @@ fi
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   -t linkitaly/govway-installer_${DB:-hsql}:${VER:-3.3.5} \
-  -f ${INSTALLER_DOCKERFILE} target
+  -f ${INSTALLER_DOCKERFILE} buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
@@ -111,6 +121,7 @@ then
   then
     TAG="${REPO}:3.3.5"
   elif [ ${DB:-hsql} == 'postgresql' ]
+  then
     TAG="${REPO}:3.3.5_postgres"
   fi
 fi
@@ -118,7 +129,7 @@ DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
-  -f govway/Dockerfile.govway target
+  -f govway/Dockerfile.govway buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
 

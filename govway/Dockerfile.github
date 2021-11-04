@@ -39,11 +39,13 @@ mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
 mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ ; 
 
-COPY ${runtime_custom_archives} /var/tmp/runtime
-RUN [ ! -f /var/tmp/runtime/ant.installer.properties ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime
-
-COPY ${manager_custom_archives} /var/tmp/manager
-RUN [ ! -f /var/tmp/manager/ant.installer.properties ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager
+ARG runtime_custom_archives=commons/ant.install.properties.template
+ARG manager_custom_archives=commons/ant.install.properties.template
+COPY ${runtime_custom_archives}* /var/tmp/runtime
+RUN [ -d /var/tmp/runtime ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime ||echo "Personalizzazioni runtime non presenti"
+ 
+COPY ${manager_custom_archives}* /var/tmp/manager
+RUN [ -d /var/tmp/manager ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager || echo "Personalizzazioni manager non presenti"
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \

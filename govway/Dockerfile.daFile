@@ -3,13 +3,12 @@ FROM centos:centos7.9.2009 AS INSTALLER
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
-ARG runtime_custom_archives=commons/ant.install.properties.template
-ARG manager_custom_archives=commons/ant.install.properties.template
+
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
 yum -y update \
-&& yum -q -y install zip unzip java-11-openjdk  \
+&& yum -y install zip unzip java-11-openjdk  \
 && yum clean all \
 && rm -rf /var/cache/yum
 
@@ -43,11 +42,13 @@ mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
 mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
 
-COPY ${runtime_custom_archives} /var/tmp/runtime
-RUN [ ! -f /var/tmp/runtime/ant.installer.properties ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime
+ARG runtime_custom_archives=commons/ant.install.properties.template
+ARG manager_custom_archives=commons/ant.install.properties.template
+COPY ${runtime_custom_archives}* /var/tmp/runtime
+RUN [ -d /var/tmp/runtime ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime ||echo "Personalizzazioni runtime non presenti"
 
-COPY ${manager_custom_archives} /var/tmp/manager
-RUN [ ! -f /var/tmp/manager/ant.installer.properties ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager
+COPY ${manager_custom_archives}* /var/tmp/manager
+RUN [ -d /var/tmp/manager ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager || echo "Personalizzazioni manager non presenti"
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \
