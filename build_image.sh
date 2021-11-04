@@ -5,6 +5,7 @@ function printHelp() {
 echo "Usage $(basename $0) [ -t <repository>:<tagname> | [ -v <versione> | -j | -l <file path> ] | -d <tipo datatbase> | -i <template path> -h ]"
 echo 
 echo "Options
+-a : Imposta quali archivi inserire nell'immmagine finale
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
 -v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default: 3.3.5)
@@ -12,7 +13,6 @@ echo "Options
 -l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
 -i : Usa il template su filesystem per la generazione degli archivi dall'installer
 -j : Usa l'installer prodotto dalla pipeline jenkin https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
-
 -h : Mostra questa pagina di aiuto
 "
 }
@@ -29,7 +29,7 @@ fi
 TAG=
 BRANCH=
 VER=
-while getopts "ht:v:d:jl:i:" opt; do
+while getopts "ht:v:d:jl:i:a:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -44,6 +44,7 @@ while getopts "ht:v:d:jl:i:" opt; do
     i) TEMPLATE="${OPTARG}"
         [ ! -f "${TEMPLATE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${TMPLATE}]."; exit 3; } 
         ;;
+    a) ARCHIVI="${OPTARG}"; case "$ARCHIVI" in runtime);;manager);;all);;*) echo "Tipologia archivi da inserire non riconosciuta: ${ARCHIVI}"; exit 2;; esac ;;
     h) printHelp
        exit 0
        ;;
@@ -85,21 +86,25 @@ RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
 # Build imagine govway
+
+[ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
 if [ -z "$TAG" ] 
 then
+  REPO=linkitaly/govway
+  [ -n "${ARCHIVI}" -a ${ARCHIVI} != 'all' ] && REPO=${REPO}-${ARCHIVI}
+  
+  # mantengo i nomi dei tag compatibili con quelli usati in precedenza
   if [ ${DB:-hsql} == 'hsql' ]
   then
-    TAG="linkitaly/govway:3.3.5"
-  else
-    TAG="linkitaly/govway:3.3.5_${DB}"
+    TAG="${REPO}:3.3.5"
+  elif [ ${DB:-hsql} == 'postgresql' ]
+    TAG="${REPO}:3.3.5_postgres"
   fi
 fi
-
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
-  --build-arg govway_archives_type=all \
   -f govway/Dockerfile.govway target
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
