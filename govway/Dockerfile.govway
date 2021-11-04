@@ -1,7 +1,6 @@
 # stage sorgente da utilizzare per il build dell'immagine finale
 ARG govway_fullversion
 ARG source_image=linkitaly/govway-installer
-ARG govway_archives_type=all
 
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
@@ -60,7 +59,7 @@ ENV JAVA_OPTS="-server \
 -DGOVWAY_FORCE_CONFIG_FILE=true"
 
 ARG source_image
-ARG govway_archives_type
+ARG govway_archives_type=all
 ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
 GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
 
@@ -90,8 +89,8 @@ echo "Abilitazione Acces Log"\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli \
 && chmod 750 ${JBOSS_HOME}/bin/config_datasource.sh \
-&& ${JBOSS_HOME}/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli 
-RUN ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
+&& ${JBOSS_HOME}/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli \
+&& ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
 && rm -rf ${JBOSS_HOME}/standalone/tmp/${JBOSS_HOME}/standalone/{tmp,data,log,configuration/standalone_xml_history} \
 /tmp/govway_standalone_configuration.cli
 
