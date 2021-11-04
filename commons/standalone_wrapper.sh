@@ -37,37 +37,12 @@ then
     [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || export GOVWAY_STAT_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
 
 
-
-# Valori di default per i datasource IM (corrispondono ai valori determinati per i datasource  GOVWAY)
-    [ -n "${IM_DB_SERVER}" ] || export IM_DB_SERVER="${GOVWAY_DB_SERVER}"
-    [ -n "${IM_CONF_DB_SERVER}" ] || export IM_CONF_DB_SERVER="${GOVWAY_CONF_DB_SERVER}"
-    [ -n "${IM_TRAC_DB_SERVER}" ] || export IM_TRAC_DB_SERVER="${GOVWAY_TRAC_DB_SERVER}"
-
-
-    [ -n "${IM_DB_NAME}" ] || export IM_DB_NAME="${GOVWAY_DB_NAME}"
-    [ -n "${IM_CONF_DB_NAME}" ] || export IM_CONF_DB_NAME="${GOVWAY_CONF_DB_NAME}"
-    [ -n "${IM_TRAC_DB_NAME}" ] || export IM_TRAC_DB_NAME="${GOVWAY_TRAC_DB_NAME}"
-
-
-    [ -n "${IM_DB_USER}" ] || export IM_DB_USER="${GOVWAY_DB_USER}"
-    [ -n "${IM_CONF_DB_USER}" ] || export IM_CONF_DB_USER="${GOVWAY_CONF_DB_USER}"
-    [ -n "${IM_TRAC_DB_USER}" ] || export IM_TRAC_DB_USER="${GOVWAY_TRAC_DB_USER}"
-
-
-    [ -n "${IM_DB_PASSWORD}" ] || export IM_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
-    [ -n "${IM_CONF_DB_PASSWORD}" ] || export IM_CONF_DB_PASSWORD="${GOVWAY_CONF_DB_PASSWORD}"
-    [ -n "${IM_TRAC_DB_PASSWORD}" ] || export IM_TRAC_DB_PASSWORD="${GOVWAY_TRAC_DB_PASSWORD}"
-
-
     # Valori di default per i parametri opzionali dei datasource IM e GOVWAY
     if [ -n "${GOVWAY_DS_PSCACHESIZE}" ]
     then
         [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
         [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
         [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
-        [ -n "${IM_DS_PSCACHESIZE}" ] || export IM_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
-        [ -n "${IM_TRAC_DS_PSCACHESIZE}" ] || export IM_TRAC_DS_PSCACHESIZE="${IM_DS_PSCACHESIZE}" 
-        [ -n "${IM_CONF_DS_PSCACHESIZE}" ] || export IM_CONF_DS_PSCACHESIZE="${IM_DS_PSCACHESIZE}" 
     fi
 
     if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
@@ -75,9 +50,6 @@ then
         [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ] || export GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}" 
         [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ] || export GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}" 
         [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] || export GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}"
-        [ -n "${IM_DS_CONN_PARAM}" ] || export IM_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}" 
-        [ -n "${IM_TRAC_DS_CONN_PARAM}" ] || export IM_TRAC_DS_CONN_PARAM="${IM_DS_CONN_PARAM}" 
-        [ -n "${IM_CONF_DS_CONN_PARAM}" ] || export IM_CONF_DS_CONN_PARAM="${IM_DS_CONN_PARAM}" 
     fi
 
 fi
