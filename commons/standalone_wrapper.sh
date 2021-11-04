@@ -1,11 +1,11 @@
 #!/bin/bash -x
 
 ## Const
-SKIP_STARTUP_CHECK=${SKIP_STARTUP_CHECK:=FALSE}
-STARTUP_CHECK_FIRST_SLEEP_TIME=${STARTUP_CHECK_FIRST_SLEEP_TIME:=20}
-STARTUP_CHECK_SLEEP_TIME=${STARTUP_CHECK_SLEEP_TIME:=5}
-STARTUP_CHECK_MAX_RETRY=${STARTUP_CHECK_MAX_RETRY:=60}
-STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
+GOVWAY_STARTUP_CHECK_SKIP=${GOVWAY_STARTUP_CHECK_SKIP:=FALSE}
+GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME:=20}
+GOVWAY_STARTUP_CHECK_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_SLEEP_TIME:=5}
+GOVWAY_STARTUP_CHECK_MAX_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY:=60}
+GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
 
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
 
@@ -105,27 +105,27 @@ PID=$!
 trap "kill -TERM $PID" TERM INT
 
 
-if [ "${SKIP_STARTUP_CHECK}" == "FALSE" ]
+if [ "${GOVWAY_STARTUP_CHECK_SKIP}" == "FALSE" ]
 then
 
 	/bin/rm -f  /tmp/govway_ready
 	echo "INFO: Attendo avvio di GovWay ..."
-	sleep ${STARTUP_CHECK_FIRST_SLEEP_TIME}s
+	sleep ${GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME}s
 	GOVWAY_READY=1
 	NUM_RETRY=0
-	while [ ${GOVWAY_READY} -ne 0 -a ${NUM_RETRY} -lt ${STARTUP_CHECK_MAX_RETRY} ]
+	while [ ${GOVWAY_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_STARTUP_CHECK_MAX_RETRY} ]
 	do
-		grep -qE "${STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
+		grep -qE "${GOVWAY_STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
 		GOVWAY_READY=$?
 		NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
 		if [  ${GOVWAY_READY} -ne 0 ]
                 then
 			echo "INFO: Attendo avvio di GovWay ..."
-			sleep ${STARTUP_CHECK_SLEEP_TIME}s
+			sleep ${GOVWAY_STARTUP_CHECK_SLEEP_TIME}s
 		fi
 	done
 
-	if [ ${NUM_RETRY} -eq ${STARTUP_CHECK_MAX_RETRY} ]
+	if [ ${NUM_RETRY} -eq ${GOVWAY_STARTUP_CHECK_MAX_RETRY} ]
 	then
 		echo "FATAL: GovWay NON avviato dopo $((${DB_CHECK_SLEEP_TIME=} * ${DB_CHECK_MAX_RETRY})) secondi ... Uscita"
 		kill -15 ${TOMCAT_PID}

@@ -1,9 +1,10 @@
 #!/bin/bash -x
-DB_CHECK_CONNECT_TIMEOUT=${DB_CHECK_CONNECT_TIMEOUT:=5}
-DB_CHECK_FIRST_SLEEP_TIME=${DB_CHECK_FIRST_SLEEP_TIME:=0}
-DB_CHECK_SLEEP_TIME=${DB_CHECK_SLEEP_TIME:=2}
-DB_CHECK_MAX_RETRY=${DB_CHECK_MAX_RETRY:=30}
-SKIP_DB_CHECK=${SKIP_DB_CHECK:=FALSE}
+GOVWAY_LIVE_DB_CHECK_CONNECT_TIMEOUT=${GOVWAY_LIVE_DB_CHECK_CONNECT_TIMEOUT:=5}
+GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME=${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME:=0}
+GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME:=2}
+GOVWAY_LIVE_DB_CHECK_MAX_RETRY=${GOVWAY_LIVE_DB_CHECK_MAX_RETRY:=30}
+GOVWAY_LIVE_DB_CHECK_SKIP=${GOVWAY_LIVE_DB_CHECK_SKIP:=FALSE}
+GOVWAY_READY_DB_CHECK_SKIP=${GOVWAY_READY_DB_CHECK_SKIP:=FALSE}
 
 
 declare -A mappa_suffissi 
@@ -103,85 +104,88 @@ charset UTF-8
 EOSQLTOOL
 
     # Server liveness
-    if [ "${SKIP_DB_CHECK^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
+    if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
     then
     	echo "INFO: Attendo avvio della base dati ..."
-	    sleep ${DB_CHECK_FIRST_SLEEP_TIME}s
+	    sleep ${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME}s
 	    DB_READY=1
 	    NUM_RETRY=0
-	    while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${DB_CHECK_MAX_RETRY} ]
+	    while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY} ]
 	    do
-            nc  -w "${DB_CHECK_CONNECT_TIMEOUT}" -z "${SERVER_HOST}" "${SERVER_PORT}"
+            nc  -w "${GOVWAY_LIVE_DB_CHECK_CONNECT_TIMEOUT}" -z "${SERVER_HOST}" "${SERVER_PORT}"
             DB_READY=$?
             NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
             if [  ${DB_READY} -ne 0 ]
             then
                 echo "INFO: Attendo disponibilita' della base dati .."
-                sleep ${DB_CHECK_SLEEP_TIME}s
+                sleep ${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME}s
             fi
 	    done
-       	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${DB_CHECK_MAX_RETRY} ]
+       	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY} ]
 	    then
-		    echo "FATAL: Base dati NON disponibile dopo $((${DB_CHECK_SLEEP_TIME=} * ${DB_CHECK_MAX_RETRY})) secondi  ... Uscita."
+		    echo "FATAL: Base dati NON disponibile dopo $((${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=} * ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY})) secondi  ... Uscita."
 		    exit 1
 	    fi
     fi
     # Server Readyness
-    ## REINIZIALIZZO VARIABILI DI CONTROLLO
-    POP=0
-    DB_POP=1
+    if [ "${GOVWAY_READY_DB_CHECK_SKIP^^}" == "FALSE" ]
+    then
+        ## REINIZIALIZZO VARIABILI DI CONTROLLO
+        POP=0
+        DB_POP=1
 
 
-    DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"
-    EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='${DBNAME,,}';" 
-    EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
-    # in caso di problemi di connessione esco
-    [ $? -eq 0 ] || exit 1
-    if [ ${EXIST} -eq 1 ]
-    then
-        #  possibile che il db sia usato per piu' funzioni devo verifcare che non sia gia' stato popolato
-        DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
-        POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
-        POP=$(java ${INVOCAZIONE_CLIENT} --sql="${POP_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
-    fi    
-    if [ -n "${POP}" -a ${POP} -eq 0 ]
-    then
-        SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
-        mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
-        #
-        # Ignoro in caso il file SQL non esista
-        #
-        [ ! -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
-        /bin/cp -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
-        #
-        # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
-        #
-        if [ "${DESTINAZIONE}" != 'RUN' ]
+        DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='${DBNAME,,}';" 
+        EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
+        # in caso di problemi di connessione esco
+        [ $? -eq 0 ] || exit 1
+        if [ ${EXIST} -eq 1 ]
         then
-            if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${SERVER}" == "${GOVWAY_DB_SERVER}" && "${DBNAME}" == "${GOVWAY_DB_NAME}" ) ]]
+            #  possibile che il db sia usato per piu' funzioni devo verifcare che non sia gia' stato popolato
+            DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
+            POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
+            POP=$(java ${INVOCAZIONE_CLIENT} --sql="${POP_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
+        fi    
+        if [ -n "${POP}" -a ${POP} -eq 0 ]
+        then
+            SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
+            mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+            #
+            # Ignoro in caso il file SQL non esista
+            #
+            [ ! -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
+            /bin/cp -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+            #
+            # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
+            #
+            if [ "${DESTINAZIONE}" != 'RUN' ]
             then
-                sed  \
-                -e '/CREATE TABLE db_info/,/;/d' \
-                -e '/CREATE SEQUENCE seq_db_info/d' \
-                -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
-                -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
-                -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${SERVER}" == "${GOVWAY_DB_SERVER}" && "${DBNAME}" == "${GOVWAY_DB_NAME}" ) ]]
+                then
+                    sed  \
+                    -e '/CREATE TABLE db_info/,/;/d' \
+                    -e '/CREATE SEQUENCE seq_db_info/d' \
+                    -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
+                    -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
+                    -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
+                    /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                fi
             fi
-        fi
-        #
-        # Inizializzazione database ${DESTINAZIONE}
-        # 
-        java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
+            #
+            # Inizializzazione database ${DESTINAZIONE}
+            # 
+            java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 START TRANSACTION;
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}_init.sql
 COMMIT;
 EOSCRIPT
-        DB_POP=$?
+            DB_POP=$?
+        fi
+        [ $POP -eq 1 -o $DB_POP -eq 0 ] || exit $DB_POP
     fi
-    [ $POP -eq 1 -o $DB_POP -eq 0 ] || exit $DB_POP
 done
 
 
