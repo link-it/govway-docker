@@ -74,18 +74,22 @@ RUN echo -e 'embed-server --server-config=standalone.xml --std-out=echo \n\
 echo "Aggiungo Worker http" \n\
 /subsystem=io/worker=http-worker:add(task-max-threads=${env.WILDFLY_HTTP_WORKER-MAX-THREADS:50}) \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker,  value=http-worker) \n\
-echo "Aggiungo Worker ajp" \n\
+echo "Aggiungo Worker e Listener ajp" \n\
 /subsystem=io/worker=ajp-worker:add(task-max-threads=${env.WILDFLY_AJP_WORKER-MAX-THREADS:50}) \n\
-/subsystem=undertow/server=default-server/ajp-listener=myListener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
+/subsystem=undertow/server=default-server/ajp-listener=ajplistener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
+echo "Abilito utilizzo degli header X-Forwarding" \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true) \n\
 echo "Rimuovo connettore https" \n\
 /subsystem=undertow/server=default-server/https-listener=https:remove() \n\
 echo "Abilitazione Non standard wrapper" \n\
 /subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
 echo "Correggo max post size" \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
-/subsystem=undertow/server=default-server/ajp-listener=myListener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+/subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
 echo "Abilitazione Acces Log"\n\
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
+echo "Sposto Server Log"\n\
+/subsystem=logging/periodic-rotating-file-handler=FILE:write-attribute(name=file , value={"path" => "${env.GOVWAY_LOGDIR}/server.log"}) \n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli \
 && chmod 750 ${JBOSS_HOME}/bin/config_datasource.sh \
