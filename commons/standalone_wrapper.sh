@@ -72,6 +72,9 @@ fi
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "Database non inizializzato;"; exit 1; }
 
 
+# Azzero un'eventuale log di startup precedente (utile in caso di restart)
+> ${GOVWAY_LOGDIR}/govway_startup.log
+
 # Forzo file di un eventuale file di properties jvm da passare all'avvio
 if [ -f ${JVM_PROPERTIES_FILE} ]
 then

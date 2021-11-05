@@ -56,6 +56,8 @@ then
     [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || export GOVWAY_STAT_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
 
 fi
+# Pronto per reinizializzare file di configurazione
+> $HOME/sqltool.rc
 
 for DESTINAZIONE in RUN CONF TRAC STAT
 do
