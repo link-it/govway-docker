@@ -19,7 +19,6 @@ Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
 -r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
 -m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
-
 "
 }
 
@@ -33,7 +32,6 @@ fi
 
 
 TAG=
-BRANCH=
 VER=
 while getopts "ht:v:d:jl:i:a:r:m:" opt; do
   case $opt in
@@ -119,16 +117,17 @@ then
   # mantengo i nomi dei tag compatibili con quelli usati in precedenza
   if [ ${DB:-hsql} == 'hsql' ]
   then
-    TAG="${REPO}:3.3.5"
+    TAG="${REPO}:${VER:-3.3.5}"
   elif [ ${DB:-hsql} == 'postgresql' ]
   then
-    TAG="${REPO}:3.3.5_postgres"
+    TAG="${REPO}:${VER:-3.3.5}_postgres"
   fi
 fi
-DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '-t' "${TAG}")
+
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
+  -t "${TAG}" \
   -f govway/Dockerfile.govway buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
@@ -170,3 +169,4 @@ services:
 EOYAML
 
 fi
+exit 0
