@@ -8,7 +8,7 @@ FROM ${source_image}:${govway_fullversion} AS source_image_full
 
 
 
-FROM centos:centos7.9.2009
+FROM centos:centos7.9.2009 AS source_image_built
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
 ARG govway_fullversion
@@ -65,7 +65,7 @@ GOVWAY_ARCHIVES_TYPE=${govway_archives_type}
 
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${JBOSS_HOME}/standalone/deployments/
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
-COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/ /tmp/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/ /opt/${govway_database_vendor}
 
 COPY commons/standalone_wrapper.sh commons/initgovway.sh commons/config_datasource.sh ${JBOSS_HOME}/bin/
 ARG govway_database_vendor=hsql
@@ -89,7 +89,8 @@ echo "Correggo max post size" \n\
 echo "Abilitazione Acces Log"\n\
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
 echo "Sposto Server Log"\n\
-/subsystem=logging/periodic-rotating-file-handler=FILE:write-attribute(name=file , value={"path" => "${env.GOVWAY_LOGDIR}/server.log"}) \n\
+/path=goway.log.dir:add(path="${env.GOVWAY_LOGDIR}") \n\
+/subsystem=logging/periodic-rotating-file-handler=FILE:write-attribute(name=file , value={path=server.log, relative-to=goway.log.dir })\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli \
 && chmod 750 ${JBOSS_HOME}/bin/config_datasource.sh \
@@ -102,6 +103,58 @@ RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh
+
+
+
+FROM centos:centos7.9.2009
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
+ARG govway_fullversion
+
+
+USER root
+ENV GOVWAY_HOME=/etc/govway \
+GOVWAY_HOME_HTTPS=/etc/govway_https \
+GOVWAY_LOGDIR=/var/log/govway \
+GOVWAY_FULLVERSION=${govway_fullversion} \
+HSQLDB_FULLVERSION=2.6.1 \
+POSTGRES_JDBC_VERSION=42.3.0 \
+WILDFLY_VERSION=18.0.1.Final \
+WILDFLY_SHA1=ef0372589a0f08c36b15360fe7291721a7e3f7d9 \
+JBOSS_HOME=/opt/wildfly-18.0.1.Final \
+LAUNCH_JBOSS_IN_BACKGROUND=true
+
+RUN set -eux; \
+useradd wildfly; \
+mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
+chown -R wildfly:0 ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
+chmod -Rf g+rwX  ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
+yum -q -y install unzip fontconfig freetype nmap-ncat java-11-openjdk-headless; \
+yum clean all; \
+rm -rf /var/cache/yum; 
+
+# -XX:+PrintFlagsFinal \
+ENV JAVA_OPTS="-server \
+-XX:+UseContainerSupport \
+-XX:+UseG1GC \
+-XX:+DisableExplicitGC \
+-XX:+UnlockExperimentalVMOptions \
+-Djava.net.preferIPv4Stack=true \
+-Djboss.modules.system.pkgs=org.jboss.byteman \
+-Djava.awt.headless=true \
+-Duser.language=it \
+-Duser.country=IT \
+-Dfile.encoding=UTF-8 \
+-DGOVWAY_FORCE_CONFIG_FILE=true"
+
+ARG source_image
+ARG govway_archives_type=all
+ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
+GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
+ARG govway_database_vendor=hsql
+ENV GOVWAY_DB_TYPE=${govway_database_vendor}
+
+COPY --from=source_image_built --chown=wildfly:wildfly /opt/ /opt/
 USER wildfly
 EXPOSE 8080 8009
 ENTRYPOINT [ "/opt/wildfly-18.0.1.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]

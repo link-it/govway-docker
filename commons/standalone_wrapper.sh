@@ -8,10 +8,13 @@ GOVWAY_STARTUP_CHECK_MAX_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY:=60}
 GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
 
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
+declare -r ENTRYPOINT_D='/docker-entrypoint-widlflycli.d/'
+declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
 
 
-if [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
-then
+    
+case "${GOVWAY_DB_TYPE:-hsql}" in
+postgresql)
 
     #
     # Sanity check variabili minime attese
@@ -37,7 +40,7 @@ then
     [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || export GOVWAY_STAT_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
 
 
-    # Valori di default per i parametri opzionali dei datasource IM e GOVWAY
+    # Valori di default per i parametri opzionali dei datasource GOVWAY
     if [ -n "${GOVWAY_DS_PSCACHESIZE}" ]
     then
         [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
@@ -52,7 +55,30 @@ then
         [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] || export GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}"
     fi
 
-fi
+    if [ -n "${GOVWAY_DS_IDLE_TIMEOUT}" ]
+    then
+        [ -n "${GOVWAY_CONF_DS_IDLE_TIMEOUT}" ] || export GOVWAY_CONF_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
+        [ -n "${GOVWAY_TRAC_DS_IDLE_TIMEOUT}" ] || export GOVWAY_TRAC_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
+        [ -n "${GOVWAY_STAT_DS_IDLE_TIMEOUT}" ] || export GOVWAY_STAT_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}"
+    fi
+
+    if [ -n "${GOVWAY_DS_BLOCKING_TIMEOUT}" ]
+    then
+        [ -n "${GOVWAY_CONF_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_CONF_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
+        [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
+        [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
+    fi
+    export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+    export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
+    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+;;
+hsql|*)
+    export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
+    export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
+    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
+;;
+esac
+
 # Recupero l'indirizzo ip usato dal container (utilizzato dalle funzionalita di clustering / orchestration)
 export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*$" /etc/hosts|awk '{print $1}')
 
@@ -71,6 +97,32 @@ fi
 # Inizializzazione del database
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "Database non inizializzato;"; exit 1; }
 
+# Eventuali inizializzazioni custom widfly
+if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
+then
+    local f
+	for f in ${ENTRYPOINT_D}/*
+    do
+		case "$f" in
+			*.sh)
+				if [ -x "$f" ]; then
+					echo "Customizzazioni: eseguo $f"
+					"$f"
+				else
+					echo "Customizzazioni: eseguo $f"
+					. "$f"
+				fi
+				;;
+			*.cli)
+                echo "Customizzazioni: eseguo $f"; 
+                ${JBOSS_HOME}/bin/jboss-cli.sh --file=$f
+                ;;
+			*) echo "Customizzazioni: ignoro $f" ;;
+		esac
+		echo
+	done
+    touch ${CUSTOM_INIT_FILE}
+fi
 
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log
@@ -130,8 +182,8 @@ then
 
 	if [ ${NUM_RETRY} -eq ${GOVWAY_STARTUP_CHECK_MAX_RETRY} ]
 	then
-		echo "FATAL: GovWay NON avviato dopo $((${DB_CHECK_SLEEP_TIME=} * ${DB_CHECK_MAX_RETRY})) secondi ... Uscita"
-		kill -15 ${TOMCAT_PID}
+		echo "FATAL: GovWay NON avviato dopo $((${GOVWAY_STARTUP_CHECK_SLEEP_TIME=} * ${GOVWAY_STARTUP_CHECK_MAX_RETRY})) secondi ... Uscita"
+		kill -15 ${PID}
 	else
 		touch /tmp/govway_ready
 		echo "INFO: GovWay avviato "

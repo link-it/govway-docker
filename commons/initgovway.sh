@@ -26,36 +26,7 @@ mappa_dbinfostring[CONF]='%Database della Console di Gestione di GovWay'
 mappa_dbinfostring[TRAC]='%Archivio delle tracce e dei messaggi diagnostici emessi da GovWay'
 mappa_dbinfostring[STAT]='%Informazioni Statistiche sulle richieste gestite da GovWay'
 
-# Setting valori di Default per i datasource GOVWAY
-if [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
-then
-    #
-    # Sanity check variabili minime attese
-    #
-    [  -n "${GOVWAY_DB_SERVER}" -a -n  "${GOVWAY_DB_USER}" -a -n "${GOVWAY_DB_PASSWORD}" -a -n "${GOVWAY_DB_NAME}" ] || exit 1
 
-
-    #
-    # Sanity check variabile GOVWAY_DB_SERVER per db remoto
-    #
-    [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_DB_SERVER}"
-    [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_DB_SERVER}"
-    [ -n "${GOVWAY_STAT_DB_SERVER}" ] || export GOVWAY_STAT_DB_SERVER="${GOVWAY_DB_SERVER}"
-
-
-    [ -n "${GOVWAY_CONF_DB_NAME}" ] || export GOVWAY_CONF_DB_NAME="${GOVWAY_DB_NAME}"
-    [ -n "${GOVWAY_TRAC_DB_NAME}" ] || export GOVWAY_TRAC_DB_NAME="${GOVWAY_DB_NAME}"
-    [ -n "${GOVWAY_STAT_DB_NAME}" ] || export GOVWAY_STAT_DB_NAME="${GOVWAY_DB_NAME}"
-
-    [ -n "${GOVWAY_CONF_DB_USER}" ] || export GOVWAY_CONF_DB_USER="${GOVWAY_DB_USER}"
-    [ -n "${GOVWAY_TRAC_DB_USER}" ] || export GOVWAY_TRAC_DB_USER="${GOVWAY_DB_USER}"
-    [ -n "${GOVWAY_STAT_DB_USER}" ] || export GOVWAY_STAT_DB_USER="${GOVWAY_DB_USER}"
-
-    [ -n "${GOVWAY_CONF_DB_PASSWORD}" ] || export GOVWAY_CONF_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
-    [ -n "${GOVWAY_TRAC_DB_PASSWORD}" ] || export GOVWAY_TRAC_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
-    [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || export GOVWAY_STAT_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
-
-fi
 # Pronto per reinizializzare file di configurazione
 > $HOME/sqltool.rc
 
@@ -80,12 +51,9 @@ do
     case "${GOVWAY_DB_TYPE:-hsql}" in
     postgresql) 
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=5432
-        DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
-        DRIVER_JDBC_CLASS='org.postgresql.Driver'
         JDBC_URL="jdbc:postgresql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}"
     ;;
     hsql|*)
-        DRIVER_JDBC_CLASS='org.hsqldb.jdbc.JDBCDriver'
         DBNAME=govway
         DBUSER=govway
         DBPASS=govway
@@ -93,14 +61,14 @@ do
     ;;
     esac
 
-    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool"
+    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool"
     cat - <<EOSQLTOOL >> $HOME/sqltool.rc
 
 urlid govwayDB${DESTINAZIONE}
 url ${JDBC_URL}
 username ${DBUSER}
 password ${DBPASS}
-driver ${DRIVER_JDBC_CLASS}
+driver ${GOVWAY_DS_DRIVER_CLASS}
 transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
@@ -156,8 +124,8 @@ EOSQLTOOL
             #
             # Ignoro in caso il file SQL non esista
             #
-            [ ! -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
-            /bin/cp -f /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+            [ ! -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
+            /bin/cp -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
             #
             # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
             #
@@ -171,7 +139,7 @@ EOSQLTOOL
                     -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
                     -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
                     -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                    /tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                    /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
                 fi
             fi
             #
