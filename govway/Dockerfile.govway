@@ -96,7 +96,7 @@ stop-embedded-server \n\
 && chmod 750 ${JBOSS_HOME}/bin/config_datasource.sh \
 && ${JBOSS_HOME}/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli \
 && ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
-&& rm -rf ${JBOSS_HOME}/standalone/tmp/${JBOSS_HOME}/standalone/{tmp,data,log,configuration/standalone_xml_history} \
+&& rm -rf ${JBOSS_HOME}/standalone/{tmp,data,log,configuration/standalone_xml_history} \
 /tmp/govway_standalone_configuration.cli
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
