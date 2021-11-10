@@ -76,7 +76,7 @@ EOSQLTOOL
     # Server liveness
     if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
     then
-    	echo "INFO: Attendo avvio della base dati ..."
+    	echo "INFO: Liveness base dati ${DESTINAZIONE} ... attendo"
 	    sleep ${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME}s
 	    DB_READY=1
 	    NUM_RETRY=0
@@ -87,14 +87,16 @@ EOSQLTOOL
             NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
             if [  ${DB_READY} -ne 0 ]
             then
-                echo "INFO: Attendo disponibilita' della base dati .."
+                echo "INFO: Liveness base dati ${DESTINAZIONE} ... attendo"
                 sleep ${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME}s
             fi
 	    done
        	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY} ]
 	    then
-		    echo "FATAL: Base dati NON disponibile dopo $((${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=} * ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY})) secondi  ... Uscita."
+		    echo "FATAL: Liveness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo $((${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=} * ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY})) secondi"
 		    exit 1
+        else
+            echo "INFO: Liveness base dati ${DESTINAZIONE} ... Base dati disponibile"
 	    fi
     fi
     # Server Readyness
@@ -119,6 +121,7 @@ EOSQLTOOL
         fi    
         if [ -n "${POP}" -a ${POP} -eq 0 ]
         then
+            echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
             SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
             mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
             #
@@ -145,6 +148,7 @@ EOSQLTOOL
             #
             # Inizializzazione database ${DESTINAZIONE}
             # 
+            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione avviata."
             java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 START TRANSACTION;
@@ -154,7 +158,15 @@ COMMIT;
 EOSCRIPT
             DB_POP=$?
         fi
-        [ $POP -eq 1 -o $DB_POP -eq 0 ] || exit $DB_POP
+        if [ $POP -eq 1 -o $DB_POP -eq 0 ] 
+        then
+            echo
+            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione completata."   
+        else
+            echo
+            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione fallita."
+            exit $DB_POP
+        fi 
     fi
 done
 

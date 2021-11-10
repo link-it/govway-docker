@@ -1,4 +1,7 @@
-#!/bin/bash -x
+#!/bin/bash
+exec 6<> /tmp/standalone_wrapper_debug.log
+exec 2>&6
+set -x
 
 ## Const
 GOVWAY_STARTUP_CHECK_SKIP=${GOVWAY_STARTUP_CHECK_SKIP:=FALSE}
@@ -19,7 +22,19 @@ postgresql)
     #
     # Sanity check variabili minime attese
     #
-    [ -n "${GOVWAY_DB_SERVER}" -a -n  "${GOVWAY_DB_USER}" -a -n "${GOVWAY_DB_PASSWORD}" -a -n "${GOVWAY_DB_NAME}" ] || exit 1
+    if [ -n "${GOVWAY_DB_SERVER}" -a -n  "${GOVWAY_DB_USER}" -a -n "${GOVWAY_DB_PASSWORD}" -a -n "${GOVWAY_DB_NAME}" ] 
+    then
+            echo "INFO: Sanity check variabili ... ok."
+    else
+        echo "FATAL: Sanity check variabili ... fallito."
+        echo "FATAL: Devono essere settate almeno le seguenti variabili:
+GOVWAY_DB_SERVER: ${GOVWAY_DB_SERVER}
+GOVWAY_DB_NAME: ${GOVWAY_DB_NAME}
+GOVWAY_DB_USER: ${GOVWAY_DB_USER}
+GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
+"
+        exit 1
+    fi
 
     # Setting valori di Default per i datasource GOVWAY
     [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_DB_SERVER}"
@@ -95,7 +110,7 @@ else
 fi
 
 # Inizializzazione del database
-${JBOSS_HOME}/bin/initgovway.sh || { echo "Database non inizializzato;"; exit 1; }
+${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
 if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
@@ -106,18 +121,18 @@ then
 		case "$f" in
 			*.sh)
 				if [ -x "$f" ]; then
-					echo "Customizzazioni: eseguo $f"
+					echo "INFO: Customizzazioni ... eseguo $f"
 					"$f"
 				else
-					echo "Customizzazioni: eseguo $f"
+					echo "INFO: Customizzazioni ... eseguo $f"
 					. "$f"
 				fi
 				;;
 			*.cli)
-                echo "Customizzazioni: eseguo $f"; 
+                echo "INFO: Customizzazioni ... eseguo $f"; 
                 ${JBOSS_HOME}/bin/jboss-cli.sh --file=$f
                 ;;
-			*) echo "Customizzazioni: ignoro $f" ;;
+			*) echo "INFO: Customizzazioni ... ignoro $f" ;;
 		esac
 		echo
 	done
@@ -164,30 +179,37 @@ if [ "${GOVWAY_STARTUP_CHECK_SKIP}" == "FALSE" ]
 then
 
 	/bin/rm -f  /tmp/govway_ready
-	echo "INFO: Attendo avvio di GovWay ..."
+	echo "INFO: Avvio di GovWay ... attendo"
 	sleep ${GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME}s
 	GOVWAY_READY=1
 	NUM_RETRY=0
 	while [ ${GOVWAY_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_STARTUP_CHECK_MAX_RETRY} ]
 	do
-		grep -qE "${GOVWAY_STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
+        if [ ${GOVWAY_ARCHIVES_TYPE} == 'manager' ]
+        then
+            [ -f "${JBOSS_HOME}/standalone/deployments/govwayConsole.war.deployed" ]
+        else
+		    grep -qE "${GOVWAY_STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
+        fi
 		GOVWAY_READY=$?
 		NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
 		if [  ${GOVWAY_READY} -ne 0 ]
                 then
-			echo "INFO: Attendo avvio di GovWay ..."
+			echo "INFO: Avvio di GovWay ... attendo"
 			sleep ${GOVWAY_STARTUP_CHECK_SLEEP_TIME}s
 		fi
 	done
 
 	if [ ${NUM_RETRY} -eq ${GOVWAY_STARTUP_CHECK_MAX_RETRY} ]
 	then
-		echo "FATAL: GovWay NON avviato dopo $((${GOVWAY_STARTUP_CHECK_SLEEP_TIME=} * ${GOVWAY_STARTUP_CHECK_MAX_RETRY})) secondi ... Uscita"
+		echo "FATAL: Avvio di GovWay ... NON avviato dopo $((${GOVWAY_STARTUP_CHECK_SLEEP_TIME=} * ${GOVWAY_STARTUP_CHECK_MAX_RETRY})) secondi"
 		kill -15 ${PID}
 	else
 		touch /tmp/govway_ready
-		echo "INFO: GovWay avviato "
+		echo "INFO: Avvio di Govway ... GovWay avviato"
 	fi
+else
+		touch /tmp/govway_ready
 fi
 
 
@@ -196,5 +218,7 @@ wait $PID
 wait $PID
 EXIT_STATUS=$?
 
+echo "INFO: GovWay arrestato"
+exec 6>&-
 
 exit $EXIT_STATUS
