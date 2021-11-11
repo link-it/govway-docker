@@ -90,7 +90,7 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
 hsql|*)
     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
-    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
+    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 ;;
 esac
 
@@ -172,7 +172,7 @@ else
 fi
 
 PID=$!
-trap "kill -TERM $PID" TERM INT
+trap "kill -TERM $PID; export NUM_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY};" TERM INT
 
 
 if [ "${GOVWAY_STARTUP_CHECK_SKIP}" == "FALSE" ]

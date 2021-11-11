@@ -27,7 +27,7 @@ postgresql)
 hsql|*)
     GOVWAY_DRIVER_JDBC="opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
-    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
+    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 
     JDBC_RUN_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
     JDBC_RUN_AUTH="/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=user-name, value=govway)
