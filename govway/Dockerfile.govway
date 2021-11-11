@@ -29,7 +29,7 @@ LAUNCH_JBOSS_IN_BACKGROUND=true
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 yum -q -y update; \
-yum -q -y install unzip fontconfig freetype nmap-ncat java-11-openjdk-headless; \
+yum -q -y install ca-certificates unzip java-11-openjdk-headless; \
 yum clean all; \
 rm -rf /var/cache/yum; \
 curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_6/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
