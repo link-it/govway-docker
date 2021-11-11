@@ -108,7 +108,7 @@ EOSQLTOOL
 
 
         DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"
-        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='${DBNAME,,}';" 
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and (LOWER(table_catalog)='${DBNAME,,}' or LOWER(table_catalog)='public' );" 
         EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
         # in caso di problemi di connessione esco
         [ $? -eq 0 ] || exit 1
