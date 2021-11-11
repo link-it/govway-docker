@@ -19,6 +19,7 @@ Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
 -r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
 -m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
+-w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory 
 "
 }
 
@@ -33,7 +34,7 @@ fi
 
 TAG=
 VER=
-while getopts "ht:v:d:jl:i:a:r:m:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -57,6 +58,11 @@ while getopts "ht:v:d:jl:i:a:r:m:" opt; do
         [ ! -d "${CUSTOM_MANAGER}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_MANAGER}]."; exit 3; }
         [ -z "$(ls -A ${CUSTOM_MANAGER})" ] && { echo "la directory [${CUSTOM_MANAGER}] e' vuota."; exit 3; }
         ;;
+    w) CUSTOM_WIDLFLY_CLI="${OPTARG}"
+        [ ! -d "${CUSTOM_WIDLFLY_CLI}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_WIDLFLY_CLI}]."; exit 3; }
+        [ -z "$(ls -A ${CUSTOM_WIDLFLY_CLI})" ] && { echo "la directory [${CUSTOM_WIDLFLY_CLI}] e' vuota."; exit 3; }
+        ;;
+
     h) printHelp
        exit 0
        ;;
@@ -123,6 +129,13 @@ then
     TAG="${REPO}:${VER:-3.3.5}_postgres"
   fi
 fi
+
+if [ -n "${CUSTOM_WIDLFLY_CLI}" ]
+then
+  cp -r ${CUSTOM_WIDLFLY_CLI}/ buildcontext/custom_widlfly_cli
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "wildfly_custom_scripts=custom_widlfly_cli")
+fi
+
 
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \

@@ -1,6 +1,7 @@
 #!/bin/bash     
 CLI_SCRIPT_FILE="$1"  
-    
+CLI_SCRIPT_CUSTOM_DIR="${JBOSS_HOME}/standalone/configuration/custom_cli"
+
 case "${GOVWAY_DB_TYPE:-hsql}" in
 postgresql)
     GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
@@ -111,3 +112,13 @@ ${JDBC_STAT_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=min-pool-size, value=\${env.GOVWAY_STAT_MIN_POOL:1})
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=max-pool-size, value=\${env.GOVWAY_STAT_MAX_POOL:5})
 EOCLI
+
+if [ -d "${CLI_SCRIPT_CUSTOM_DIR}" -a -n "$(ls -A ${CLI_SCRIPT_CUSTOM_DIR} 2>/dev/null)" ]
+then
+    cli=""
+	for cli in ${CLI_SCRIPT_CUSTOM_DIR}/*
+    do
+		echo >> "${CLI_SCRIPT_FILE}"
+        cat ${cli} >> "${CLI_SCRIPT_FILE}"
+	done
+fi
