@@ -160,6 +160,16 @@ EOSCRIPT
         fi
         if [ $POP -eq 1 -o $DB_POP -eq 0 ] 
         then
+            #TODO: da valutare come soluzione per il caso delle connessioni in blocking-timeut
+            #      quando il db è hsql
+            #if  [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
+            #then
+            #    echo
+            #    echo "INFO: Readyness base dati ${DESTINAZIONE} ... setto dtatase in modalita MVCC."
+            #    java ${INVOCAZIONE_CLIENT} --continueOnErr=false --autoCommit govwayDB${DESTINAZIONE} << EOSCRIPT    
+#SET DATABASE TRANSACTION CONTROL MVCC;
+#EOSCRIPT
+            #fi
             echo
             echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione completata."   
         else
