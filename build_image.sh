@@ -171,7 +171,6 @@ services:
     image: ${TAG}
     ports:
         - 8080:8080
-        - 8443:8443
     volumes:
         - ./govway_conf:/etc/govway
         - ./govway_log:/var/log/govway
