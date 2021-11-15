@@ -1,20 +1,25 @@
-# Tags supportati e link ai rispettivi `Dockerfile`
+<img height="70px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
 
-* [`3.3.5`, `3.3.5_standalone`, `latest`, (govway/Dockerfile.govway)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`3.3.5_postgres`, `3.3.5_postgres_all`, (govway/Dockerfile.govway)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`3.3.5_postgres_run`, (govway/Dockerfile.govway)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`3.3.5_postgres_manager`, (govway/Dockerfile.govway)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+# Docker Image
+
+
+## Tags supportati e link ai rispettivi Dockerfile
+
+* [`3.3.5`, `3.3.5_standalone`, `latest`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_run_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_manager_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
 * [`3.3.4.p2`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/standalone_bin/Dockerfile)
 * [`3.3.4.p2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/compose_bin/Dockerfile)
 * [`3.3.4.p1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p1/standalone_bin/Dockerfile)
 * [`3.3.4.p1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p1/compose_bin/Dockerfile)
 
-# Riferimenti al progetto
+## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
 * [Sorgenti GovWay su GitHub](https://github.com/link-it/govway)
-* [Progetto Govway-Docker su GitHub][3]
+* [Progetto Govway-Docker su GitHub](https://github.com/link-it/govway-docker)
 
-# Cosa è GovWay
+## Cosa è GovWay
 Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle normative della Pubblica Amministrazione:
 
 * Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
@@ -22,16 +27,20 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
-<img height="70px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
 
-# Nomenclatura delle immagini fornite
-**standalone**: Installazione GovWay indipendente. Tutti i dati vengono scritti su un datbase HSQL interno al container
 
-**postgres_all**: Installazione GovWay da utilizzare in ambienti dove il database è gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift)
+## Nomenclatura delle immagini fornite
 
-**postgres_run**: Come postgres_all, ma l'immaginre contiene solo le componenti di api gateway
+- **standalone**: fornisce un ambiente di prova di GovWay funzionante dove i dati di configurazione e tracciamento vengono mantenuti su un database HSQL interno al container;
 
-**postgres_manager**: Come postgres_all, ma l'immaginre contiene solo le interfacce web di configurazione e monitoraggio.
+- **postgres**: fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database postgresql gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
+
+Esistono ulteriori immagini che consentono di mantenere i dati su un database postgresql esterno, ma suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
+
+- **postgres_run**: contiene solamente il componente runtime di api gateway;
+
+- **postgres_manager**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
+
 
 ## Avviare l'immagine standalone
 
@@ -50,22 +59,30 @@ $ docker run \
 linkitaly/govway
 ```
 
-Per maggiori informazioni sull'accesso e l'utilizzo  fare riferimento alla documentazione del progetto [GovWay-Docker][3] e alla manualistica presente su [GovWay.org](https://govway.org/download).
+Per maggiori informazioni sulle console fare riferimento alla documentazione del progetto [GovWay](https://govway.org/documentazione/).
 
+I files, interni all'immagine, utilizzati da GovWay sono: 
+- le properties di configurazione, posizionati nella directory **/etc/govway**;
+- i file di log, posizionati nella directory **/var/log/govway**;
+- il database HSQL situato in **/opt/hsqldb-2.6.1/hsqldb/database**.
 
-I files interni utilizzati da GovWay: le properties di configurazione, il database HSQL ed i file di log, sono posizionati tutti sotto le directory standard **/etc/govway**, **/var/log/govway** ed **/opt/hsqldb-2.6.1/hsqldb/database** rispettivamente; si possono quindi rendere tutti persistenti montando un volume su questa directory:
+Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
 
 ```console 
 $ mkdir ~/govway_home
+$ mkdir ~/govway_log
+$ mkdir ~/govway_db
 $ docker run \
  -p 8080:8080 \
  -v ~/govway_home:/etc/govway \
- -v ~/govway_log:/var/log/govway
+ -v ~/govway_log:/var/log/govway \
+ -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database
 linkitaly/govway
 ```
 
 ## Avviare una delle immagini orchestrate
+
 Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente:
 
 ```yaml
@@ -103,5 +120,4 @@ $ chmod 777 govway_{conf,log}
 $ docker-compose up
 ```
 
-[3]: https://github.com/link-it/govway-docker "Progetto Govway-Docker"
-
+Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
