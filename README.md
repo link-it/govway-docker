@@ -1,80 +1,168 @@
 # Immagine docker per GovWay
 
-Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'ambiente è reso disponible in due modalità:
+Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'ambiente consente di produrre immagini in due modalità:
 - **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
-- **compose** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database Potsgres esterno
+- **orchestrate** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database Postgres esterno
 
 ## Build immagine Docker
-Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto sono presenti due script di shell che si occupano di prepare tutti i files necessari al build dell'immagine e ad avviare il processo di build. 
-Gli script possono essere avviati senza parametri per ottenere il build dell'immagine di default; in alternativa è possibile fare alcune personalizzazioni impostando opportunamente i parametri, come descritti qui di seguito:
+Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente uno script di shell che si occupa di prepare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari. 
+Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, ossia una immagine in modalità standalone realizzata a partire dalla release binaria disponibile su GitHub.
+Lo script di build consente did personalizzare l'immagine prodotta, impostando opportunamente i parametri, come descritti qui di seguito:
 
 ```
-Usage build_standalone.sh [ -t <repository>:<tagname> | [ -v <versione> | -b <branch> ] | -h ]
+Usage build_image.sh [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]
 
 Options
 -t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--v : Imposta la versione dell'installer binario di govway da utilizzare per il build (default :3.3.4.p2)
--b : Imposta il branch su github da utilizzare per il build (incompatibile con -v)
 -h : Mostra questa pagina di aiuto
+
+Installer Sorgente:
+-v : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
+-l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
+-j : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
+
+Personalizzazioni:
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql ] , default: hsql)
+-a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
+
+Avanzate:
+-i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
+-r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
+-m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
+-w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory indicata
+
 ```
-
-I files interni utilizzati da GovWay: le properties di configurazione, i certificati SSL di esempio, il database HSQL (usato in modalita standalone) ed i file di log, sono posizionati tutti sotto la directory standard **/var/govway**; si possono quindi rendere tutti persistenti montando un volume vuoto su questa directory.
- 
- Il container tomcat utilizzato per il deploy di govway rimane in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**HTTPS**_ sulla porta **8443**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine
-
-Il database viene inizializzato all'avvio del container, sia in modalià standalone che in modaliatà compose; comunque è possibile esaminare lo script SQL, o riutilizzarlo per un'altro database, recuperandolo dall'immagine alla directory standard  **/database**.
 
 ## Avvio immagine Docker
 
-Una volta eseguito il build dell'immagine tramite uno degli script forniti, l'immagine puo essere eseguita con i normali comandi di run docker:
+Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine puo essere eseguita con i normali comandi di run docker:
 ```
-./build_standalone.sh -t govway_standalone:3.3.4.p2
-docker run -v ~/govway_home:/var/govway -p 8080:8080 -p 8443:8443 govway_standalone:3.3.4.p2
-```
-
-In modalità compose
+./build_standalone.sh 
+docker run -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway -p 8080:8080 linkitaly/govway:3.3.5
 
 ```
-./build_compose.sh -t govway_compose:3.3.4.p2
-cd target 
+
+In modalità orchestrate viene predisposta la directory **compose/** contenente uno scenario di test avviabile con docker-compose:
+
+```
+./build_compose.sh -d postgresql
+cd compose
 docker-compose up
 ```
 
-In questa modalità la personalizzazione dei volumi e la pubblicazione delle porte non può essere fatta a linea di comando ma deve essere fatta necessariamente editando il file **docker-compose.yml** che si trova nella directory target generata dallo script di build.
-Nel caso che il file non venga editato, per default verranno pubblicate le porte _**8080**_ e _**8443**_.
-Inoltre nella directory corrente verra' creata la sottodirectory **govway_home**, su cui il container montera' il path _**/var/govway**_
+Sotto la directory compose vengono create le sottodirectories **govway_conf** e **govway_log**, su cui il container montera' i path _**/etc/govway**_ ed _**/var/log/govway**_  rispettivamente.
+gli accessi sono previsti in protocollo HTTP sulla porta _**8080**_ .
 
 ### Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento del container. Le variabili supportate al momento sono queste:
-* FQDN: utilizzato per personalizzare il campo CN del subject dei certificati generati; se non specificato viene usato il valore di default **test.govway.org**
-* USERID: utilizzato per impostare l'id di sistema dell'utente tomcat
-* GROUPID: utilizzato per impostare l'id di sistema dell'utente tomcat
-* SSH_PUBLIC_KEY: utilizzato per registrare una chiave pubblica ,tra gli host autorizzati a collegarsi al server SSH interno
-* GOVWAY_INTERFACE: utilizzato per pilotare il set di interfacce da utilizzare per configurazione o monitoraggio. I valori possibili sono ***web*** o ***rest**
+
+##### Controlli all'avvio del container
+
+A runtime il container esegue i controlli di raggiungibilita del dtabase, di popolamento del database e di avvio di govway. Questi controlli possono essere abilitati o meno impostando le seguneti variabili d'ambiente:
+
+* GOVWAY_LIVE_DB_CHECK_SKIP: Esegue il controllo di raggiungibilità dei server database allo startup (default: FALSE)
+
+* GOVWAY_READY_DB_CHECK_SKIP: Esegue il controllo di popolamento dei database allo startup (default: FALSE)
+
+* GOVWAY_STARTUP_CHECK_SKIP:: Esegue il controllo di avvio di govway allo startup (default: FALSE)
 
 
-L'avvio tipico in modalità standalone è il seguente:
-```
-docker run \
- -v ~/govway_home:/var/govway \
- -p 8080:8080 -p 8443:8443 -p 2222:22 \
- -e "FQDN=`hostname -f`" -e "USERID=`id -u $USER`" -e "GROUPID=`id -g $USER`" -e "SSH_PUBLIC_KEY=$(cat ~/.ssh/id_rsa.pub)" \
- govway_standalone:3.3.4.p2
-```
+E' possibile personalizzare il ciclo di controllo di raggiungibilità dei server database impostando le seguenti variabili d'ambiente:
+* GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME: tempo di attesa, in secondi, prima di effettuare la prima verifica (default: 0)
+* GOVWAY_LIVE_DB_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un tentativo di connessione faallito ed il successivo (default: 2)
+* GOVWAY_LIVE_DB_CHECK_MAX_RETRY: Numero massimo di tentativi di connessione (default: 30)
+* GOVWAY_LIVE_DB_CHECK_CONNECT_TIMEOUT: Timeout di connessione al server, in secondi (default: 5)
 
-in modalità compose si deve editare la sezione "_**environment**_" del file docker-compose.yml e valorizzare le variabili eseguendo prima i comandi sulla shell del sistema host e sostituendo i rispettivi risultati. Ad esempio
-```
-...
-    - USERID=1234
-    - GROUPID=1234
-    - FQDN=docker_instance.govway.org
-    - SSH_PUBLIC_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAABI......"
-...
-```
 
-## Accessi standard
-Le immagini costruite, per default sono in ascolto sulla porta TCP 8080 in protocollo HTTP. Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+E' possibile personalizzare il ciclo di controllo di avvio di govway impostando le seguenti variabili d'ambiente:
+* GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME: tempo di attesa, in secondi, prima di effettuare il primo controllo (default: 20)
+* GOVWAY_STARTUP_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un controllo fallito ed il successivo  (default: 5)
+* GOVWAY_STARTUP_CHECK_MAX_RETRY: Numero massimo di controlli effettuati (default: 60)
+
+##### Connessione a database esterni 
+
+* GOVWAY_DB_SERVER: nome dns o ip address del server database (obbligatorio in modalita orchestrate)
+* GOVWAY_DB_NAME: Nome del database (obbligatorio in modalita orchestrate)
+* GOVWAY_DB_USER: username da utiliizare per l'accesso al database (obbligatorio in modalita orchestrate)
+* GOVWAY_DB_PASSWORD: password di accesso al database (obbligatorio in modalita orchestrate)
+
+Se la configurazione lo richiede è possibile suddividere i dati prodotti o utilizzati da govway, su piu' database, a seconda della categoria di dati contenuti.
+Le categorie di dati gestite sono:  CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
+
+E' possibile quindi, aggiungere puntamenti ai database, indicando in aggiunta al set di variabili indicato in precedenza, uno o piu di quelli indicati di seguito:  
+
+CONFIGURAZIONE
+* GOVWAY_CONF_DB_SERVER (default: GOVWAY_DB_SERVER)
+* GOVWAY_CONF_DB_NAME (default: GOVWAY_DB_NAME)
+* GOVWAY_CONF_DB_USER (default: GOVWAY_DB_USER)
+* GOVWAY_CONF_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+STATISTICHE
+* GOVWAY_STAT_DB_SERVER (default: GOVWAY_DB_SERVER)
+* GOVWAY_STAT_DB_NAME (default: GOVWAY_DB_NAME)
+* GOVWAY_STAT_DB_USER (default: GOVWAY_DB_USER)
+* GOVWAY_STAT_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+TRACCIAMENTO
+* GOVWAY_TRAC_DB_SERVER (default: GOVWAY_DB_SERVER)
+* GOVWAY_TRAC_DB_NAME (default: GOVWAY_DB_NAME)
+* GOVWAY_TRAC_DB_USER (default: GOVWAY_DB_USER)
+* GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+
+##### Pooling connessioni
+
+* GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite(default: 50)
+* GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
+* GOVWAY_DS_BLOCKING_TIMEOUT: Tempo di attesa, im millisecondi, per una connessione libera dal pool (default: 30000)
+* GOVWAY_DS_IDLE_TIMEOUT: Tempo trascorso, in minuti, prima di eliminare una connessione dal pool per inattivita (default: 5)
+* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
+* GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
+
+
+Se è stata utilizzata la suddivisione dei dati su piu' database, è possibile, in aggiunta al set di in aggiunta al set di variabili indicato in precedenza, fornire uno o piu di quelli indicati di seguito:  
+
+CONFIGURAZIONE
+* GOVWAY_CONF_MAX_POOL (default: 10)
+* GOVWAY_CONF_MIN_POOL (default: 29
+* GOVWAY_CONF_DS_BLOCKING_TIMEOUT (default: 30000)
+* GOVWAY_CONF_DS_CONN_PARAM (default: vuoto)
+* GOVWAY_CONF_DS_IDLE_TIMEOUT (default: 5)
+* GOVWAY_CONF_DS_PSCACHESIZE (default: 20)
+
+STATISTICHE
+* GOVWAY_STAT_MAX_POOL (default: 5)
+* GOVWAY_STAT_MIN_POOL (default: 1)
+* GOVWAY_STAT_DS_BLOCKING_TIMEOUT (default: 30000)
+* GOVWAY_STAT_DS_CONN_PARAM (default: vuoto)
+* GOVWAY_STAT_DS_IDLE_TIMEOUT (default: 5)
+* GOVWAY_STAT_DS_PSCACHESIZE (default: 20)
+
+TRACCIAMENTO
+* GOVWAY_TRAC_MAX_POOL (default: 50)
+* GOVWAY_TRAC_MIN_POOL (default: 2)
+* GOVWAY_TRAC_DS_BLOCKING_TIMEOUT (default: 30000)
+* GOVWAY_TRAC_DS_CONN_PARAM (default: vuoto)
+* GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
+* GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
+
+## Informazioni di Base
+
+A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i seguenti path:
+- **/etc/govway** path le properties di configurazione, 
+- **/var/log/govway** path dove vengono scritti i files di log 
+
+Se l'immagine è stata prodotta in modalità standalone: 
+- **/opt/hsqldb-2.6.1/hsqldb/database** database interno HSQL 
+
+si possono rendere queste location persistenti, montando un volume vuoto su queste directory.
+ 
+
+All'avvio del container, sia in modalià standalone che in modaliatà orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto che il datbase non è popolato, vengono utilizzatti gli scripts SQL interni, per avviare l'inizializzazione.
+Se si vuole esaminare gli script o riutilizzarli per un'altro database, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql** o **/opt/postgresql**.
+
+Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
 ```
  http://<indirizzo IP>:8080/govwayConsole/
  http://<indirizzo IP>:8080/govwayMonitor/
@@ -90,43 +178,6 @@ L'account di default per l'interfaccia **govwayMonitor** è
 Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
 ```
  http://<indirizzo IP>:8080/govway/
-```
-
-### Configurazione HTTPS
-Oltre all´accesso standard in HTTP le immagini consentono di configurare dinamicamente un connettore HTTPS in ascolto sulla porta 8443; il connettore generato utilizzerà un keystore ed un truststore contenente dei certificati generati all`avvio del server. Tutti i files relativi alla comunicazione HTTPS vengono posizionate nella directory standard **/var/govway/pki**
-
-Un volta avviato il container tutte gli accessi descritti in precedenza saranno disponibili su protocollo HTTPS ed il server si presenterà con un certificato server col subject: 
-**_CN=test.govway.org,O=govway.org,C=it_** 
-
-emesso dalla Certification Authority:
-**_CN=GovWay CA,O=govway.org,C=it_** .
-
-La certification Authority utilizzata per generare tutti i files si trova nella sottodirectory **_CA_test/ca_** ; in particolare sarà possibile trovare: i certificati Server e Client, le relative chiavi private e le password utilizzate per porteggerle. 
-
-Nella sottodirectory _**esempi/**_ sono disponibili i certificati e le chiavi private di esempio, organizzate per funzione (client e server)
-- esempi/test_Client_1 e esempi/test_Client_2 e 
-  - **ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
-  - **ee_test_Client_X.cert.pem** : Certificato client numero 1 da utilizzare per test della piattaforma
-  - **ee_test_Client_X.key.pem** : Chiave privata RSA da accoppiare al certificato client numero 1
-  - **ee_test_Client_X.README.txt** : password utilizzata per la protezione della chiave privata del certificato
-
-- esempi/test.govway.org
-  - **ca_test.cert.pem** : Certificato x509 della CA comune a tutti i certificati
-  - **ee_test.govway.org.cert.pem** : Certificato server relativo al FQDN
-  - **ee_test.govway.org.key.pem** : Chiave privata RSA da accoppiare al certificato server
-  - **ee_test_.govway.org.README.txt** : password utilizzata per la protezione della chiave privata del certificato
-
-Nella sottodirectory _**stores/**_ chiavi e certificati sono raccolti in keystore utilizzati dal server tomcat per configurare il connettore HTTPS
-  - **keystore_server.jks** : Contiene chiave privata e certificato relativo al FQDN
-  - **truststore_server.jks**: Contiene il certifica della CA emettitrice di tutti i certificati di esempio
-  - **keystore_server.README.txt**: Password del keystore e della chiave privata
-
-### Script SQL
-Lo script SQL necessario ad inizializzare il database si trova nell'immagine alla directory standard **/database**; Per recuperalo si possono utilizzare i seguenti comandi :
-
-```
-docker run govway_compose:3.3.4.p2 true
-docker cp <Container ID>:/database/GovWay_setup.sql .
 ```
 
 
