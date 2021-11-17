@@ -9,7 +9,7 @@ Per semplificare il più possibile la preparazione dell'ambiente, sulla root del
 Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, ossia una immagine in modalità standalone realizzata a partire dalla release binaria disponibile su GitHub.
 Lo script di build consente did personalizzare l'immagine prodotta, impostando opportunamente i parametri, come descritti qui di seguito:
 
-```
+```console
 Usage build_image.sh [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]
 
 Options
@@ -37,35 +37,76 @@ Avanzate:
 ## Avvio immagine Docker
 
 Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine puo essere eseguita con i normali comandi di run docker:
-```
-./build_standalone.sh 
-docker run -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway -p 8080:8080 linkitaly/govway:3.3.5
+```shell
+./build_image.sh 
+docker run \
+  -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
+  -p 8080:8080 \
+linkitaly/govway:3.3.5
 
 ```
 
-In modalità orchestrate viene predisposta la directory **compose/** contenente uno scenario di test avviabile con docker-compose:
+In modalità orchestrate al termine delle operazioni di build, lo script predispone uno scenario di test avviabile con docker-compose, all'interno della directory **"compose"**; lo scenario di test può quindi essere avviato come segue:
 
 ```
-./build_compose.sh -d postgresql
+./build_image.sh -d postgresql
 cd compose
 docker-compose up
 ```
 
 Sotto la directory compose vengono create le sottodirectories **govway_conf** e **govway_log**, su cui il container montera' i path _**/etc/govway**_ ed _**/var/log/govway**_  rispettivamente.
-gli accessi sono previsti in protocollo HTTP sulla porta _**8080**_ .
+L'accesso è previsto in protocollo HTTP sulla porta _**8080**_ .
 
-### Personalizzazioni
+## Informazioni di Base
+
+A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i seguenti path:
+- **/etc/govway** path le properties di configurazione, 
+- **/var/log/govway** path dove vengono scritti i files di log 
+
+Se l'immagine è stata prodotta in modalità standalone: 
+- **/opt/hsqldb-2.6.1/hsqldb/database** database interno HSQL 
+
+si possono rendere queste location persistenti, montando devi volumi su queste directory.
+ 
+
+All'avvio del container, sia in modalià standalone che in modaliatà orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto che il database non è popolato, vengono utilizzatti gli scripts SQL interni, per avviare l'inizializzazione.
+Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql** o **/opt/postgresql**.
+
+```shell
+CONTAINER_ID=$(docker create linkitaly/govway:3.3.5_postgres)
+docker cp ${CONTAINER_ID}:/opt/postgresql .
+```
+
+Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+```
+ http://<indirizzo IP>:8080/govwayConsole/
+ http://<indirizzo IP>:8080/govwayMonitor/
+```
+L'account di default per l'interfaccia **govwayConsole** è:
+ * username: amministratore
+ * password: 123456
+
+L'account di default per l'interfaccia **govwayMonitor** è:
+ * username: operatore
+ * password: 123456
+
+Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
+```
+ http://<indirizzo IP>:8080/govway/
+```
+
+## Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento del container. Le variabili supportate al momento sono queste:
 
-##### Controlli all'avvio del container
+### Controlli all'avvio del container
 
-A runtime il container esegue i controlli di raggiungibilita del dtabase, di popolamento del database e di avvio di govway. Questi controlli possono essere abilitati o meno impostando le seguneti variabili d'ambiente:
+A runtime il container esegue i controlli di: raggiungibilita del database, di popolamento del database e di avvio di govway. Questi controlli possono essere abilitati o meno impostando le seguenti variabili d'ambiente:
 
-* GOVWAY_LIVE_DB_CHECK_SKIP: Esegue il controllo di raggiungibilità dei server database allo startup (default: FALSE)
+* GOVWAY_LIVE_DB_CHECK_SKIP: Salta il controllo di raggiungibilità dei server database allo startup (default: FALSE)
 
-* GOVWAY_READY_DB_CHECK_SKIP: Esegue il controllo di popolamento dei database allo startup (default: FALSE)
+* GOVWAY_READY_DB_CHECK_SKIP: Salta il controllo di popolamento dei database allo startup (default: FALSE)
 
-* GOVWAY_STARTUP_CHECK_SKIP:: Esegue il controllo di avvio di govway allo startup (default: FALSE)
+* GOVWAY_STARTUP_CHECK_SKIP:: Salta il controllo di avvio di govway allo startup (default: FALSE)
 
 
 E' possibile personalizzare il ciclo di controllo di raggiungibilità dei server database impostando le seguenti variabili d'ambiente:
@@ -80,7 +121,7 @@ E' possibile personalizzare il ciclo di controllo di avvio di govway impostando 
 * GOVWAY_STARTUP_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un controllo fallito ed il successivo  (default: 5)
 * GOVWAY_STARTUP_CHECK_MAX_RETRY: Numero massimo di controlli effettuati (default: 60)
 
-##### Connessione a database esterni 
+### Connessione a database esterni 
 
 * GOVWAY_DB_SERVER: nome dns o ip address del server database (obbligatorio in modalita orchestrate)
 * GOVWAY_DB_NAME: Nome del database (obbligatorio in modalita orchestrate)
@@ -111,7 +152,7 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
 
 
-##### Pooling connessioni
+### Pooling connessioni
 
 * GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite(default: 50)
 * GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
@@ -120,12 +161,11 @@ TRACCIAMENTO
 * GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
 * GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
 
-
-Se è stata utilizzata la suddivisione dei dati su piu' database, è possibile, in aggiunta al set di in aggiunta al set di variabili indicato in precedenza, fornire uno o piu di quelli indicati di seguito:  
+Se è stata utilizzata la suddivisione dei dati su piu' database, è possibile in aggiunta al set di variabili indicato in precedenza, fornire uno o più di quelli indicati di seguito:  
 
 CONFIGURAZIONE
 * GOVWAY_CONF_MAX_POOL (default: 10)
-* GOVWAY_CONF_MIN_POOL (default: 29
+* GOVWAY_CONF_MIN_POOL (default: 2)
 * GOVWAY_CONF_DS_BLOCKING_TIMEOUT (default: 30000)
 * GOVWAY_CONF_DS_CONN_PARAM (default: vuoto)
 * GOVWAY_CONF_DS_IDLE_TIMEOUT (default: 5)
@@ -146,38 +186,5 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DS_CONN_PARAM (default: vuoto)
 * GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
-
-## Informazioni di Base
-
-A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i seguenti path:
-- **/etc/govway** path le properties di configurazione, 
-- **/var/log/govway** path dove vengono scritti i files di log 
-
-Se l'immagine è stata prodotta in modalità standalone: 
-- **/opt/hsqldb-2.6.1/hsqldb/database** database interno HSQL 
-
-si possono rendere queste location persistenti, montando un volume vuoto su queste directory.
- 
-
-All'avvio del container, sia in modalià standalone che in modaliatà orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto che il datbase non è popolato, vengono utilizzatti gli scripts SQL interni, per avviare l'inizializzazione.
-Se si vuole esaminare gli script o riutilizzarli per un'altro database, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql** o **/opt/postgresql**.
-
-Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
-```
- http://<indirizzo IP>:8080/govwayConsole/
- http://<indirizzo IP>:8080/govwayMonitor/
-```
-L'account di default per l'interfaccia **govwayConsole** è
- * username: amministratore
- * password: 123456
-
-L'account di default per l'interfaccia **govwayMonitor** è
- * username: operatore
- * password: 123456
-
-Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
-```
- http://<indirizzo IP>:8080/govway/
-```
 
 
