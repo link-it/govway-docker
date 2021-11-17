@@ -26,9 +26,10 @@ mappa_dbinfostring[CONF]='%Database della Console di Gestione di GovWay'
 mappa_dbinfostring[TRAC]='%Archivio delle tracce e dei messaggi diagnostici emessi da GovWay'
 mappa_dbinfostring[STAT]='%Informazioni Statistiche sulle richieste gestite da GovWay'
 
+SQLTOOL_RC_FILE=/tmp/sqltool.rc
 
 # Pronto per reinizializzare file di configurazione
-> $HOME/sqltool.rc
+> ${SQLTOOL_RC_FILE}
 
 for DESTINAZIONE in RUN CONF TRAC STAT
 do
@@ -61,8 +62,8 @@ do
     ;;
     esac
 
-    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool"
-    cat - <<EOSQLTOOL >> $HOME/sqltool.rc
+    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    cat - <<EOSQLTOOL >> ${SQLTOOL_RC_FILE}
 
 urlid govwayDB${DESTINAZIONE}
 url ${JDBC_URL}
