@@ -34,11 +34,11 @@ oracle)
     elif [ ${#lista_jar[@]} -eq 1 ]
     then
         # è presente solo un jar: lo utilizzo
-        GOVWAY_DRIVER_JDBC="${lista_jar[0]}" 
+        ORACLE_DRIVER_JDBC="${lista_jar[0]}" 
     elif [ ${#lista_jar[@]} -gt 1 ]
     then
         # sono presenti diversi jar: provo a riconoscere la versione e ad usare il più recente 
-        GOVWAY_DRIVER_JDBC=
+        ORACLE_DRIVER_JDBC=
         MAX=0
         for j in ${lista_jar[@]}
         do
@@ -49,7 +49,7 @@ oracle)
                 OJDBC_VERSION="${OJDBC_VERSION_FULL%%[._-]*}"
                 # skippo ojdbc14 che va bene per java 1.4
                 [ ${OJDBC_VERSION} -eq 14 ] && continue
-                [ ${OJDBC_VERSION} -gt ${MAX} ] && GOVWAY_DRIVER_JDBC=$j && MAX=${OJDBC_VERSION}
+                [ ${OJDBC_VERSION} -gt ${MAX} ] && ORACLE_DRIVER_JDBC=$j && MAX=${OJDBC_VERSION}
             fi
         done
         if [ ${MAX} -eq  0 ]
@@ -59,10 +59,12 @@ oracle)
             for j in ${lista_jar[@]}
             do
                 AGE=$(stat "$j" --printf '%Z')
-                [ ${AGE} -gt ${MAX} ] && GOVWAY_DRIVER_JDBC=$j && MAX=${AGE}
+                [ ${AGE} -gt ${MAX} ] && ORACLE_DRIVER_JDBC=$j && MAX=${AGE}
             done
         fi
     fi
+    cp -f ${ORACLE_DRIVER_JDBC} /var/tmp/oracle-jdbc.jar
+    GOVWAY_DRIVER_JDBC='/var/tmp/oracle-jdbc.jar'
     GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL;'
 
@@ -172,6 +174,7 @@ ${JDBC_STAT_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=max-pool-size, value=\${env.GOVWAY_STAT_MAX_POOL:5})
 EOCLI
 
+
 if [ -d "${CLI_SCRIPT_CUSTOM_DIR}" -a -n "$(ls -A ${CLI_SCRIPT_CUSTOM_DIR} 2>/dev/null)" ]
 then
     cli=""
@@ -180,4 +183,10 @@ then
 		echo >> "${CLI_SCRIPT_FILE}"
         cat ${cli} >> "${CLI_SCRIPT_FILE}"
 	done
+fi
+
+# Cleanup
+if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+then
+    rm -f "${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar" ${GOVWAY_DRIVER_JDBC}
 fi
