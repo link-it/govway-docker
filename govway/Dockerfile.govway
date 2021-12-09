@@ -65,13 +65,20 @@ GOVWAY_ARCHIVES_TYPE=${govway_archives_type}
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${JBOSS_HOME}/standalone/deployments/
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/ /opt/${govway_database_vendor}
+
 ARG wildfly_custom_scripts=commons/standalone_wrapper.sh
 COPY ${wildfly_custom_scripts}* /var/tmp/custom_cli
 RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${JBOSS_HOME}/standalone/configuration || echo "Personalizzazioni wildfly non presenti"
 
+
 COPY commons/standalone_wrapper.sh commons/initgovway.sh commons/config_datasource.sh ${JBOSS_HOME}/bin/
 ARG govway_database_vendor=hsql
 ENV GOVWAY_DB_TYPE=${govway_database_vendor}
+
+ARG oracle_custom_jdbc=commons/standalone_wrapper.sh
+COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
+RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
+
 RUN echo -e 'embed-server --server-config=standalone.xml --std-out=echo \n\
 echo "Aggiungo Worker http" \n\
 /subsystem=io/worker=http-worker:add(task-max-threads=${env.WILDFLY_HTTP_WORKER-MAX-THREADS:50}) \n\

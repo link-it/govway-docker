@@ -17,7 +17,7 @@ declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildl
 
     
 case "${GOVWAY_DB_TYPE:-hsql}" in
-postgresql)
+postgresql|oracle)
 
     #
     # Sanity check variabili minime attese
@@ -35,7 +35,22 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
 "
         exit 1
     fi
-
+    if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+    then
+        if [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -o ! -f "${GOVWAY_ORACLE_JDBC_PATH}" ]
+        then
+            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Il path al driver jdbc oracle, non è stato indicato o non è leggibile: [GOVWAY_ORACLE_JDBC_PATH=${GOVWAY_ORACLE_JDBC_PATH}] "
+            exit 1
+        fi
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' -a "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
+        then
+            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Valore non consentito per la variabile GOVWAY_ORACLE_JDBC_URL_TYPE: [GOVWAY_ORACLE_JDBC_URL_TYPE=${GOVWAY_ORACLE_JDBC_URL_TYPE}]."
+            echo "       Valori consentiti: [ servicename , sid ]"
+            exit 1
+        fi
+    fi
     # Setting valori di Default per i datasource GOVWAY
     [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_DB_SERVER}"
     [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_DB_SERVER}"
@@ -83,9 +98,27 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
         [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
         [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
     fi
-    export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
-    export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
-    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+
+    if [ "${GOVWAY_DB_TYPE:-hsql}" == 'postgresql' ]
+    then
+        export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    else
+        export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
+        export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL;'
+        cp ${GOVWAY_ORACLE_JDBC_PATH}  "${GOVWAY_DRIVER_JDBC}"
+
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' ] 
+        then
+            export ORACLE_JDBC_SERVER_PREFIX='//'
+            export ORACLE_JDBC_DB_SEPARATOR='/'
+        else
+            export ORACLE_JDBC_SERVER_PREFIX=''
+            export ORACLE_JDBC_DB_SEPARATOR=':'
+        fi
+    fi
 ;;
 hsql|*)
     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"

@@ -25,6 +25,65 @@ postgresql)
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
 
 ;;
+oracle)
+    declare -a lista_jar=( /var/tmp/oracle_custom_jdbc/*.jar )
+    if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == '/var/tmp/oracle_custom_jdbc/*.jar' ]
+    then
+        echo "Driver JDBC oracle non presente"
+        exit 1
+    elif [ ${#lista_jar[@]} -eq 1 ]
+    then
+        # è presente solo un jar: lo utilizzo
+        GOVWAY_DRIVER_JDBC="${lista_jar[0]}" 
+    elif [ ${#lista_jar[@]} -gt 1 ]
+    then
+        # sono presenti diversi jar: provo a riconoscere la versione e ad usare il più recente 
+        GOVWAY_DRIVER_JDBC=
+        MAX=0
+        for j in ${lista_jar[@]}
+        do
+            JAR_NAME=$(basename $j)
+            if [ "${JAR_NAME:0:5}" == 'ojdbc' ]
+            then
+                OJDBC_VERSION_FULL="${JAR_NAME:5:(-4)}"
+                OJDBC_VERSION="${OJDBC_VERSION_FULL%%[._-]*}"
+                # skippo ojdbc14 che va bene per java 1.4
+                [ ${OJDBC_VERSION} -eq 14 ] && continue
+                [ ${OJDBC_VERSION} -gt ${MAX} ] && GOVWAY_DRIVER_JDBC=$j && MAX=${OJDBC_VERSION}
+            fi
+        done
+        if [ ${MAX} -eq  0 ]
+        then
+            # non ho trovato un jar con il nome giusto. Prendo il file con la data piu recente
+            MAX=0
+            for j in ${lista_jar[@]}
+            do
+                AGE=$(stat "$j" --printf '%Z')
+                [ ${AGE} -gt ${MAX} ] && GOVWAY_DRIVER_JDBC=$j && MAX=${AGE}
+            done
+        fi
+    fi
+    GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
+    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL;'
+
+    JDBC_RUN_URL='jdbc:oracle:thin:@\${ORACLE_JDBC_SERVER_PREFIX}\${env.GOVWAY_DB_SERVER}\${ORACLE_JDBC_DB_SEPARATOR}\${env.GOVWAY_DB_NAME}?\${env.GOVWAY_DS_CONN_PARAM:}'
+    JDBC_RUN_AUTH="/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=user-name, value=\${env.GOVWAY_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=password, value=\${env.GOVWAY_DB_PASSWORD})"
+
+
+    JDBC_CONF_URL='jdbc:oracle:thin:@\${ORACLE_JDBC_SERVER_PREFIX}\${env.GOVWAY_CONF_DB_SERVER}\${ORACLE_JDBC_DB_SEPARATOR}\${env.GOVWAY_CONF_DB_NAME}?\${env.GOVWAY_CONF_DS_CONN_PARAM:}' 
+    JDBC_CONF_AUTH="/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=user-name, value=\${env.GOVWAY_CONF_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=password, value=\${env.GOVWAY_CONF_DB_PASSWORD})"
+
+    JDBC_TRAC_URL='jdbc:oracle:thin:@\${ORACLE_JDBC_SERVER_PREFIX}\${env.GOVWAY_TRAC_DB_SERVER}\${ORACLE_JDBC_DB_SEPARATOR}\${env.GOVWAY_TRAC_DB_NAME}?\${env.GOVWAY_TRAC_DS_CONN_PARAM:}' 
+    JDBC_TRAC_AUTH="/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=user-name, value=\${env.GOVWAY_TRAC_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=password, value=\${env.GOVWAY_TRAC_DB_PASSWORD})"
+
+    JDBC_STAT_URL='jdbc:oracle:thin:@\${ORACLE_JDBC_SERVER_PREFIX}\${env.GOVWAY_STAT_DB_SERVER}\${ORACLE_JDBC_DB_SEPARATOR}\${env.GOVWAY_STAT_DB_NAME}?\${env.GOVWAY_STAT_DS_CONN_PARAM:}'
+    JDBC_STAT_AUTH="/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=user-name, value=\${env.GOVWAY_STAT_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
+
+;;
 hsql|*)
     GOVWAY_DRIVER_JDBC="opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
