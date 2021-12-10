@@ -70,47 +70,48 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
     [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || export GOVWAY_STAT_DB_PASSWORD="${GOVWAY_DB_PASSWORD}"
 
 
-    # Valori di default per i parametri opzionali dei datasource GOVWAY
-    if [ -n "${GOVWAY_DS_PSCACHESIZE}" ]
-    then
-        [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
-        [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
-        [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
-    fi
+    [ -n "${GOVWAY_CONF_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_CONF_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
+    [ -n "${GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
+    [ -n "${GOVWAY_STAT_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_STAT_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
 
-    if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
-    then
-        [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ] || export GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}" 
-        [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ] || export GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}" 
-        [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] || export GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}"
-    fi
+    # Settaggio Valori per i parametri dei datasource GOVWAY
+    ## Prepared statement cache size (default 20)
+    # [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
+    # [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
+    # [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
 
-    if [ -n "${GOVWAY_DS_IDLE_TIMEOUT}" ]
-    then
-        [ -n "${GOVWAY_CONF_DS_IDLE_TIMEOUT}" ] || export GOVWAY_CONF_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
-        [ -n "${GOVWAY_TRAC_DS_IDLE_TIMEOUT}" ] || export GOVWAY_TRAC_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
-        [ -n "${GOVWAY_STAT_DS_IDLE_TIMEOUT}" ] || export GOVWAY_STAT_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}"
-    fi
+    ## parametri di connessione URL JDBC (default vuoto)
+    [ -n "${GOVWAY_DS_CONN_PARAM}" ] &&  export DATASOURCE_CONN_PARAM="?${GOVWAY_DS_CONN_PARAM}"
+    if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+    if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+    if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]; then export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"; else export DATASOURCE_STAT_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+    
+    ## Idle timeout (default 5 min)
+    # [ -n "${GOVWAY_CONF_DS_IDLE_TIMEOUT}" ] || export GOVWAY_CONF_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
+    # [ -n "${GOVWAY_TRAC_DS_IDLE_TIMEOUT}" ] || export GOVWAY_TRAC_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 
+    # [ -n "${GOVWAY_STAT_DS_IDLE_TIMEOUT}" ] || export GOVWAY_STAT_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}"
 
-    if [ -n "${GOVWAY_DS_BLOCKING_TIMEOUT}" ]
-    then
-        [ -n "${GOVWAY_CONF_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_CONF_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
-        [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
-        [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
-    fi
+    ## blocking timeout (default 30000 ms)
+    # [ -n "${GOVWAY_CONF_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_CONF_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
+    # [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
+    # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
-    if [ "${GOVWAY_DB_TYPE:-hsql}" == 'postgresql' ]
-    then
+
+
+    case "${GOVWAY_DB_TYPE:-hsql}" in
+    postgresql)
         export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
-    else
+    ;;
+    oracle)
         export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
         export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
-        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL;'
-        cp ${GOVWAY_ORACLE_JDBC_PATH}  "${GOVWAY_DRIVER_JDBC}"
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
+        rm -rf "${GOVWAY_DRIVER_JDBC}"
+        cp "${GOVWAY_ORACLE_JDBC_PATH}"  "${GOVWAY_DRIVER_JDBC}"
 
-        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' ] 
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
         then
             export ORACLE_JDBC_SERVER_PREFIX='//'
             export ORACLE_JDBC_DB_SEPARATOR='/'
@@ -118,7 +119,8 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
             export ORACLE_JDBC_SERVER_PREFIX=''
             export ORACLE_JDBC_DB_SEPARATOR=':'
         fi
-    fi
+    ;;
+    esac
 ;;
 hsql|*)
     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
