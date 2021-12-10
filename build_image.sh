@@ -15,7 +15,7 @@ Installer Sorgente:
 -j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
--d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql ,oracle] , default: hsql)
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
 
 Avanzate:
@@ -23,6 +23,7 @@ Avanzate:
 -r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
 -m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
 -w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory indicata
+-o <DIRECTORY> : Utilizza il driver JDBC Oracle contenuto dentro la directory per configurare l'immagine (il file viene cancellato al termine)
 "
 }
 
@@ -44,12 +45,12 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_WIDLFLY_CLI=
-while getopts "ht:v:d:jl:i:a:r:m:w:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:o:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
-    d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle;;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
+    d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
         [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
@@ -133,16 +134,14 @@ if [ -z "$TAG" ]
 then
   REPO=linkitaly/govway
   TAGNAME=${VER:-3.3.5}
-  [ -n "${ARCHIVI}" -a ${ARCHIVI} != 'all' ] && TAGNAME=${VER:-3.3.5}_${ARCHIVI}
+  [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-3.3.5}_${ARCHIVI}
   
   # mantengo i nomi dei tag compatibili con quelli usati in precedenza
-  if [ ${DB:-hsql} == 'hsql' ]
-  then
-    TAG="${REPO}:${TAGNAME}"
-  elif [ ${DB:-hsql} == 'postgresql' ]
-  then
-    TAG="${REPO}:${TAGNAME}_postgres"
-  fi
+  case "${DB:-hsql}" in
+  hsql) TAG="${REPO}:${TAGNAME}" ;;
+  postresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
+  oracle) TAG="${REPO}:${TAGNAME}_oracle" ;;
+  esac
 fi
 
 if [ -n "${CUSTOM_WIDLFLY_CLI}" ]

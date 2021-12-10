@@ -50,15 +50,22 @@ do
     SERVER_HOST="${SERVER%:*}"
     
     case "${GOVWAY_DB_TYPE:-hsql}" in
+    oracle)
+        [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1521
+        JDBC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${SERVER_HOST}:${SERVER_PORT}${ORACLE_JDBC_DB_SEPARATOR}${DBNAME}"
+        START_TRANSACTION=""
+    ;;
     postgresql) 
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=5432
         JDBC_URL="jdbc:postgresql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}"
+        START_TRANSACTION="START TRANSACTION;"
     ;;
     hsql|*)
         DBNAME=govway
         DBUSER=govway
         DBPASS=govway
         JDBC_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/${DBNAME};shutdown=true"
+        START_TRANSACTION="START TRANSACTION;"
     ;;
     esac
 
@@ -108,17 +115,48 @@ EOSQLTOOL
         DB_POP=1
 
 
-        DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"
+        DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"    
+        
+        case "${GOVWAY_DB_TYPE:-hsql}" in
+        oracle)
+        EXIST_QUERY="SELECT count(table_name) FROM all_tables WHERE  LOWER(table_name)='${DBINFO,,}' AND LOWER(owner)='${DBUSER,,}';" 
+        ;;
+        *)         
         EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and (LOWER(table_catalog)='${DBNAME,,}' or LOWER(table_catalog)='public' );" 
-        EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
-        # in caso di problemi di connessione esco
-        [ $? -eq 0 ] || exit 1
+        ;;
+        hsql|*)
+        ;;
+        esac
+
+        DB_READY=1
+	    NUM_RETRY=0
+        while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt 5 ]
+	    do
+            EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
+            DB_READY=$?
+            NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
+            if [  ${DB_READY} -ne 0 ]
+            then
+                echo "INFO: Readyness base dati ${DESTINAZIONE} ... riprovo"
+                sleep 2s
+            fi
+        done
+        if [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt 5 ]
+        then
+            echo "FATAL: Readyness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo 10 secondi"
+		    exit 1
+        else
+            ##ripulisco gli spazi
+            EXIST="${EXIST// /}"
+        fi
         if [ ${EXIST} -eq 1 ]
         then
             #  possibile che il db sia usato per piu' funzioni devo verifcare che non sia gia' stato popolato
             DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
             POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
             POP=$(java ${INVOCAZIONE_CLIENT} --sql="${POP_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
+            POP="${POP// /}"
+
         fi    
         if [ -n "${POP}" -a ${POP} -eq 0 ]
         then
@@ -142,9 +180,23 @@ EOSQLTOOL
                     -e '/CREATE SEQUENCE seq_db_info/d' \
                     -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
                     -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
+		            -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                     -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
+		            -e '/CREATE TRIGGER trg_db_info/,/\//d' \
                     /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
                 fi
+            fi
+            #
+            # Aggiusto l'SQL per il database oracle 
+            #
+            if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+            then
+                # La sintassi dei trigger è problematica
+                # utilizzo la raw mode per evitare errori di sintassi
+                # http://www.hsqldb.org/doc/2.0/util-guide/sqltool-chapt.html#sqltool_raw-sect
+                #
+                sed -i -e '/^CREATE TRIGGER .*$/i \
+\\.' -e 's/^\/$/.\n:;/' /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
             fi
             #
             # Inizializzazione database ${DESTINAZIONE}
@@ -152,7 +204,7 @@ EOSQLTOOL
             echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione avviata."
             java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-START TRANSACTION;
+${START_TRANSACTION}
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}_init.sql
 COMMIT;
