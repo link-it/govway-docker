@@ -4,7 +4,6 @@ function printHelp() {
 echo "Usage $(basename $0) [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]"
 echo 
 echo "Options
-Options
 -t <TAG>       : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
                  NOTA: deve essere rispettata la sintassi <repository>:<tagname>
 -h             : Mostra questa pagina di aiuto

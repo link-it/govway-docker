@@ -2,7 +2,7 @@
 
 Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'ambiente consente di produrre immagini in due modalità:
 - **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
-- **orchestrate** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database Postgres esterno
+- **orchestrate** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database esterno
 
 ## Build immagine Docker
 Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente uno script di shell che si occupa di prepare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari. 
@@ -13,24 +13,27 @@ Lo script di build consente did personalizzare l'immagine prodotta, impostando o
 Usage build_image.sh [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]
 
 Options
--t : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
-     NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--h : Mostra questa pagina di aiuto
+-t <TAG>       : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
+                 NOTA: deve essere rispettata la sintassi <repository>:<tagname>
+-h             : Mostra questa pagina di aiuto
 
 Installer Sorgente:
--v : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
--l : Usa un'installer binario sul filesystem locale (incompatibile con -j)
--j : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
+-v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
+-l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
+-j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
--d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql ] , default: hsql)
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
+-e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
+-f <PATH>      : I posta il path interno utilizzato per i log di govway
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
 -r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
 -m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
 -w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory indicata
+-o <DIRECTORY> : Utilizza il driver JDBC Oracle contenuto dentro la directory per configurare l'immagine (il file viene cancellato al termine)
 
 ```
 
@@ -63,8 +66,8 @@ L'accesso è previsto in protocollo HTTP sulle porte _**8080, 8081, 8082**_ .
 ## Informazioni di Base
 
 A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i seguenti path:
-- **/etc/govway** path le properties di configurazione, 
-- **/var/log/govway** path dove vengono scritti i files di log 
+- **/etc/govway** path le properties di configurazione (riconfigurabile al momento del build). 
+- **/var/log/govway** path dove vengono scritti i files di log (riconfigurabile al momento del build).
 
 Se l'immagine è stata prodotta in modalità standalone: 
 - **/opt/hsqldb-2.6.1/hsqldb/database** database interno HSQL 
@@ -160,6 +163,12 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DB_USER (default: GOVWAY_DB_USER)
 * GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
 
+#### Connessione a database Oracle ####
+Quando ci si connette ad un databse esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
+
+
+* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (obbligatorio: deve essere obbligatoriamente montato come volume all'avvio)
+* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (defalt: SERVICENAME)
 
 ### Pooling connessioni
 
