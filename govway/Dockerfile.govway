@@ -80,9 +80,15 @@ COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
 RUN echo -e 'embed-server --server-config=standalone.xml --std-out=echo \n\
-echo "Aggiungo Worker http" \n\
-/subsystem=io/worker=http-worker:add(task-max-threads=${env.WILDFLY_HTTP_WORKER-MAX-THREADS:50}) \n\
-/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker,  value=http-worker) \n\
+echo "Aggiungo Workers http" \n\
+/subsystem=io/worker=http-in-worker:add(task-max-threads=${env.WILDFLY_HTTP_IN_WORKER-MAX-THREADS:100}) \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker, value=http-in-worker) \n\
+/subsystem=io/worker=http-out-worker:add(task-max-threads=${env.WILDFLY_HTTP_OUT_WORKER-MAX-THREADS:100}) \n\
+/socket-binding-group=standard-sockets/socket-binding=http-out:add(port=${jboss.http.out.port:8081}) \n\
+/subsystem=undertow/server=default-server/http-listener=fruizioni:add(socket-binding=http-out,  worker=http-out-worker) \n\
+/subsystem=io/worker=http-gest-worker:add(task-max-threads=${env.WILDFLY_HTTP_GEST_WORKER-MAX-THREADS:20}) \n\
+/socket-binding-group=standard-sockets/socket-binding=http-gest:add(port=${jboss.http.gest.port:8082}) \n\
+/subsystem=undertow/server=default-server/http-listener=gestione:add(socket-binding=http-gest, worker=http-gest-worker) \n\
 echo "Aggiungo Worker e Listener ajp" \n\
 /subsystem=io/worker=ajp-worker:add(task-max-threads=${env.WILDFLY_AJP_WORKER-MAX-THREADS:50}) \n\
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
@@ -94,6 +100,8 @@ echo "Abilitazione Non standard wrapper" \n\
 /subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
 echo "Correggo max post size" \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=fruizioni:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=gestione:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
 echo "Abilitazione Acces Log"\n\
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
@@ -165,5 +173,5 @@ ENV GOVWAY_DB_TYPE=${govway_database_vendor}
 
 COPY --from=source_image_built --chown=wildfly:0 /opt/ /opt/
 USER wildfly
-EXPOSE 8080 8009
+EXPOSE 8080 8081 8082 8009
 ENTRYPOINT [ "/opt/wildfly-18.0.1.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]

@@ -41,7 +41,10 @@ Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine 
 ./build_image.sh 
 docker run \
   -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
+  -e GOVWAY_POP_DB_SKIP=false
   -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8082:8082 \
 linkitaly/govway:3.3.5
 
 ```
@@ -55,7 +58,7 @@ docker-compose up
 ```
 
 Sotto la directory compose vengono create le sottodirectories **govway_conf** e **govway_log**, su cui il container montera' i path _**/etc/govway**_ ed _**/var/log/govway**_  rispettivamente.
-L'accesso è previsto in protocollo HTTP sulla porta _**8080**_ .
+L'accesso è previsto in protocollo HTTP sulle porte _**8080, 8081, 8082**_ .
 
 ## Informazioni di Base
 
@@ -70,14 +73,14 @@ si possono rendere queste location persistenti, montando devi volumi su queste d
  
 
 All'avvio del container, sia in modalià standalone che in modaliatà orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto che il database non è popolato, vengono utilizzatti gli scripts SQL interni, per avviare l'inizializzazione.
-Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql** o **/opt/postgresql**.
+Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.
 
 ```shell
 CONTAINER_ID=$(docker create linkitaly/govway:3.3.5_postgres)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
-Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulla porta **8080** che in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulle porte **8080**, **8081** e **8082** sia in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
 ```
  http://<indirizzo IP>:8080/govwayConsole/
  http://<indirizzo IP>:8080/govwayMonitor/
