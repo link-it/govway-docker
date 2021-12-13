@@ -4,8 +4,10 @@ GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME=${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME:=0
 GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME:=2}
 GOVWAY_LIVE_DB_CHECK_MAX_RETRY=${GOVWAY_LIVE_DB_CHECK_MAX_RETRY:=30}
 GOVWAY_LIVE_DB_CHECK_SKIP=${GOVWAY_LIVE_DB_CHECK_SKIP:=FALSE}
+GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME=${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME:=2}
+GOVWAY_READY_DB_CHECK_MAX_RETRY=${GOVWAY_READY_DB_CHECK_MAX_RETRY:=5}
 GOVWAY_READY_DB_CHECK_SKIP=${GOVWAY_READY_DB_CHECK_SKIP:=FALSE}
-
+GOVWAY_POP_DB_SKIP=${GOVWAY_POP_DB_SKIP:=TRUE}
 
 declare -A mappa_suffissi 
 mappa_suffissi[RUN]=''
@@ -130,7 +132,7 @@ EOSQLTOOL
 
         DB_READY=1
 	    NUM_RETRY=0
-        while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt 5 ]
+        while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_READY_DB_CHECK_MAX_RETRY} ]
 	    do
             EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
             DB_READY=$?
@@ -138,12 +140,12 @@ EOSQLTOOL
             if [  ${DB_READY} -ne 0 ]
             then
                 echo "INFO: Readyness base dati ${DESTINAZIONE} ... riprovo"
-                sleep 2s
+                sleep ${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME}
             fi
         done
-        if [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt 5 ]
+        if [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_READY_DB_CHECK_MAX_RETRY}  ]
         then
-            echo "FATAL: Readyness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo 10 secondi"
+            echo "FATAL: Readyness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo $(( ${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME} * ${GOVWAY_READY_DB_CHECK_MAX_RETRY} ))secondi"
 		    exit 1
         else
             ##ripulisco gli spazi
@@ -152,84 +154,91 @@ EOSQLTOOL
         if [ ${EXIST} -eq 1 ]
         then
             #  possibile che il db sia usato per piu' funzioni devo verifcare che non sia gia' stato popolato
-            DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
-            POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
+            #DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
+            #POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
+
+            POP_QUERY="SELECT count(*) FROM ${DBINFO};"
             POP=$(java ${INVOCAZIONE_CLIENT} --sql="${POP_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
+            ##ripulisco gli spazi
             POP="${POP// /}"
 
-        fi    
-        if [ -n "${POP}" -a ${POP} -eq 0 ]
-        then
-            echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
-            SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
-            mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
-            #
-            # Ignoro in caso il file SQL non esista
-            #
-            [ ! -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
-            /bin/cp -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
-            #
-            # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
-            #
-            if [ "${DESTINAZIONE}" != 'RUN' ]
+        fi
+        # Popolamento automatico del db 
+        if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
+        then 
+            if [ -n "${POP}" -a ${POP} -eq 0 ]
             then
-                if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${SERVER}" == "${GOVWAY_DB_SERVER}" && "${DBNAME}" == "${GOVWAY_DB_NAME}" ) ]]
-                then
-                    sed  \
-                    -e '/CREATE TABLE db_info/,/;/d' \
-                    -e '/CREATE SEQUENCE seq_db_info/d' \
-                    -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
-                    -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
-		            -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
-                    -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-		            -e '/CREATE TRIGGER trg_db_info/,/\//d' \
-                    /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
-                fi
-            fi
-            #
-            # Aggiusto l'SQL per il database oracle 
-            #
-            if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
-            then
-                # La sintassi dei trigger è problematica
-                # utilizzo la raw mode per evitare errori di sintassi
-                # http://www.hsqldb.org/doc/2.0/util-guide/sqltool-chapt.html#sqltool_raw-sect
+                echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
+                SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
+                mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
                 #
-                sed -i -e '/^CREATE TRIGGER .*$/i \
+                # Ignoro in caso il file SQL non esista
+                #
+                [ ! -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
+                /bin/cp -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+                #
+                # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
+                #
+                if [ "${DESTINAZIONE}" != 'RUN' ]
+                then
+                    if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${SERVER}" == "${GOVWAY_DB_SERVER}" && "${DBNAME}" == "${GOVWAY_DB_NAME}" ) ]]
+                    then
+                        sed  \
+                        -e '/CREATE TABLE db_info/,/;/d' \
+                        -e '/CREATE SEQUENCE seq_db_info/d' \
+                        -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
+                        -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
+                        -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
+                        -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
+                        -e '/CREATE TRIGGER trg_db_info/,/\//d' \
+                        /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                    fi
+                fi
+                #
+                # Aggiusto l'SQL per il database oracle 
+                #
+                if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+                then
+                    # La sintassi dei trigger è problematica
+                    # utilizzo la raw mode per evitare errori di sintassi
+                    # http://www.hsqldb.org/doc/2.0/util-guide/sqltool-chapt.html#sqltool_raw-sect
+                    #
+                    sed -i -e '/^CREATE TRIGGER .*$/i \
 \\.' -e 's/^\/$/.\n:;/' /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
-            fi
-            #
-            # Inizializzazione database ${DESTINAZIONE}
-            # 
-            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione avviata."
-            java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
+                fi
+                #
+                # Inizializzazione database ${DESTINAZIONE}
+                # 
+                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione avviata."
+                java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ${START_TRANSACTION}
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
 \i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}_init.sql
 COMMIT;
 EOSCRIPT
-            DB_POP=$?
+                DB_POP=$?
+            fi
+            if [ $POP -ge 1 -o $DB_POP -eq 0 ] 
+            then
+                #TODO: da valutare come soluzione per il caso delle connessioni in blocking-timeut
+                #      quando il db è hsql
+                #if  [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
+                #then
+                #    echo
+                #    echo "INFO: Readyness base dati ${DESTINAZIONE} ... setto dtatase in modalita MVCC."
+                #    java ${INVOCAZIONE_CLIENT} --continueOnErr=false --autoCommit govwayDB${DESTINAZIONE} << EOSCRIPT    
+    #SET DATABASE TRANSACTION CONTROL MVCC;
+    #EOSCRIPT
+                #fi
+                echo
+                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione completata."   
+            else
+                echo
+                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione fallita."
+                exit $DB_POP
+            fi 
         fi
-        if [ $POP -eq 1 -o $DB_POP -eq 0 ] 
-        then
-            #TODO: da valutare come soluzione per il caso delle connessioni in blocking-timeut
-            #      quando il db è hsql
-            #if  [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
-            #then
-            #    echo
-            #    echo "INFO: Readyness base dati ${DESTINAZIONE} ... setto dtatase in modalita MVCC."
-            #    java ${INVOCAZIONE_CLIENT} --continueOnErr=false --autoCommit govwayDB${DESTINAZIONE} << EOSCRIPT    
-#SET DATABASE TRANSACTION CONTROL MVCC;
-#EOSCRIPT
-            #fi
-            echo
-            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione completata."   
-        else
-            echo
-            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione fallita."
-            exit $DB_POP
-        fi 
     fi
 done
 

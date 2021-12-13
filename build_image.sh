@@ -189,6 +189,7 @@ services:
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_POP_DB_SKIP=false
   database:
     container_name: pg_govway_${SHORT}
     image: postgres:13
