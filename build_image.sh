@@ -209,6 +209,8 @@ EOYAML
   elif [ "${DB:-hsql}" == 'oracle' ]
   then
     mkdir -p compose/oracle_startup
+    mkdir compose/ORADATA
+    chmod 777 compose/ORADATA
     cat - << EOSQL > compose/oracle_startup/create_db_and_user.sql
 alter session set container = GOVWAYPDB;
 -- USER GOVWAY
@@ -221,6 +223,7 @@ GRANT "RESOURCE" TO "GOVWAY" ;
 EOSQL
 
     cat - << EOYAML >> compose/docker-compose.yaml
+        # Il driver deve essere compiato manualmente nella directory corrente
         - ./ojdbc10.jar:/tmp/ojdbc10.jar 
     environment:
         - GOVWAY_DB_SERVER=or_govway_${SHORT}
@@ -230,8 +233,9 @@ EOSQL
         - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc10.jar
         - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
         - GOVWAY_POP_DB_SKIP=false
+        # il container oracle puo impiegare anche 20 minuti ad avviarsi
         - GOVWAY_LIVE_DB_CHECK_MAX_RETRY=120
-        - GOVWAY_READY_DB_CHECK_MAX_RETRY=150
+        - GOVWAY_READY_DB_CHECK_MAX_RETRY=600
   database:
     container_name: or_govway_3.3.5_oracle
     image: container-registry.oracle.com/database/enterprise:19.3.0.0
@@ -240,6 +244,7 @@ EOSQL
       - ORACLE_PDB=GOVWAYPDB
       - ORACLE_PWD=123456
     volumes:
+       - ./ORADATA:/opt/oracle/oradata
        - ./oracle_startup:/opt/oracle/scripts/startup
     ports:
        - 1521:1521
