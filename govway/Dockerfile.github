@@ -78,19 +78,24 @@ rm -rf /tmp/WEB-INF
 
 
 RUN set -eux;\
+if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-config_local.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/; \
-rm -rf /tmp/WEB-INF
+rm -rf /tmp/WEB-INF; \
+fi
 
 
 RUN set -eux;\
+if [ -f "/tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-monitor_local.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/; \
-rm -rf /tmp/WEB-INF
+rm -rf /tmp/WEB-INF; \
+fi
+
 
 
 RUN set -eux;\
