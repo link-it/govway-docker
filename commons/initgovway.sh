@@ -50,7 +50,10 @@ do
     fi
     SERVER_PORT="${SERVER#*:}"
     SERVER_HOST="${SERVER%:*}"
-    
+    USE_RUN_DB=FALSE
+    [ "${DESTINAZIONE}" != 'RUN' -a "${SERVER}" == "${GOVWAY_DB_SERVER}" -a "${DBNAME}" == "${GOVWAY_DB_NAME}" ] && USE_RUN_DB=TRUE
+
+
     case "${GOVWAY_DB_TYPE:-hsql}" in
     oracle)
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1521
@@ -166,7 +169,8 @@ EOSQLTOOL
         # Popolamento automatico del db 
         if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
         then 
-            if [ -n "${POP}" -a ${POP} -eq 0 ]
+            if [ -n "${POP}" -a ${POP} -eq 0 ] \
+            || [ -n "${POP}" -a ${POP} -ge 1 -a "${USE_RUN_DB^^}" == "TRUE" ]
             then
                 echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
                 SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
@@ -181,7 +185,7 @@ EOSQLTOOL
                 #
                 if [ "${DESTINAZIONE}" != 'RUN' ]
                 then
-                    if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${SERVER}" == "${GOVWAY_DB_SERVER}" && "${DBNAME}" == "${GOVWAY_DB_NAME}" ) ]]
+                    if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${USE_RUN_DB}" == "TRUE" ) ]]
                     then
                         sed  \
                         -e '/CREATE TABLE db_info/,/;/d' \
