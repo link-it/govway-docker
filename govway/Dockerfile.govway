@@ -1,7 +1,8 @@
 # stage sorgente da utilizzare per il build dell'immagine finale
 ARG govway_fullversion
 ARG source_image=linkitaly/govway-installer
-
+ARG govway_home=/etc/govway
+ARG govway_log=/var/log/govway
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
 FROM ${source_image}:${govway_fullversion} AS source_image_full
@@ -12,12 +13,13 @@ FROM centos:centos7.9.2009 AS source_image_built
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
 ARG govway_fullversion
-
+ARG govway_home
+ARG govway_log
 
 USER root
-ENV GOVWAY_HOME=/etc/govway \
-GOVWAY_HOME_HTTPS=/etc/govway_https \
-GOVWAY_LOGDIR=/var/log/govway \
+ENV GOVWAY_HOME=${govway_home} \
+GOVWAY_HOME_HTTPS=${govway_home}_https \
+GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.6.1 \
 POSTGRES_JDBC_VERSION=42.3.0 \
@@ -127,12 +129,14 @@ FROM centos:centos7.9.2009
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
 ARG govway_fullversion
+ARG govway_home
+ARG govway_log
 
 
 USER root
-ENV GOVWAY_HOME=/etc/govway \
-GOVWAY_HOME_HTTPS=/etc/govway_https \
-GOVWAY_LOGDIR=/var/log/govway \
+ENV GOVWAY_HOME=${govway_home} \
+GOVWAY_HOME_HTTPS=${govway_home}_https \
+GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.6.1 \
 POSTGRES_JDBC_VERSION=42.3.0 \

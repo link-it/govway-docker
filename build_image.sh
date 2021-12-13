@@ -17,6 +17,8 @@ Installer Sorgente:
 Personalizzazioni:
 -d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
+-e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
+-f <PATH>      : I posta il path interno utilizzato per i log di govway
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
@@ -45,7 +47,7 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_WIDLFLY_CLI=
-while getopts "ht:v:d:jl:i:a:r:m:w:o:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -77,7 +79,8 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:" opt; do
         [ ! -d "${CUSTOM_ORACLE_JDBC}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_ORACLE_JDBC}]."; exit 3; }
         [ -z "$(ls -A ${CUSTOM_ORACLE_JDBC})" ] && { echo "la directory [${CUSTOM_ORACLE_JDBC}] e' vuota.";  }
         ;;
-
+    e) CUSTOM_GOVWAY_HOME="${OPTARG}" ;;
+    f) CUSTOM_GOVWAY_LOG="${OPTARG}" ;;
     h) printHelp
        exit 0
        ;;
@@ -97,6 +100,8 @@ DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
 [ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
+[ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
+[ -n "${CUSTOM_GOVWAY_LOG}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_log=${CUSTOM_GOVWAY_LOG}")
 if [ -n "${CUSTOM_RUNTIME}" ]
 then
   cp -r ${CUSTOM_RUNTIME}/ buildcontext/runtime
@@ -164,7 +169,7 @@ RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
 
 
-if [ ${DB:-hsql} != 'hsql' ]
+if [ "${DB:-hsql}" != 'hsql' ]
 then
   mkdir -p compose/govway_{conf,log}
   chmod 777 compose/govway_{conf,log}
@@ -176,16 +181,19 @@ services:
   govway:
     container_name: govway_${SHORT}
     image: ${TAG}
+    depends_on:
+        - database
     ports:
         - 8080:8080
     volumes:
-        - ./govway_conf:/etc/govway
-        - ./govway_log:/var/log/govway
-    depends_on:
-        - database
+        - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
+        - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
+EOYAML
+  if [ "${DB:-hsql}" == 'postgresql' ]
+  then
+    cat - << EOYAML >> compose/docker-compose.yaml
     environment:
         - GOVWAY_DB_SERVER=pg_govway_${SHORT}
-        - GOVWAY_DB_PORT=5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
@@ -198,6 +206,44 @@ services:
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 EOYAML
+  elif [ "${DB:-hsql}" == 'oracle' ]
+  then
+    mkdir -p compose/oracle_startup
+    cat - << EOSQL > compose/oracle_startup/create_db_and_user.sql
+alter session set container = GOVWAYPDB;
+-- USER GOVWAY
+CREATE USER "GOVWAY" IDENTIFIED BY "GOVWAY"  
+DEFAULT TABLESPACE "USERS"
+TEMPORARY TABLESPACE "TEMP";
+ALTER USER "GOVWAY" QUOTA UNLIMITED ON "USERS";
+GRANT "CONNECT" TO "GOVWAY" ;
+GRANT "RESOURCE" TO "GOVWAY" ;
+EOSQL
 
+    cat - << EOYAML >> compose/docker-compose.yaml
+        - ./ojdbc10.jar:/tmp/ojdbc10.jar 
+    environment:
+        - GOVWAY_DB_SERVER=or_govway_${SHORT}
+        - GOVWAY_DB_NAME=GOVWAYPDB
+        - GOVWAY_DB_USER=GOVWAY
+        - GOVWAY_DB_PASSWORD=GOVWAY
+        - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc10.jar
+        - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
+        - GOVWAY_POP_DB_SKIP=false
+        - GOVWAY_LIVE_DB_CHECK_MAX_RETRY=120
+        - GOVWAY_READY_DB_CHECK_MAX_RETRY=150
+  database:
+    container_name: or_govway_3.3.5_oracle
+    image: container-registry.oracle.com/database/enterprise:19.3.0.0
+    shm_size: 2g
+    environment:
+      - ORACLE_PDB=GOVWAYPDB
+      - ORACLE_PWD=123456
+    volumes:
+       - ./oracle_startup:/opt/oracle/scripts/startup
+    ports:
+       - 1521:1521
+EOYAML
+  fi
 fi
 exit 0

@@ -3,6 +3,9 @@ FROM centos:centos7.9.2009
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
+ARG govway_home=/etc/govway
+ARG govway_log=/var/log/govway
+
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
@@ -15,9 +18,9 @@ yum -y update \
 ENV LANG=it_IT.UTF-8 \
 JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
 PATH=$JAVA_HOME/bin:$PATH \
-GOVWAY_HOME=/etc/govway \
-GOVWAY_HOME_HTTPS=/etc/govway_https \
-GOVWAY_LOGDIR=/var/log/govway \
+GOVWAY_HOME=${govway_home} \
+GOVWAY_HOME_HTTPS=${govway_home}_https \
+GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} 
 
 COPY commons/ant.install.properties.template /var/tmp/
