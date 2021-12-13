@@ -146,7 +146,13 @@ JBOSS_HOME=/opt/wildfly-18.0.1.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
-useradd wildfly; \
+echo -e "\n\
+wildfly\tsoft\tnofile\t8192\n\
+wildfly\thard\tnofile\t8192\n\
+wildfly\tsoft\tnproc\t4096\n\
+wildfly\thard\tnproc\t4096\n\
+" >> /etc/security/limits.conf \
+&& useradd wildfly; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 chown -R wildfly:0 ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
