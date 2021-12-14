@@ -17,7 +17,7 @@ Personalizzazioni:
 -d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
--f <PATH>      : I posta il path interno utilizzato per i log di govway
+-f <PATH>      : Imposta il path interno utilizzato per i log di govway
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
