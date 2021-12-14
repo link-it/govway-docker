@@ -5,14 +5,19 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.5`, `3.3.5_standalone`, `latest`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
-* [`3.3.5_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
-* [`3.3.5_run_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
-* [`3.3.5_manager_postgres`, (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
-* [`3.3.4.p2`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/standalone_bin/Dockerfile)
-* [`3.3.4.p2_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/compose_bin/Dockerfile)
-* [`3.3.4.p1`, (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p1/standalone_bin/Dockerfile)
-* [`3.3.4.p1_postgres`, (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p1/compose_bin/Dockerfile)
+* [`3.3.5.p1`, `3.3.5.p1_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p1/govway/Dockerfile.govway)
+* [`3.3.5`, `3.3.5_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.5_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5/govway/Dockerfile.govway)
+* [`3.3.4.p2` (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/standalone_bin/Dockerfile)
+* [`3.3.4.p2_postgres` (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/compose_bin/Dockerfile)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -33,13 +38,13 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 - **standalone**: fornisce un ambiente di prova di GovWay funzionante dove i dati di configurazione e tracciamento vengono mantenuti su un database HSQL interno al container;
 
-- **postgres**: fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database postgresql gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
+- **postgres** o **oracle**: fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database postgresql o oracle, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
 
-Esistono ulteriori immagini che consentono di mantenere i dati su un database postgresql esterno, ma suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
+Esistono ulteriori immagini che consentono di mantenere i dati su un database postgresql o oracle esterno, ma suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
 
-- **postgres_run**: contiene solamente il componente runtime di api gateway;
+- **run_postgres** o **run_oracle**: contiene solamente il componente runtime di api gateway;
 
-- **postgres_manager**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
+- **manager_postgres** o **manager_oracle**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
 
 
 ## Avviare l'immagine standalone
@@ -47,14 +52,16 @@ Esistono ulteriori immagini che consentono di mantenere i dati su un database po
 Eseguire il _run_ dell'immagine:
 
 ```console 
-$ docker run linkitaly/govway
+$ docker run \
+  -e GOVWAY_POP_DB_SKIP=false \
+linkitaly/govway
 ```
 
 I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo AJP sulle porte 8080 e 8009 rispettivamente:
 
-
 ```console 
 $ docker run \
+ -e GOVWAY_POP_DB_SKIP=false \
  -p 8080:8080 -p 8009:8009 \
 linkitaly/govway
 ```
@@ -68,49 +75,69 @@ I files, interni all'immagine, utilizzati da GovWay sono:
 
 Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
-
 ```console 
 $ mkdir ~/govway_home
 $ mkdir ~/govway_log
 $ mkdir ~/govway_db
 $ docker run \
- -p 8080:8080 \
+ -e GOVWAY_POP_DB_SKIP=false \
+ -p 8080:8080 -p 8009:8009 \
  -v ~/govway_home:/etc/govway \
  -v ~/govway_log:/var/log/govway \
  -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database
 linkitaly/govway
 ```
+Nota: abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
+
 
 ## Avviare una delle immagini orchestrate
 
-Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente:
+Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql:
 
 ```yaml
 version: '2'
  services:
   govway:
-    container_name: govway-3.3.5_postgres
-    image: linkitaly/govway:3.3.5_postgres
+    container_name: govway
+    image: linkitaly/govway:3.3.5.p1_postgres
     ports:
         - 8080:8080
+        - 8009:8009
     volumes:
-        - ./govway_conf:/etc/govway
-        - ./govway_log:/var/log/govway
-    depends_on:
-        - database
+        - ~/govway_home:/etc/govway
+        - ~/govway_log:/var/log/govway
     environment:
-        - GOVWAY_DB_SERVER=pg_govway-3.3.5_postgres
+        - GOVWAY_DB_SERVER=postgres_hostname:5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
-  database:
-    container_name: pg_govway-3.3.5_postgres
-    image: postgres:13
-    environment:
-        - POSTGRES_DB=govwaydb
-        - POSTGRES_USER=govway
-        - POSTGRES_PASSWORD=govway
+        - GOVWAY_POP_DB_SKIP=true
 ```
+
+Un esempio di docker-compose per oracle è invece il seguente:
+
+```yaml
+version: '2'
+ services:
+  govway:
+    container_name: govway
+    image: linkitaly/govway:3.3.5.p1_oracle
+    ports:
+        - 8080:8080
+        - 8009:8009
+    volumes:
+        - ~/govway_home:/etc/govway
+        - ~/govway_log:/var/log/govway
+        - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
+    environment:
+        - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
+        - GOVWAY_DB_SERVER=oracle_hostname:1521
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_ORACLE_JDBC_URL_TYPE=ServiceName
+        - GOVWAY_POP_DB_SKIP=true
+
 
 I containers vengono avviati con i seguenti comandi:
 
