@@ -137,6 +137,7 @@ version: '2'
         - GOVWAY_DB_PASSWORD=govway
         - GOVWAY_ORACLE_JDBC_URL_TYPE=ServiceName
         - GOVWAY_POP_DB_SKIP=true
+```
 
 
 I containers vengono avviati con i seguenti comandi:
