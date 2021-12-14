@@ -83,7 +83,14 @@ CONTAINER_ID=$(docker create linkitaly/govway:3.3.5_postgres)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
-Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**HTTP**_ sulle porte **8080**, **8081** e **8082** sia in _**AJP**_ sulla porta **8009**; queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine.  Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+- **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
+- **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
+- **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
+
+Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine. 
+Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+
 ```
  http://<indirizzo IP>:8080/govwayConsole/
  http://<indirizzo IP>:8080/govwayMonitor/
@@ -168,9 +175,9 @@ Quando ci si connette ad un databse esterno Oracle devono essere indicate anche 
 
 
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (obbligatorio: deve essere obbligatoriamente montato come volume all'avvio)
-* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (defalt: SERVICENAME)
+* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
-### Pooling connessioni
+### Pooling connessioni database
 
 * GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite(default: 50)
 * GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
@@ -205,4 +212,8 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
 
-
+### Pooling connessioni Http
+I listener HTTP configurati sul wildfly possono 
+* WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in erogazione, (default: 100)
+* WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in fruizione, (default: 100)
+* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, (default: 20)
