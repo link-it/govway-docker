@@ -64,6 +64,7 @@ rm -rf /tmp/properties
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/* ; \
 cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/console_local.properties >> /tmp/WEB-INF/classes/console_local.properties; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF
@@ -72,6 +73,7 @@ rm -rf /tmp/WEB-INF
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/* ; \
 cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/monitor_local.properties >> /tmp/WEB-INF/classes/monitor_local.properties; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF
@@ -96,6 +98,14 @@ zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAP
 rm -rf /tmp/WEB-INF; \
 fi
 
+RUN set -eux;\
+if [ -f "/tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war" ]; then \
+unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war WEB-INF/classes/* ; \
+cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
+cd /tmp; \
+zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war WEB-INF/classes/; \
+rm -rf /tmp/WEB-INF; \
+fi
 
 
 RUN set -eux;\
