@@ -90,7 +90,7 @@ fi
 
 
 RUN set -eux;\
-if [ -f "/tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war" ]; then \
+if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-monitor_local.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
@@ -99,7 +99,7 @@ rm -rf /tmp/WEB-INF; \
 fi
 
 RUN set -eux;\
-if [ -f "/tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war" ]; then \
+if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
 cd /tmp; \
