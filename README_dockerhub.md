@@ -5,13 +5,13 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.6`, `3.3.6_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
-* [`3.3.6_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6/govway/Dockerfile.govway)
+* [`3.3.6.p1`, `3.3.6.p1_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
+* [`3.3.6.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
 * [`3.3.5.p2`, `3.3.5.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
 * [`3.3.5.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
 * [`3.3.5.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
