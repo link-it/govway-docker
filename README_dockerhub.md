@@ -5,6 +5,13 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
+* [`3.3.7`, `3.3.7_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
+* [`3.3.7_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
 * [`3.3.6.p1`, `3.3.6.p1_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
 * [`3.3.6.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
 * [`3.3.6.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
@@ -19,8 +26,6 @@
 * [`3.3.5.p2_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
 * [`3.3.5.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
 * [`3.3.5.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.4.p2` (standalone_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/standalone_bin/Dockerfile)
-* [`3.3.4.p2_postgres` (compose_bin/Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.4.p2/compose_bin/Dockerfile)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
