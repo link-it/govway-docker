@@ -9,7 +9,7 @@ echo "Options
 -h             : Mostra questa pagina di aiuto
 
 Installer Sorgente:
--v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
+-v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: ${LATEST_GOVPAY_RELEASE})
 -l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
 -j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
 
@@ -46,6 +46,10 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_WIDLFLY_CLI=
+
+LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
+LATEST_GOVPAY_RELEASE="${LATEST_LINK##*/}"
+
 while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
@@ -96,7 +100,7 @@ mkdir -p buildcontext/
 cp -fr commons buildcontext/
 
 DOCKERBUILD_OPT=()
-DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-3.3.5}")
+DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVPAY_RELEASE}}")
 [ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
@@ -126,7 +130,7 @@ fi
 
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
-  -t linkitaly/govway-installer_${DB:-hsql}:${VER:-3.3.5} \
+  -t linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVPAY_RELEASE}} \
   -f ${INSTALLER_DOCKERFILE} buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
@@ -137,13 +141,13 @@ RET=$?
 if [ -z "$TAG" ] 
 then
   REPO=linkitaly/govway
-  TAGNAME=${VER:-3.3.5}
-  [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-3.3.5}_${ARCHIVI}
+  TAGNAME=${VER:-${LATEST_GOVPAY_RELEASE}}
+  [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVPAY_RELEASE}}_${ARCHIVI}
   
   # mantengo i nomi dei tag compatibili con quelli usati in precedenza
   case "${DB:-hsql}" in
   hsql) TAG="${REPO}:${TAGNAME}" ;;
-  postresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
+  postgresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
   oracle) TAG="${REPO}:${TAGNAME}_oracle" ;;
   esac
 fi
@@ -236,7 +240,7 @@ EOSQL
         - GOVWAY_LIVE_DB_CHECK_MAX_RETRY=120
         - GOVWAY_READY_DB_CHECK_MAX_RETRY=600
   database:
-    container_name: or_govway_3.3.5_oracle
+    container_name: or_govway_${LATEST_GOVPAY_RELEASE}_oracle
     image: container-registry.oracle.com/database/enterprise:19.3.0.0
     shm_size: 2g
     environment:
