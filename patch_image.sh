@@ -49,7 +49,7 @@ cp -fr commons buildcontext/
 
 
   
-cp -r ${PATCHDIR} buildcontext/PATCH
+cp -rL ${PATCHDIR} buildcontext/PATCH
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
 --build-arg target_image=${SOURCE} \
