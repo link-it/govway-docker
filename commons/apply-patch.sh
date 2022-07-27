@@ -3,7 +3,7 @@
 for ARCHIVETOPATCH in $(ls ${JBOSS_HOME}/standalone/deployments/*.?ar)
 do
     ARCHIVENAME="$(basename ${ARCHIVETOPATCH})"
-    if [ -d "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch" ] 
+    if [ -d "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch" -o -L "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch" ] 
     then
         # Incorporo nuovi files
         cd "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch"
