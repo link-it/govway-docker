@@ -84,15 +84,15 @@ I files, interni all'immagine, utilizzati da GovWay sono:
 Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
 ```console 
-$ mkdir ~/govway_home
+$ mkdir ~/govway_conf
 $ mkdir ~/govway_log
 $ mkdir ~/govway_db
 $ docker run \
  -e GOVWAY_POP_DB_SKIP=false \
  -p 8080:8080 -p 8009:8009 \
- -v ~/govway_home:/etc/govway \
+ -v ~/govway_conf:/etc/govway \
  -v ~/govway_log:/var/log/govway \
- -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database
+ -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database \
 linkitaly/govway
 ```
 Nota: abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
@@ -112,7 +112,7 @@ version: '2'
         - 8080:8080
         - 8009:8009
     volumes:
-        - ~/govway_home:/etc/govway
+        - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
     environment:
         - GOVWAY_DB_SERVER=postgres_hostname:5432
@@ -134,7 +134,7 @@ version: '2'
         - 8080:8080
         - 8009:8009
     volumes:
-        - ~/govway_home:/etc/govway
+        - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
         - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
     environment:
@@ -151,8 +151,8 @@ version: '2'
 I containers vengono avviati con i seguenti comandi:
 
 ```console
-$ mkdir -p govway_{conf,log}
-$ chmod 777 govway_{conf,log}
+$ mkdir -p ~/govway_{conf,log}
+$ chmod 777 ~/govway_{conf,log}
 $ docker-compose up
 ```
 
