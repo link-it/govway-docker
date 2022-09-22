@@ -169,8 +169,14 @@ EOSQLTOOL
         # Popolamento automatico del db 
         if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
         then 
-            if [ -n "${POP}" -a ${POP} -eq 0 ] \
-            || [ -n "${POP}" -a ${POP} -ge 1 -a "${USE_RUN_DB^^}" == "TRUE" ]
+            if [ "${USE_RUN_DB^^}" == "TRUE" ]
+            then
+                MAX_COUNT=3
+                [ ${DESTINAZIONE} == 'CONF' ] && MAX_COUNT=1
+            else
+                MAX_COUNT=1
+            fi
+            if [ -n "${POP}" -a ${POP} -lt ${MAX_COUNT} ]
             then
                 echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
                 SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
