@@ -130,7 +130,7 @@ hsql|*)
 esac
 
 # Recupero l'indirizzo ip usato dal container (utilizzato dalle funzionalita di clustering / orchestration)
-export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*$" /etc/hosts|head -n 1|awk '{print $1}')
+export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*" /etc/hosts|head -n 1|awk '{print $1}')
 
 #
 # Startup
