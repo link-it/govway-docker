@@ -48,12 +48,31 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 - **postgres** o **oracle**: fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database postgresql o oracle, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
 
+### Ambienti run e manager
+
 Esistono ulteriori immagini che consentono di mantenere i dati su un database postgresql o oracle esterno, ma suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
 
 - **run_postgres** o **run_oracle**: contiene solamente il componente runtime di api gateway;
 
 - **manager_postgres** o **manager_oracle**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
 
+Le console disponibili nell'ambiente manager hanno la necessità di accedere ai seguenti servizi esposti dai nodi run:
+
+- servizio 'check': consente di monitorare il servizio dei nodi run; è possibile invocare il contesto "/govway/check" di un qualsiasi nodo run (riferendo l'endpoint di esposizione del servizio dei nodi run) o un servizio fornito dal container;
+
+- servizio 'proxy': consente di inviare un comando ad ogni nodo run attivo; deve essere indirizzato il servizio "/govway/proxy" di un qualsiasi nodo attivo.
+
+L'indirizzamento utilizzato deve essere definito nel file '/etc/govway/govway.nodirun.properties' come segue:
+
+```
+# ===================================================================
+# Indirizzamento servizi dei nodi 'run' 
+# Servizio 'proxy'
+GovWay.remoteAccess.url=http://<service-name>/govway/proxy
+# Servizio 'check'
+GovWay.remoteAccess.checkStatus.url=http://<service-name>/govway/check
+# ===================================================================
+```
 
 ## Avviare l'immagine standalone
 
@@ -62,6 +81,7 @@ Eseguire il _run_ dell'immagine:
 ```console 
 $ docker run \
   -e GOVWAY_POP_DB_SKIP=false \
+  -e TZ=Europe/Rome \
 linkitaly/govway
 ```
 
@@ -70,6 +90,7 @@ I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP,
 ```console 
 $ docker run \
  -e GOVWAY_POP_DB_SKIP=false \
+ -e TZ=Europe/Rome \
  -p 8080:8080 -p 8009:8009 \
 linkitaly/govway
 ```
@@ -89,6 +110,7 @@ $ mkdir ~/govway_log
 $ mkdir ~/govway_db
 $ docker run \
  -e GOVWAY_POP_DB_SKIP=false \
+ -e TZ=Europe/Rome \
  -p 8080:8080 -p 8009:8009 \
  -v ~/govway_conf:/etc/govway \
  -v ~/govway_log:/var/log/govway \
@@ -115,6 +137,7 @@ version: '2'
         - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
     environment:
+        - TZ=Europe/Rome
         - GOVWAY_DB_SERVER=postgres_hostname:5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
@@ -138,6 +161,7 @@ version: '2'
         - ~/govway_log:/var/log/govway
         - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
     environment:
+        - TZ=Europe/Rome
         - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
         - GOVWAY_DB_SERVER=oracle_hostname:1521
         - GOVWAY_DB_NAME=govwaydb
