@@ -182,6 +182,12 @@ ARG govway_database_vendor=hsql
 ENV GOVWAY_DB_TYPE=${govway_database_vendor}
 
 COPY --from=source_image_built --chown=wildfly:0 /opt/ /opt/
+RUN mkdir -p /usr/share/licenses/govway/third-party-licenses
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/LICENSE* \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/COPYING* \
+/usr/share/licenses/govway/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 USER wildfly
 EXPOSE 8080 8081 8082 8009
 ENTRYPOINT [ "/opt/wildfly-18.0.1.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]
