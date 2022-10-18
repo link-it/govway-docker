@@ -117,7 +117,7 @@ $ docker run \
  -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database \
 linkitaly/govway
 ```
-Nota: abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
+> **_NOTA:_** abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
 
 
 ## Avviare una delle immagini orchestrate
@@ -181,3 +181,29 @@ $ docker-compose up
 ```
 
 Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+
+
+## Aggiornamento di Versione
+
+Un upgrade richiede l'aggiornamento della base dati.
+
+### Ambiente orchestrato
+
+Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o oracle) o un'immagine standalone con database montato su un volume esterno, per effettuare l'upgrade è necessario seguire i seguenti step:
+
+- fermare ed eliminare il container contenente la precedente versione;
+
+- aggiornare la base dati come indicato in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update);
+
+- riferire la nuova versione all'interno del docker-compose;
+
+- riavvare il docker-compose. 
+
+> **_NOTA:_** una volta applicate le patch di upgrade descritte in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update) la base dati non risulta più compatibile con la precedente versione del software. Si consiglia di effettuare un backup prima di procedere con l'upgrade in modo da poter effettuare un eventuale downgrade di versione.
+
+
+### Standalone
+
+Nel caso di versione standalone in cui il database non sia stato montato su un volume esterno, è sufficiente avviare la nuova versione dell'immagine.
+
+> **_NOTA:_** i dati contenuti all'interno del precedente container verranno persi.
