@@ -180,7 +180,7 @@ $ chmod 777 ~/govway_{conf,log}
 $ docker-compose up
 ```
 
-Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+> **_NOTA:_** Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
 
 
 ## Aggiornamento di Versione
