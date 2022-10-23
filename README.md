@@ -18,9 +18,9 @@ Options
 -h             : Mostra questa pagina di aiuto
 
 Installer Sorgente:
--v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.5)
+-v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: latest)
 -l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
--j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-<version>.tgz
+-j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
 -d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
