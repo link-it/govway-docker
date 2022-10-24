@@ -36,7 +36,7 @@
 Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle normative della Pubblica Amministrazione:
 
 * Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
-* Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI PA). Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
+* Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI) e gestione dei token rilasciati dalla PDND. Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
 * Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
@@ -207,3 +207,16 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 Nel caso di versione standalone in cui il database non sia stato montato su un volume esterno, è sufficiente avviare la nuova versione dell'immagine.
 
 > **_NOTA:_** i dati contenuti all'interno del precedente container verranno persi.
+
+
+## Versione Snapshot
+
+Ogni modifica dei sorgenti attuata sul master del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway/job/GovWay/).
+Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway-testsuite/installer/) scaricabile dall'ambiente di CI.
+
+Vengono inoltre fornite le seguenti immagini per le versioni snapshot:
+
+* [`master`, `master_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* [`master_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* [`master_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+
