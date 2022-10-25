@@ -5,6 +5,13 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
+* [`3.3.8`, `3.3.8_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
+* [`3.3.8_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.8/govway/Dockerfile.govway)
 * [`3.3.7`, `3.3.7_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
 * [`3.3.7_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
 * [`3.3.7_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.7/govway/Dockerfile.govway)
@@ -19,13 +26,6 @@
 * [`3.3.6.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
 * [`3.3.6.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
 * [`3.3.6.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.6.p1/govway/Dockerfile.govway)
-* [`3.3.5.p2`, `3.3.5.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
-* [`3.3.5.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.5.p2/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -36,7 +36,7 @@
 Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle normative della Pubblica Amministrazione:
 
 * Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
-* Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI PA). Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
+* Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI) e gestione dei token rilasciati dalla PDND. Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
 * Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
@@ -117,7 +117,7 @@ $ docker run \
  -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database \
 linkitaly/govway
 ```
-Nota: abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
+> **_NOTA:_** abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
 
 
 ## Avviare una delle immagini orchestrate
@@ -180,4 +180,43 @@ $ chmod 777 ~/govway_{conf,log}
 $ docker-compose up
 ```
 
-Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+> **_NOTA:_** Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+
+
+## Aggiornamento di Versione
+
+Un upgrade richiede l'aggiornamento della base dati.
+
+### Ambiente orchestrato
+
+Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o oracle) o un'immagine standalone con database montato su un volume esterno, per effettuare l'upgrade è necessario seguire i seguenti step:
+
+- fermare ed eliminare il container contenente la precedente versione;
+
+- aggiornare la base dati come indicato in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update);
+
+- riferire la nuova versione all'interno del docker-compose;
+
+- riavvare il docker-compose. 
+
+> **_NOTA:_** una volta applicate le patch di upgrade descritte in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update) la base dati non risulta più compatibile con la precedente versione del software. Si consiglia di effettuare un backup prima di procedere con l'upgrade in modo da poter effettuare un eventuale downgrade di versione.
+
+
+### Standalone
+
+Nel caso di versione standalone in cui il database non sia stato montato su un volume esterno, è sufficiente avviare la nuova versione dell'immagine.
+
+> **_NOTA:_** i dati contenuti all'interno del precedente container verranno persi.
+
+
+## Versione Snapshot
+
+Ogni modifica dei sorgenti attuata sul master del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway/job/GovWay/).
+Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway-testsuite/installer/) scaricabile dall'ambiente di CI.
+
+Vengono inoltre fornite le seguenti immagini per le versioni snapshot:
+
+* [`master`, `master_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* [`master_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* [`master_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+

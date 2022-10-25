@@ -30,8 +30,8 @@ ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
 RUN set -eux; \
-curl -LksS https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ;\
-curl -LksS -o /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ;\
+curl -LksS https://jenkins.link.it/govway-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ;\
+curl -LksS -o /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion https://jenkins.link.it/govway-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ;\
 mkdir -p /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/999JENKINS/all/all/properties/add ;\
 touch /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/incremental.patch ;\
 echo "version=GovWay ${GOVWAY_FULLVERSION}.jenkins" > /opt/govway-installer-${GOVWAY_FULLVERSION}/installer/setup/deploy/patch/999JENKINS/all/all/properties/add/govwayVersion.properties ;\
