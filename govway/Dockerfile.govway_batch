@@ -1,0 +1,41 @@
+# stage sorgente da utilizzare per il build dell'immagine finale
+ARG govway_fullversion
+ARG source_image=linkitaly/govway-installer
+ARG govway_batch_home=/var/govway/batch
+ARG govway_log=/var/log/govway
+
+# Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
+FROM ${source_image}:${govway_fullversion} AS source_image_full
+
+
+
+FROM centos:centos7.9.2009 AS source_image_built
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per la generazione delle statistiche di traffico"
+ARG govway_fullversion
+ARG govway_batch_home
+ARG govway_log
+
+USER root
+ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
+GOVWAY_LOGDIR=${govway_log} \
+GOVWAY_FULLVERSION=${govway_fullversion} \
+JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
+POSTGRES_JDBC_VERSION=42.3.0 
+
+RUN set -eux; \
+mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};  \
+yum -q -y install ca-certificates unzip java-11-openjdk-headless; \
+yum clean all; \
+rm -rf /var/cache/yum; \
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
+
+ARG oracle_custom_jdbc=commons/standalone_wrapper.sh
+COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
+RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
+
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/batch/ ${GOVWAY_BATCH_HOME}/
+COPY commons/run_batch.sh /
+
+ENTRYPOINT [ "/run_batch.sh" ]
+CMD [ "Giornaliere" ]

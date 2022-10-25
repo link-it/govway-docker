@@ -9,8 +9,7 @@ ARG govway_log=/var/log/govway
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
-yum -y update \
-&& yum -q -y install zip unzip java-11-openjdk  \
+yum -q -y install zip unzip java-11-openjdk  \
 && yum clean all \
 && rm -rf /var/cache/yum
 
@@ -29,6 +28,7 @@ COPY commons/ant.install.properties.template /var/tmp/
 
 ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
+ARG govway_stats_mode=runtime
 RUN set -eux; \
 curl -LksS https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ;\
 curl -LksS -o /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion https://jenkins.link.it/govway/risultati-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ;\
@@ -44,6 +44,7 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
   -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
   -e "s%#GOVWAY_DATABASE_TIPO#%${govway_database_vendor}%" \
+  -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \

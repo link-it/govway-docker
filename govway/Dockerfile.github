@@ -25,6 +25,7 @@ COPY commons/ant.install.properties.template /var/tmp/
 
 ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
+ARG govway_stats_mode=runtime
 RUN set -eux; \
 curl -LksS  https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ; \
 cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
@@ -34,6 +35,7 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
   -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
   -e "s%#GOVWAY_DATABASE_TIPO#%${govway_database_vendor}%" \
+  -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \

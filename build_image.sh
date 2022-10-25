@@ -18,6 +18,7 @@ Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
+-s             : Prepara anche l'immagine con il software di generazione statistiche
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
@@ -50,7 +51,7 @@ CUSTOM_WIDLFLY_CLI=
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVPAY_RELEASE="${LATEST_LINK##*/}"
 
-while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:s" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -84,6 +85,7 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
         ;;
     e) CUSTOM_GOVWAY_HOME="${OPTARG}" ;;
     f) CUSTOM_GOVWAY_LOG="${OPTARG}" ;;
+    s) STATS_MODE="batch";;
     h) printHelp
        exit 0
        ;;
@@ -105,6 +107,7 @@ DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
 [ -n "${CUSTOM_GOVWAY_LOG}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_log=${CUSTOM_GOVWAY_LOG}")
+[ -n "${STATS_MODE}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_stats_mode=${STATS_MODE}")
 if [ -n "${CUSTOM_RUNTIME}" ]
 then
   cp -r ${CUSTOM_RUNTIME}/ buildcontext/runtime
@@ -172,6 +175,17 @@ RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
 
 
+
+if [ "${STATS_MODE}" == 'batch' ]
+then
+
+  "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
+  --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
+  -t "${TAG}_batch" \
+  -f govway/Dockerfile.govway_batch buildcontext
+  RET=$?
+  [ ${RET} -eq  0 ] || exit ${RET}
+fi
 if [ "${DB:-hsql}" != 'hsql' ]
 then
   mkdir -p compose/govway_{conf,log}
