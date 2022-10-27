@@ -1,18 +1,24 @@
 #!/bin/bash
+exec 6<> /tmp/run_batch.log
+exec 2>&6
+set -x
 
 case "$1" in
-[oO]rarie) TIPO='StatisticheOrarie';;
-[gG]iornaliere) TIPO='StatisticheGiornaliere';;
-[sS]ettimanali) TIPO='StatisticheSettimanali';;
-[mM]ensili) TIPO='StatisticheMensili';;
+[oO]rari[ea]) TIPO='StatisticheOrarie'
+INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-5} ;;
+[gG]iornalier[ea]) TIPO='StatisticheGiornaliere'
+INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
+# [sS]ettimanal[ie]) TIPO='StatisticheSettimanali';;
+# SCHEDULAZIONE_CRON='';;
+# [mM]ensil[ie]) TIPO='StatisticheMensili';;
+# SCHEDULAZIONE_CRON='';;
 *) echo "Tipo di statistiche non supportato: '$1'"
    exit 1
    ;;
 esac 
-
-export GOVWAY_BATCH_STATISTICHE="${GOVWAY_BATCH_HOME}/generatoreStatistiche"
-mkdir -p /tmp/runtime_properties
-cp ${GOVWAY_BATCH_STATISTICHE}/properties/* /tmp/runtime_properties 
+[ ${INTERVALLO_SCHEDULAZIONE} -eq ${INTERVALLO_SCHEDULAZIONE} -a ${INTERVALLO_SCHEDULAZIONE} -gt 0 ] 2> /dev/null \
+|| { echo "Non e' possibile schedulare il batch ad intervalli di '${INTERVALLO_SCHEDULAZIONE}' minuti."; exit 2; }
+CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * root ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false"
 
 
 case "${GOVWAY_DB_TYPE}" in
@@ -107,17 +113,18 @@ GOVWAY_STAT_DB_PASSWORD: ${GOVWAY_STAT_DB_NAME:+xxxxx}
     ;;
     esac
 ;;
-hsql)
-    export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
-    export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
-    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
-    # JDBC URLS
-    export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
-    export JDBC_TRAC_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
-    export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
+# Temporanemaente disabilitato
+# hsql)
+#     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
+#     export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
+#     export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
+#     # JDBC URLS
+#     export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
+#     export JDBC_TRAC_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
+#     export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
 
 
-;;
+# ;;
 *) 
     echo "FATAL: Sanity check variabili ... fallito."
     echo "FATAL: la variabile GOVWAY_DB_TYPE non è valida: '${GOVWAY_DB_TYPE}'"
@@ -128,8 +135,20 @@ esac
 
 
 
+# Configurazione 
+export GOVWAY_BATCH_STATISTICHE="${GOVWAY_BATCH_HOME}/generatoreStatistiche"
+export BATCH_CLASSPATH="${GOVWAY_BATCH_STATISTICHE}/lib"
+export BATCH_CONFIG='/tmp/runtime_properties'
+export BATCH_JDBC="$(dirname ${GOVWAY_DRIVER_JDBC})"
 
-cat - << EOPROP > /tmp/runtime_properties/daoFactory.properties
+
+
+
+mkdir -p "${BATCH_CONFIG}"
+cp ${GOVWAY_BATCH_STATISTICHE}/properties/* "${BATCH_CONFIG}"
+
+
+cat - << EOPROP > "${BATCH_CONFIG}/daoFactory.properties"
 db.showSql=true
 db.secondsToRefreshConnection=300
 db.tipo=connection
@@ -151,6 +170,24 @@ factory.statistiche.db.connection.password=${GOVWAY_STAT_DB_PASSWORD}
 EOPROP
 
 ### MAIN ####
-java -cp "${GOVWAY_BATCH_STATISTICHE}/lib/*:/tmp/runtime_properties/:${GOVWAY_DRIVER_JDBC}" org.openspcoop2.core.statistiche.batch.Generator ${TIPO}
 
-echo "INFO: Generazione ${TIPO} completata."
+
+if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
+then
+    env | sed -r -e 's/([^=]*)=([^=]*)/\1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
+    cat - << EOCRONTAB > /etc/crontab
+SHELL=/bin/bash
+BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
+${CRONTAB} >/proc/1/fd/1 2>&1
+EOCRONTAB
+
+    echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
+    exec crond -n 
+else
+    "INFO: Generazione ${TIPO} avviata..."
+    ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false
+    echo "INFO: Generazione ${TIPO} completata."
+fi
+
+
+

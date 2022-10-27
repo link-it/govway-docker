@@ -3,6 +3,7 @@ ARG govway_fullversion
 ARG source_image=linkitaly/govway-installer
 ARG govway_batch_home=/var/govway/batch
 ARG govway_log=/var/log/govway
+ARG govway_database_vendor=postgresql
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
 FROM ${source_image}:${govway_fullversion} AS source_image_full
@@ -24,8 +25,7 @@ JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
 POSTGRES_JDBC_VERSION=42.3.0 
 
 RUN set -eux; \
-mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};  \
-yum -q -y install ca-certificates unzip java-11-openjdk-headless; \
+yum -q -y install cronie unzip java-11-openjdk-headless; \
 yum clean all; \
 rm -rf /var/cache/yum; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
@@ -34,8 +34,22 @@ ARG oracle_custom_jdbc=commons/standalone_wrapper.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
-COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/batch/ ${GOVWAY_BATCH_HOME}/
-COPY commons/run_batch.sh /
+COPY --from=source_image_full  --chown=root:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/batch/ ${GOVWAY_BATCH_HOME}/
+RUN set -eux; \
+sed -i -r -e 's/^BATCH_CLASSPATH=.*$/BATCH_CLASSPATH=${BATCH_CLASSPATH:-lib}/' \
+-e 's/^BATCH_CONFIG=.*$/BATCH_CONFIG=${BATCH_CONFIG:-lib}/' \
+-e 's/^BATCH_JDBC=.*$/BATCH_JDBC=${BATCH_JDBC:-jdbc}/' \
+${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh; \
+sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
+chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
+rm -rf /etc/cron.*/*; \
+mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};  \
+chown -R root:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
+chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; 
 
+COPY commons/run_batch.sh /
+RUN chown -R root:0 /run_batch.sh && chmod -Rf g+rwX  /run_batch.sh 
+ARG govway_database_vendor
+ENV GOVWAY_DB_TYPE=${govway_database_vendor} 
 ENTRYPOINT [ "/run_batch.sh" ]
-CMD [ "Giornaliere" ]
+CMD [ "Orarie" ]
