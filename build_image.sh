@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 function printHelp() {
 echo "Usage $(basename $0) [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]"
@@ -18,7 +18,6 @@ Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
--s             : Prepara anche l'immagine con il software di generazione statistiche
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer

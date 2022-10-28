@@ -172,7 +172,7 @@ EOPROP
 ### MAIN ####
 
 
-if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
+if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
     env | sed -r -e 's/([^=]*)=([^=]*)/\1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
     cat - << EOCRONTAB > /etc/crontab
