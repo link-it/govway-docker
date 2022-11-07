@@ -171,6 +171,9 @@ EOPROP
 
 ### MAIN ####
 
+# Imposto Timezone
+[ -z "${TZ}" ] && export TZ="Europe/Rome"
+ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
