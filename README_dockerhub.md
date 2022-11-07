@@ -212,7 +212,7 @@ Nel caso di versione standalone in cui il database non sia stato montato su un v
 
 
 
-### Ambienti batch
+## Ambienti batch
 
 Le informazioni statistiche consultabili tramite la console di Monitoraggio consistono di informazioni aggregate su base periodica dei dati relativi alle transazioni gestite. 
 
@@ -323,7 +323,7 @@ $ chmod 777 ~/govway_{conf,log}
 $ docker-compose up
 ```
 
-> **_NOTA:_** Negli esempi forniti per l'ambiente docker-compose, non essendo possibile schedulare jobs in maniera orchestrata, è stata abilitata la modalità 'cron' tramite l'abilitazione della variabile 'GOVWAY_BATCH_USA_CRON' e la definizione dell'intervallo di schedulazione del batch in minuti tramite la variabile 'GOVWAY_BATCH_INTERVALLO_CRON'. Su ambienti dove esiste tale possibilità (es. Cronjobs kubernetes) le variabili precedentemente devono non devono essere dichiarate (GOVWAY_BATCH_USA_CRON assume per default il valore false) o deve essere disabilitata la variabile GOVWAY_BATCH_USA_CRON.
+> **_NOTA:_** Negli esempi forniti per l'ambiente docker-compose, non essendo possibile schedulare jobs in maniera orchestrata, è stata abilitata la modalità 'cron' tramite l'abilitazione della variabile 'GOVWAY_BATCH_USA_CRON' e la definizione dell'intervallo di schedulazione del batch in minuti tramite la variabile 'GOVWAY_BATCH_INTERVALLO_CRON'. Su ambienti dove esiste la possibilità di schedulare jobs (es. Cronjobs kubernetes) deve essere disabilitata la variabile 'GOVWAY_BATCH_USA_CRON' o in alternativa non deve essere dichiarata (assume per default il valore false).
 
 
 ## Versione Snapshot
