@@ -18,13 +18,13 @@ Options
 -h             : Mostra questa pagina di aiuto
 
 Installer Sorgente:
--v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: latest)
+-v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.9.p1)
 -l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
 -j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
 -d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
--a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, all] , default: all)
+-a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
 
@@ -107,9 +107,31 @@ Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
 ```
  http://<indirizzo IP>:8080/govway/
 ```
+### Informazioni sulle immagini batch
+Utilizzando lo switch "-a" dello script di build è possibile costruire una immmagine contenente solamente il software necessario all'esecuzione dei batch di generazione statistiche.
+Questo tipo di immagini si differenzia dalle immagini run, manager e full per il fatto che non viene istanziato un server che rimane in ascolto, ma viene eseguito un singolo task destinato a terminare in un tempo finito.
+
+### Tipo di statistiche da generare ###
+Il batch è in grado di generare le statistiche orarie e giornaliere; il tipo di statistiche da generare si decide attraverso un'argomento passato a runtime. 
+
+Viene verificata la corrispondenza dell'argomento con uno di questi due pattern **"[oO]rari[ea]"** , **"[gG]iornalier[ea]"**
+Se non viene passato alcun argomento il default è orarie
+Es:
+```bash
+docker run 
+-e <VARIABILI_DI_CONFIGURAZIONE> \
+.... \
+linkitaly/govway:3.3..p1_postgres_batch_postgres giornaliera
+```
+
+### Modalita Cron ###
+il batch è stato creato per essere eseguito da uno schedulatore orchestrato (es Cronjobs kubernetes), quindi la schedulazione è demandata a questi sistemi. 
+
+Se non disponibile è possibile abilitare la modalità cron. In questa modalità, il container creato schedula autonomamente l'esecuzione del batch; inoltre è possibile indicare con quali intervallo eseguire il batch.
 
 ## Personalizzazioni
-Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento del container. Le variabili supportate al momento sono queste:
+Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento dei container. Le variabili supportate al momento sono queste:
+
 
 ### Controlli all'avvio del container
 
@@ -216,4 +238,33 @@ TRACCIAMENTO
 I listener HTTP configurati sul wildfly possono 
 * WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in erogazione, (default: 100)
 * WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in fruizione, (default: 100)
-* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, (default: 20)
+* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, ##(default: 20)
+
+## Personalizzazioni Batch
+Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti categorie CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
+Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguneti variabili obbligatorie.:
+
+* GOVWAY_STAT_DB_SERVER: nome dns o ip address del server database (obbligatorio)
+* GOVWAY_STAT_DB_NAME: Nome del database delle statistiche (obbligatorio)
+* GOVWAY_STAT_DB_USER: username da utilizzare per l'accesso al database (obbligatorio)
+* GOVWAY_STAT_DB_PASSWORD: password di accesso al database (obbligatorio)
+
+
+Se la configurazione lo richiede è possibile
+indicare puntamenti differenti per le tabelle delle restanti categorie, usando i seguenti set di variabili
+
+CONFIGURAZIONE
+* GOVWAY_CONF_DB_SERVER (default: GOVWAY_DB_SERVER)
+* GOVWAY_CONF_DB_NAME (default: GOVWAY_DB_NAME)
+* GOVWAY_CONF_DB_USER (default: GOVWAY_DB_USER)
+* GOVWAY_CONF_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+TRACCIAMENTO
+* GOVWAY_TRAC_DB_SERVER (default: GOVWAY_DB_SERVER)
+* GOVWAY_TRAC_DB_NAME (default: GOVWAY_DB_NAME)
+* GOVWAY_TRAC_DB_USER (default: GOVWAY_DB_USER)
+* GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+### Modalita Cron
+* GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])
+* GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere) 
