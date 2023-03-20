@@ -33,11 +33,12 @@ mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 yum -q -y install ca-certificates unzip java-11-openjdk-headless; \
 yum clean all; \
 rm -rf /var/cache/yum; \
-curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_6/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
+curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
-curl -LfksS -o /tmp/wildfly-${WILDFLY_VERSION}.tar.gz https://download.jboss.org/wildfly/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz; \
+#curl -LfksS -o /tmp/wildfly-${WILDFLY_VERSION}.tar.gz https://download.jboss.org/wildfly/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz; \
+curl -LfksS -o /tmp/wildfly-${WILDFLY_VERSION}.tar.gz https://github.com/wildfly/wildfly/releases/download/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz; \
 echo ${WILDFLY_SHA1} /tmp/wildfly-${WILDFLY_VERSION}.tar.gz | sha1sum -c -; \
 tar -C /opt -xf /tmp/wildfly-${WILDFLY_VERSION}.tar.gz; \
 useradd wildfly; \
