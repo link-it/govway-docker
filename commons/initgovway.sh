@@ -70,7 +70,7 @@ do
         DBUSER=govway
         DBPASS=govway
         JDBC_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/${DBNAME};shutdown=true"
-        START_TRANSACTION="START TRANSACTION;"
+        START_TRANSACTION="START TRANSACTION ISOLATION LEVEL SERIALIZABLE;"
     ;;
     esac
 

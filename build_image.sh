@@ -245,7 +245,7 @@ EOYAML
   elif [ "${DB:-hsql}" == 'oracle' ]
   then
     mkdir -p compose/oracle_startup
-    mkdir compose/ORADATA
+    mkdir -p compose/ORADATA
     chmod 777 compose/ORADATA
     cat - << EOSQL > compose/oracle_startup/create_db_and_user.sql
 alter session set container = GOVWAYPDB;
@@ -297,7 +297,7 @@ EOSQL
     shm_size: 2g
     environment:
       - ORACLE_PDB=GOVWAYPDB
-      - ORACLE_PWD=123456
+      - ORACLE_PWD=GovWay@123
     volumes:
        - ./ORADATA:/opt/oracle/oradata
        - ./oracle_startup:/opt/oracle/scripts/startup
