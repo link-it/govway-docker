@@ -23,9 +23,9 @@ GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.1 \
 POSTGRES_JDBC_VERSION=42.5.3 \
-WILDFLY_VERSION=26.1.3 \
+WILDFLY_VERSION=26.1.3.Final \
 WILDFLY_SHA1=b9f52ba41df890e09bb141d72947d2510caf758c \
-JBOSS_HOME=/opt/wildfly-26.1.3 \
+JBOSS_HOME=/opt/wildfly-26.1.3.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
@@ -141,9 +141,9 @@ GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.1 \
 POSTGRES_JDBC_VERSION=42.5.3 \
-WILDFLY_VERSION=26.1.3 \
+WILDFLY_VERSION=26.1.3.Final \
 WILDFLY_SHA1=b9f52ba41df890e09bb141d72947d2510caf758c \
-JBOSS_HOME=/opt/wildfly-26.1.3 \
+JBOSS_HOME=/opt/wildfly-26.1.3.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
@@ -192,4 +192,4 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 USER wildfly
 EXPOSE 8080 8081 8082 8009
-ENTRYPOINT [ "/opt/wildfly-26.1.3/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]
+ENTRYPOINT [ "/opt/wildfly-26.1.3.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]
