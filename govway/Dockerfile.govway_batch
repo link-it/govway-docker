@@ -26,7 +26,7 @@ POSTGRES_JDBC_VERSION=42.5.3
 
 RUN set -eux; \
 yum -q -y install cronie unzip java-11-openjdk-headless; \
-yum -q -y update \
+yum -q -y update; \
 yum clean all; \
 rm -rf /var/cache/yum; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
