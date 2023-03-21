@@ -22,7 +22,7 @@ ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
-POSTGRES_JDBC_VERSION=42.5.3
+POSTGRES_JDBC_VERSION=42.6.0
 
 RUN set -eux; \
 yum -q -y install cronie unzip java-11-openjdk-headless; \
