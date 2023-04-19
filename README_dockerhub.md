@@ -5,7 +5,16 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.11`, `3.3.11_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
+* [`3.3.12`, `3.3.12_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.12_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.11`, `3.3.11_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 * [`3.3.11_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 * [`3.3.11_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 * [`3.3.11_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
@@ -23,15 +32,6 @@
 * [`3.3.10_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
 * [`3.3.10_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
 * [`3.3.10_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.9.p3`, `3.3.9.p3_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
-* [`3.3.9.p3_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.9.p3/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -135,7 +135,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.11_postgres
+    image: linkitaly/govway:3.3.12_postgres
     ports:
         - 8080:8080
         - 8009:8009
@@ -158,7 +158,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.11_oracle
+    image: linkitaly/govway:3.3.12_oracle
     ports:
         - 8080:8080
         - 8009:8009
@@ -244,7 +244,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.11_batch_postgres
+    image: linkitaly/govway:3.3.12_batch_postgres
     command: 
       - orarie
     environment:
@@ -258,7 +258,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.11_batch_postgres
+    image: linkitaly/govway:3.3.12_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -279,7 +279,7 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.11_batch_oracle
+    image: linkitaly/govway:3.3.12_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -299,7 +299,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.11_batch_oracle
+    image: linkitaly/govway:3.3.12_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
