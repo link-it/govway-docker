@@ -106,7 +106,7 @@ Per maggiori informazioni sulle console fare riferimento alla documentazione del
 I files, interni all'immagine, utilizzati da GovWay sono: 
 - le properties di configurazione, posizionati nella directory **/etc/govway**;
 - i file di log, posizionati nella directory **/var/log/govway**;
-- il database HSQL situato in **/opt/hsqldb-2.6.1/hsqldb/database**.
+- il database HSQL situato in **/opt/hsqldb-2.7.1/hsqldb/database**.
 
 Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
@@ -120,7 +120,7 @@ $ docker run \
  -p 8080:8080 -p 8009:8009 \
  -v ~/govway_conf:/etc/govway \
  -v ~/govway_log:/var/log/govway \
- -v ~/govway_db:/opt/hsqldb-2.6.1/hsqldb/database \
+ -v ~/govway_db:/opt/hsqldb-2.7.1/hsqldb/database \
 linkitaly/govway
 ```
 > **_NOTA:_** abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
