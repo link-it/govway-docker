@@ -41,12 +41,14 @@ do
         DBNAME="${GOVWAY_DB_NAME}"
         DBUSER="${GOVWAY_DB_USER}"    
         DBPASS="${GOVWAY_DB_PASSWORD}"
+        QUERYSTRING="${DATASOURCE_CONN_PARAM}"
     else
 
         eval "SERVER=\${GOVWAY_${DESTINAZIONE}_DB_SERVER}"
         eval "DBNAME=\${GOVWAY_${DESTINAZIONE}_DB_NAME}"
         eval "DBUSER=\${GOVWAY_${DESTINAZIONE}_DB_USER}"    
         eval "DBPASS=\${GOVWAY_${DESTINAZIONE}_DB_PASSWORD}"
+        eval "QUERYSTRING=\${DATASOURCE_${DESTINAZIONE}_CONN_PARAM}"
     fi
     SERVER_PORT="${SERVER#*:}"
     SERVER_HOST="${SERVER%:*}"
@@ -57,12 +59,12 @@ do
     case "${GOVWAY_DB_TYPE:-hsql}" in
     oracle)
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1521
-        JDBC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${SERVER_HOST}:${SERVER_PORT}${ORACLE_JDBC_DB_SEPARATOR}${DBNAME}"
+        JDBC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${SERVER_HOST}:${SERVER_PORT}${ORACLE_JDBC_DB_SEPARATOR}${DBNAME}${QUERYSTRING}"
         START_TRANSACTION=""
     ;;
     postgresql) 
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=5432
-        JDBC_URL="jdbc:postgresql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}"
+        JDBC_URL="jdbc:postgresql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
     ;;
     hsql|*)

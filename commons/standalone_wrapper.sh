@@ -1,4 +1,5 @@
 #!/bin/bash
+
 exec 6<> /tmp/standalone_wrapper_debug.log
 exec 2>&6
 set -x
@@ -8,14 +9,38 @@ GOVWAY_STARTUP_CHECK_SKIP=${GOVWAY_STARTUP_CHECK_SKIP:=FALSE}
 GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME:=20}
 GOVWAY_STARTUP_CHECK_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_SLEEP_TIME:=5}
 GOVWAY_STARTUP_CHECK_MAX_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY:=60}
-GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
+declare -r GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
+declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
 declare -r ENTRYPOINT_D='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
 
+if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
+then
+        
+    echo "FATAL: Sanity check variabili ... fallito."
+    echo "FATAL: GOVWAY_DEFAULT_ENTITY_NAME può iniziare solo con un carattere o cifra [0-9A-Za-z] e dev'essere formato solo da caratteri, cifre e '-'"
+    exit 0
+fi
 
-    
+
+#
+# Comandi di avvio
+#
+if [ -n "$1" ]
+then
+    if [ "$1" = "initsql" ]
+    then
+        ${JBOSS_HOME}/bin/initsql.sh 
+        exit
+    else
+        exec "$@"
+        exit
+    fi
+fi
+
+
 case "${GOVWAY_DB_TYPE:-hsql}" in
 postgresql|oracle)
 
@@ -145,6 +170,7 @@ else
 fi
 
 # Inizializzazione del database
+${JBOSS_HOME}/bin/initsql.sh 
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
@@ -164,9 +190,19 @@ then
 				fi
 				;;
 			*.cli)
-                echo "INFO: Customizzazioni ... eseguo $f"; 
-                ${JBOSS_HOME}/bin/jboss-cli.sh --file=$f
-                ;;
+				echo "INFO: Customizzazioni ... eseguo $f"; 
+				if ! grep -q embed-server "$f"
+				then
+				    # Mi assicuro che sia presente la direttiva embed-server in cima allo script
+				    # perche l'application server a questo punto non è ancora attivo
+				    echo -e 'embed-server --server-config=standalone.xml --std-out=echo\n' > "/tmp/$(basename $f).fix"
+				    cat "$f" >> "/tmp/$(basename $f).fix"
+				    echo -e '\nstop-embedded-server\n' >> "/tmp/$(basename $f).fix"
+				    ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/$(basename $f).fix"
+				else
+				    ${JBOSS_HOME}/bin/jboss-cli.sh --file="$f"
+				fi
+				;;
 			*) echo "INFO: Customizzazioni ... ignoro $f" ;;
 		esac
 		echo

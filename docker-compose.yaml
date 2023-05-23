@@ -1,0 +1,38 @@
+version: '2'
+services:
+  govway:
+    container_name: govway_3.3.8.build-master_postgres
+    image: linkitaly/govway:3.3.8.build-master_postgres
+    depends_on:
+        - database
+    ports:
+        - 8080:8080
+    volumes:
+        - ./govway_conf:/etc/govway
+        - ./govway_log:/var/log/govway
+    environment:
+        - GOVWAY_DB_SERVER=pg_govway_3.3.8.build-master_postgres
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_POP_DB_SKIP=false
+  batch:
+    container_name: govway_3.3.8.build-master_batch_postgres
+    image: linkitaly/govway:3.3.8.build-master_batch_postgres
+    depends_on:
+        - database
+    environment:
+        - GOVWAY_STAT_DB_SERVER=pg_govway_3.3.8.build-master_batch_postgres
+        - GOVWAY_STAT_DB_NAME=govwaydb
+        - GOVWAY_STAT_DB_USER=govway
+        - GOVWAY_STAT_DB_PASSWORD=govway
+        - GOVWAY_BATCH_USA_CRON=yes
+        - GOVWAY_BATCH_INTERVALLO_CRON=1
+
+  database:
+    container_name: pg_govway_3.3.8.build-master_postgres
+    image: postgres:13
+    environment:
+        - POSTGRES_DB=govwaydb
+        - POSTGRES_USER=govway
+        - POSTGRES_PASSWORD=govway
