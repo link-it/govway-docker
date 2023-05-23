@@ -32,11 +32,8 @@ if [ -n "$1" ]
 then
     if [ "$1" = "initsql" ]
     then
-        ${JBOSS_HOME}/bin/initsql.sh 
-        exit
-    else
-        exec "$@"
-        exit
+        ${JBOSS_HOME}/bin/initsql.sh || echo "FATAL: Scripts sql non inizializzati."
+        exit $?
     fi
 fi
 
@@ -170,7 +167,7 @@ else
 fi
 
 # Inizializzazione del database
-${JBOSS_HOME}/bin/initsql.sh 
+${JBOSS_HOME}/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
@@ -237,9 +234,9 @@ then
         fi
     done
     [ $FOUND -eq 0 ] && CMDLINARGS+=("--properties=${JVM_PROPERTIES_FILE}")
-    ${JBOSS_HOME}/bin/standalone.sh ${CMDLINARGS[@]} &
+    ${JBOSS_HOME}/bin/standalone.sh -b 0.0.0.0 ${CMDLINARGS[@]} &
 else
-    ${JBOSS_HOME}/bin/standalone.sh $@ &
+    ${JBOSS_HOME}/bin/standalone.sh -b 0.0.0.0 $@ &
 fi
 
 PID=$!
