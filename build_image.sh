@@ -115,7 +115,7 @@ then
   cp -r ${CUSTOM_MANAGER}/ buildcontext/manager
   DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=manager")
 fi
-export  DOCKER_BUILDKIT=0
+
 # Build immagine installer
 if [ -n "${JENKINS}" ]
 then
@@ -215,6 +215,7 @@ EOYAML
   then
     cat - << EOYAML >> compose/docker-compose.yaml
     environment:
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_DB_SERVER=pg_govway_${SHORT}
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
