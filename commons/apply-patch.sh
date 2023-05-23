@@ -34,7 +34,7 @@ do
         done
         
         # Incorporo tutti gli eventuali altri files
-        for f in $(find . -not -name \*.properties -and -not -name \*.diff)
+        for f in $(find . -type f -and -not -name \*.properties -and -not -name \*.diff)
         do 
             # assicuro la presenza di tutte le sottodirectory
             mkdir -p "/tmp/${ARCHIVENAME}.temp/$(dirname ${f})"
