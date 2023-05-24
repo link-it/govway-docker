@@ -45,10 +45,11 @@ Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine 
 docker run \
   -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
   -e GOVWAY_POP_DB_SKIP=false \
+  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.3.5
+linkitaly/govway:3.3.12
 
 ```
 
@@ -79,7 +80,7 @@ All'avvio del container, sia in modalià standalone che in modaliatà orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.
 
 ```shell
-CONTAINER_ID=$(docker create linkitaly/govway:3.3.5_postgres)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.12_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -121,7 +122,7 @@ Es:
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.3..p1_postgres_batch_postgres giornaliera
+linkitaly/govway:3.3.12.p1_postgres_batch_postgres giornaliera
 ```
 
 ### Modalita Cron ###
@@ -132,6 +133,7 @@ Se non disponibile è possibile abilitare la modalità cron. In questa modalità
 ## Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento dei container. Le variabili supportate al momento sono queste:
 
+* GOVWAY_DEFAULT_ENTITY_NAME: Indica il nome del soggetto di default utilizzato  (Obbligatorio)
 
 ### Controlli all'avvio del container
 
