@@ -30,6 +30,7 @@ LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
+ulimit -n 1024; \
 yum -q -y install ca-certificates unzip java-11-openjdk-headless; \
 yum clean all; \
 rm -rf /var/cache/yum; \
@@ -74,7 +75,7 @@ COPY ${wildfly_custom_scripts}* /var/tmp/custom_cli
 RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${JBOSS_HOME}/standalone/configuration || echo "Personalizzazioni wildfly non presenti"
 
 
-COPY commons/standalone_wrapper.sh commons/initgovway.sh commons/config_datasource.sh ${JBOSS_HOME}/bin/
+COPY commons/standalone_wrapper.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh ${JBOSS_HOME}/bin/
 ARG govway_database_vendor=hsql
 ENV GOVWAY_DB_TYPE=${govway_database_vendor}
 
@@ -120,9 +121,9 @@ stop-embedded-server \n\
 /tmp/govway_standalone_configuration.cli
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh
+&& chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh
 
 
 
@@ -157,6 +158,7 @@ wildfly\thard\tnproc\t4096\n\
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 chown -R wildfly:0 ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR}; \
+ulimit -n 1024; \
 yum -q -y install ca-certificates unzip fontconfig freetype nmap-ncat java-11-openjdk-headless; \
 yum -q -y update; \
 yum clean all; \
@@ -192,4 +194,4 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 USER wildfly
 EXPOSE 8080 8081 8082 8009
-ENTRYPOINT [ "/opt/wildfly-26.1.3.Final/bin/standalone_wrapper.sh" , "-b", "0.0.0.0" ]
+ENTRYPOINT [ "/opt/wildfly-26.1.3.Final/bin/standalone_wrapper.sh" ]

@@ -9,6 +9,7 @@ ARG govway_log=/var/log/govway
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
+ulimit -n 1024; \
 yum -y install zip unzip java-11-openjdk  \
 && yum clean all \
 && rm -rf /var/cache/yum
@@ -27,14 +28,13 @@ COPY commons/ant.install.properties.template /var/tmp/
 ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
 
 
-ARG govway_soggetto=Ente
 ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
 RUN set -eux; \
 cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
 sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_FULLVERSION#%${GOVWAY_FULLVERSION}%" \
-  -e "s%#GOVWAY_SOGGETTO#%${govway_soggetto}%" \
+  -e 's%#GOVWAY_DEFAULT_ENTITY_NAME#%${GOVWAY_DEFAULT_ENTITY_NAME}%' \
   -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
   -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
   -e "s%#GOVWAY_DATABASE_TIPO#%${govway_database_vendor}%" \
