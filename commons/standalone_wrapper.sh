@@ -20,7 +20,12 @@ if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
 then
         
     echo "FATAL: Sanity check variabili ... fallito."
-    echo "FATAL: GOVWAY_DEFAULT_ENTITY_NAME può iniziare solo con un carattere o cifra [0-9A-Za-z] e dev'essere formato solo da caratteri, cifre e '-'"
+    if [ -z "${GOVWAY_DEFAULT_ENTITY_NAME}" ]
+    then
+        echo "FATAL: La variabile obbligatoria GOVWAY_DEFAULT_ENTITY_NAME non è stata definita"
+    else
+        echo "FATAL: GOVWAY_DEFAULT_ENTITY_NAME può iniziare solo con un carattere o cifra [0-9A-Za-z] e dev'essere formato solo da caratteri, cifre e '-'"
+    fi
     exit 0
 fi
 
@@ -49,7 +54,7 @@ postgresql|oracle)
             echo "INFO: Sanity check variabili ... ok."
     else
         echo "FATAL: Sanity check variabili ... fallito."
-        echo "FATAL: Devono essere settate almeno le seguenti variabili:
+        echo "FATAL: Devono essere settate almeno le seguenti variabili obbligatorie:
 GOVWAY_DB_SERVER: ${GOVWAY_DB_SERVER}
 GOVWAY_DB_NAME: ${GOVWAY_DB_NAME}
 GOVWAY_DB_USER: ${GOVWAY_DB_USER}
