@@ -72,10 +72,10 @@ RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/* ; \
 cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/console_local.properties >> /tmp/WEB-INF/classes/console_local.properties; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/properties/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF
@@ -85,10 +85,10 @@ RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/* ; \
 cat /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/monitor_local.properties >> /tmp/WEB-INF/classes/monitor_local.properties; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/properties/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayMonitor.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF
@@ -98,10 +98,10 @@ RUN set -eux;\
 if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-config_local.properties  /tmp/WEB-INF/classes/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/properties/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIConfig.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF; \
@@ -112,10 +112,10 @@ RUN set -eux;\
 if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/rs-api-monitor_local.properties  /tmp/WEB-INF/classes/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/properties/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAPIMonitor.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF; \
@@ -125,10 +125,10 @@ RUN set -eux;\
 if [ -f "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war" ]; then \
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war WEB-INF/classes/* ; \
 cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/govway.nodirun.properties  /tmp/WEB-INF/classes/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/properties/; \
-[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/properties/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/modipa_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/spcoop_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/sdi_local.properties /tmp/WEB-INF/classes/; \
+[ -e "/opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties" ] && cp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/manager/as4_local.properties /tmp/WEB-INF/classes/; \
 cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayAllarmi.war WEB-INF/classes/; \
 rm -rf /tmp/WEB-INF; \
