@@ -122,7 +122,7 @@ stop-embedded-server \n\
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/${govway_database_vendor} \
 && chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh
 
 
