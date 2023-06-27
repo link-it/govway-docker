@@ -205,6 +205,7 @@ EOSQLTOOL
                         -e '/CREATE TRIGGER trg_db_info/,/\//d' \
                         /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
 		    elif [[ ( ${DBINFO} == "db_info_console" && "${USE_RUN_DB}" == "TRUE" && "${DESTINAZIONE}" != 'CONF' ) ]]
+      		    then
                         sed  \
                         -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
                         -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
