@@ -263,6 +263,7 @@ EOSQL
         # Il driver deve essere compiato manualmente nella directory corrente
         - ./ojdbc10.jar:/tmp/ojdbc10.jar 
     environment:
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_DB_SERVER=or_govway_${SHORT}
         - GOVWAY_DB_NAME=GOVWAYPDB
         - GOVWAY_DB_USER=GOVWAY
