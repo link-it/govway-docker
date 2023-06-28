@@ -66,35 +66,30 @@ L'accesso è previsto in protocollo HTTP sulle porte _**8080, 8081, 8082**_ .
 
 ## Informazioni di Base
 
+### File interni all'immagine
+
 A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i seguenti path:
 - **/etc/govway** path le properties di configurazione (riconfigurabile al momento del build). 
 - **/var/log/govway** path dove vengono scritti i files di log (riconfigurabile al momento del build).
 
 Se l'immagine è stata prodotta in modalità standalone: 
-- **/opt/hsqldb-2.6.1/hsqldb/database** database interno HSQL 
+- **/opt/hsqldb-2.7.1/hsqldb/database** database interno HSQL 
 
-si possono rendere queste location persistenti, montando devi volumi su queste directory.
- 
+si possono rendere queste location persistenti, montando dei volumi su queste directory.
 
-All'avvio del container, sia in modalià standalone che in modaliatà orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto che il database non è popolato, vengono utilizzatti gli scripts SQL interni, per avviare l'inizializzazione.
-Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.
+### Servizi attivi
 
-```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.12_postgres initsql)
-docker cp ${CONTAINER_ID}:/opt/postgresql .
-```
-
-Le immagini prodotte utilizzano come application server ospite WildFly 18.0.1.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
 - **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
 
-Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno, si devono pubblicare al momento dell'avvio del immagine. 
+Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno si devono pubblicare al momento dell'avvio del immagine. 
 Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
 
 ```
- http://<indirizzo IP>:8080/govwayConsole/
- http://<indirizzo IP>:8080/govwayMonitor/
+ http://<indirizzo IP>:8082/govwayConsole/
+ http://<indirizzo IP>:8082/govwayMonitor/
 ```
 L'account di default per l'interfaccia **govwayConsole** è:
  * username: amministratore
@@ -104,11 +99,28 @@ L'account di default per l'interfaccia **govwayMonitor** è:
  * username: operatore
  * password: 123456
 
-Il contesto di accesso ai aservizi dell`API gateway è invece il seguente:
+Il contesto di accesso ai servizi dell`API gateway per le erogazioni di API:
 ```
  http://<indirizzo IP>:8080/govway/
 ```
-### Informazioni sulle immagini batch
+
+Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
+```
+ http://<indirizzo IP>:8081/govway/
+```
+
+### Script SQL di inizializzazione della BaseDati 
+
+All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzatti gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
+
+Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
+
+```shell
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.12_postgres initsql)
+docker cp ${CONTAINER_ID}:/opt/postgresql .
+```
+
+## Informazioni sulle immagini batch
 Utilizzando lo switch "-a" dello script di build è possibile costruire una immmagine contenente solamente il software necessario all'esecuzione dei batch di generazione statistiche.
 Questo tipo di immagini si differenzia dalle immagini run, manager e full per il fatto che non viene istanziato un server che rimane in ascolto, ma viene eseguito un singolo task destinato a terminare in un tempo finito.
 

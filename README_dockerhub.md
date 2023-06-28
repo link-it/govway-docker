@@ -5,6 +5,15 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
+* [`3.3.13`, `3.3.13_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
+* [`3.3.13_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
 * [`3.3.12`, `3.3.12_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
@@ -23,15 +32,6 @@
 * [`3.3.11_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 * [`3.3.11_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 * [`3.3.11_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.10`, `3.3.10_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
-* [`3.3.10_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.10/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -84,20 +84,26 @@ GovWay.remoteAccess.checkStatus.url=http://<service-name>/govway/check
 
 Eseguire il _run_ dell'immagine:
 
+> **_NOTA:_** la variabile 'GOVWAY_DEFAULT_ENTITY_NAME' consente di indicare il nome del soggetto operativo attivo sul dominio gestito attraverso GovWay.
+
 ```console 
 $ docker run \
+  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -e GOVWAY_POP_DB_SKIP=false \
   -e TZ=Europe/Rome \
 linkitaly/govway
 ```
 
-I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo AJP sulle porte 8080 e 8009 rispettivamente:
+I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo AJP sulle porte 808* e 8009 rispettivamente (nella sezione 'Informazioni di Base' vengono fornite maggiori informazioni a riguardo):
 
 ```console 
 $ docker run \
  -e GOVWAY_POP_DB_SKIP=false \
  -e TZ=Europe/Rome \
- -p 8080:8080 -p 8009:8009 \
+ -p 8080:8080 \
+ -p 8081:8081 \
+ -p 8082:8082 \
+ -p 8009:8009 \
 linkitaly/govway
 ```
 
@@ -115,9 +121,13 @@ $ mkdir ~/govway_conf
 $ mkdir ~/govway_log
 $ mkdir ~/govway_db
 $ docker run \
+ -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
  -e GOVWAY_POP_DB_SKIP=false \
  -e TZ=Europe/Rome \
- -p 8080:8080 -p 8009:8009 \
+ -p 8080:8080 \
+ -p 8081:8081 \
+ -p 8082:8082 \
+ -p 8009:8009 \
  -v ~/govway_conf:/etc/govway \
  -v ~/govway_log:/var/log/govway \
  -v ~/govway_db:/opt/hsqldb-2.7.1/hsqldb/database \
@@ -130,20 +140,25 @@ linkitaly/govway
 
 Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql:
 
+> **_NOTA:_** la variabile 'GOVWAY_DEFAULT_ENTITY_NAME' consente di indicare il nome del soggetto operativo attivo sul dominio gestito attraverso GovWay.
+
 ```yaml
 version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.12_postgres
+    image: linkitaly/govway:3.3.13_postgres
     ports:
         - 8080:8080
+        - 8081:8081
+        - 8082:8082
         - 8009:8009
     volumes:
         - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
     environment:
         - TZ=Europe/Rome
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_DB_SERVER=postgres_hostname:5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
@@ -158,9 +173,11 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.12_oracle
+    image: linkitaly/govway:3.3.13_oracle
     ports:
         - 8080:8080
+        - 8081:8081
+        - 8082:8082
         - 8009:8009
     volumes:
         - ~/govway_conf:/etc/govway
@@ -168,6 +185,7 @@ version: '2'
         - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
     environment:
         - TZ=Europe/Rome
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
         - GOVWAY_DB_SERVER=oracle_hostname:1521
         - GOVWAY_DB_NAME=govwaydb
@@ -187,6 +205,62 @@ $ docker-compose up
 ```
 
 > **_NOTA:_** Per maggiori informazioni sulle variabili che possono essere utilizzate per personalizzare l'immagine fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+
+
+## Informazioni di Base
+
+### File interni all'immagine
+
+I files, interni all'immagine, utilizzati da GovWay sono: 
+- le properties di configurazione, posizionati nella directory **/etc/govway**;
+- i file di log, posizionati nella directory **/var/log/govway**;
+- in una immagine standalone il database HSQL è situato in **/opt/hsqldb-2.7.1/hsqldb/database**.
+
+si possono rendere queste location persistenti, montando dei volumi su queste directory come mostrato negli esempi delle sezioni precedenti.
+
+### Servizi attivi
+
+Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+- **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
+- **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
+- **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
+
+Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno si devono pubblicare al momento dell'avvio del immagine. 
+Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
+
+```
+ http://<indirizzo IP>:8082/govwayConsole/
+ http://<indirizzo IP>:8082/govwayMonitor/
+```
+L'account di default per l'interfaccia **govwayConsole** è:
+ * username: amministratore
+ * password: 123456
+
+L'account di default per l'interfaccia **govwayMonitor** è:
+ * username: operatore
+ * password: 123456
+
+Il contesto di accesso ai servizi dell`API gateway per le erogazioni di API:
+```
+ http://<indirizzo IP>:8080/govway/
+```
+
+Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
+```
+ http://<indirizzo IP>:8081/govway/
+```
+
+### Script SQL di inizializzazione della BaseDati
+
+All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzatti gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
+
+Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
+
+```shell
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.13_postgres initsql)
+docker cp ${CONTAINER_ID}:/opt/postgresql .
+```
+
 
 
 ## Aggiornamento di Versione
@@ -244,7 +318,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.12_batch_postgres
+    image: linkitaly/govway:3.3.13_batch_postgres
     command: 
       - orarie
     environment:
@@ -258,7 +332,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.12_batch_postgres
+    image: linkitaly/govway:3.3.13_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -279,7 +353,7 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.12_batch_oracle
+    image: linkitaly/govway:3.3.13_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -299,7 +373,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.12_batch_oracle
+    image: linkitaly/govway:3.3.13_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
