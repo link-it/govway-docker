@@ -215,7 +215,7 @@ echo "Ricreo moduleo {GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
 module add --name={GOVWAY_DB_TYPE:-hsql}Mod --resources="${LIBRERIE}" --dependencies=javax.api,javax.transaction.api
 EOCLI
 
- ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
+    ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
 fi
 
 if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
@@ -252,8 +252,9 @@ then
 					echo "INFO: Customizzazioni ... eseguo $f"
 					"$f"
 				else
-                    echo "INFO: Customizzazioni ... IGNORO $f" ;;
+                    echo "INFO: Customizzazioni ... IGNORO $f"
 				fi
+                ;;
 		esac
 		echo
 	done
