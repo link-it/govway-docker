@@ -7,7 +7,10 @@ GOVWAY_LIVE_DB_CHECK_SKIP=${GOVWAY_LIVE_DB_CHECK_SKIP:=FALSE}
 GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME=${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME:=2}
 GOVWAY_READY_DB_CHECK_MAX_RETRY=${GOVWAY_READY_DB_CHECK_MAX_RETRY:=5}
 GOVWAY_READY_DB_CHECK_SKIP=${GOVWAY_READY_DB_CHECK_SKIP:=FALSE}
+GOVWAY_READY_DB_CHECK_PGSQL_NATIVE=${GOVWAY_READY_DB_CHECK_PGSQL_NATIVE:=FALSE}
 GOVWAY_POP_DB_SKIP=${GOVWAY_POP_DB_SKIP:=TRUE}
+
+NOPASSWORDS_CLI_SCRIPT="/tmp/__initgovway_fix_datasources.cli"
 
 declare -A mappa_suffissi 
 mappa_suffissi[RUN]=''
@@ -27,6 +30,12 @@ mappa_dbinfostring[RUN]='%Database di GovWay'
 mappa_dbinfostring[CONF]='%Database della Console di Gestione di GovWay'
 mappa_dbinfostring[TRAC]='%Archivio delle tracce e dei messaggi diagnostici emessi da GovWay'
 mappa_dbinfostring[STAT]='%Informazioni Statistiche sulle richieste gestite da GovWay'
+
+declare -A mappa_datasource
+mappa_datasource[RUN]='org.govway.datasource'
+mappa_datasource[CONF]='org.govway.datasource.console'
+mappa_datasource[TRAC]='org.govway.datasource.tracciamento'
+mappa_datasource[STAT]='org.govway.datasource.statistiche'
 
 SQLTOOL_RC_FILE=/tmp/sqltool.rc
 
@@ -76,17 +85,31 @@ do
     ;;
     esac
 
-    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+    then
+        INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    else
+        INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    fi
     cat - <<EOSQLTOOL >> ${SQLTOOL_RC_FILE}
 
 urlid govwayDB${DESTINAZIONE}
 url ${JDBC_URL}
 username ${DBUSER}
-password ${DBPASS}
 driver ${GOVWAY_DS_DRIVER_CLASS}
 transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
+if [ -n "${DBPASS}" ]
+then
+    cat - <<EOSQLTOOL >> ${SQLTOOL_RC_FILE}
+password ${DBPASS}
+EOSQLTOOL
+
+else
+    echo "/subsystem=datasources/data-source=${mappa_datasource[${DESTINAZIONE}]}:undefine-attribute(name=password)" >> ${NOPASSWORDS_CLI_SCRIPT}
+fi
+
 
     # Server liveness
     if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
@@ -128,10 +151,16 @@ EOSQLTOOL
         oracle)
         EXIST_QUERY="SELECT count(table_name) FROM all_tables WHERE  LOWER(table_name)='${DBINFO,,}' AND LOWER(owner)='${DBUSER,,}';" 
         ;;
-        *)         
-        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and (LOWER(table_catalog)='${DBNAME,,}' or LOWER(table_catalog)='public' );" 
+        postgresql)    
+        if [ ${GOVWAY_READY_DB_CHECK_PGSQL_NATIVE^^} == 'FALSE' ]  
+        then
+            EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='${DBNAME,,}';" 
+        else
+            EXIST_QUERY="SELECT count(tablename) FROM pg_catalog.pg_tables WHERE LOWER(tablename)='${DBINFO,,}' AND schemaname <> 'information_schema' AND schemaname <> 'pg_catalog';"
+        fi
         ;;
-        hsql|*)
+        hsql)
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='public';" 
         ;;
         esac
 
@@ -263,5 +292,14 @@ EOSCRIPT
 done
 
 
+if [ -f "${NOPASSWORDS_CLI_SCRIPT}" ]
+then
+    echo "INFO: Rimozione passwords vuote dai datasources"
+    sed -i  -e '1i\embed-server --server-config=standalone.xml --std-out=echo' \
+    -e '$astop-embedded-server' \
+    "${NOPASSWORDS_CLI_SCRIPT}"
+
+    ${JBOSS_HOME}/bin/jboss-cli.sh --file="${NOPASSWORDS_CLI_SCRIPT}"
+fi
 
 exit 0

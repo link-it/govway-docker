@@ -12,6 +12,8 @@ GOVWAY_STARTUP_CHECK_MAX_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY:=60}
 declare -r GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
 declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 
+
+
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
 declare -r ENTRYPOINT_D='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
@@ -49,8 +51,9 @@ postgresql|oracle)
     #
     # Sanity check variabili minime attese
     #
-    if [ -n "${GOVWAY_DB_SERVER}" -a -n  "${GOVWAY_DB_USER}" -a -n "${GOVWAY_DB_PASSWORD}" -a -n "${GOVWAY_DB_NAME}" ] 
+    if [ -n "${GOVWAY_DB_SERVER}" -a -n  "${GOVWAY_DB_USER}"  -a -n "${GOVWAY_DB_NAME}" ] 
     then
+            [ -n "${GOVWAY_DB_PASSWORD}" ] || echo "WARN: La variabile GOVWAY_DB_PASSWORD non è stata impostata."
             echo "INFO: Sanity check variabili ... ok."
     else
         echo "FATAL: Sanity check variabili ... fallito."
@@ -58,7 +61,6 @@ postgresql|oracle)
 GOVWAY_DB_SERVER: ${GOVWAY_DB_SERVER}
 GOVWAY_DB_NAME: ${GOVWAY_DB_NAME}
 GOVWAY_DB_USER: ${GOVWAY_DB_USER}
-GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
 "
         exit 1
     fi
@@ -123,16 +125,19 @@ GOVWAY_DB_PASSWORD: ${GOVWAY_DB_NAME:+xxxxx}
     # [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
     # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
-
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+    then
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+    fi
 
     case "${GOVWAY_DB_TYPE:-hsql}" in
     postgresql)
-        export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
     ;;
     oracle)
-        export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
         export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
         rm -rf "${GOVWAY_DRIVER_JDBC}"
@@ -171,11 +176,48 @@ else
     export JAVA_OPTS="$JAVA_OPTS -XX:MaxRAMPercentage=${MAX_JVM_PERC:-80}"
 fi
 
+# Impostazione del timeout di sospensione di Wildfly in fase di shutdown
+export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${WILDFLY_SUSPEND_TIMEOUT:-20}"
+
+
 # Inizializzazione del database
 ${JBOSS_HOME}/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
+if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+then
+
+    declare -a lista_jar=( ${GOVWAY_DS_JDBC_LIBS}/*.jar )
+    if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${GOVWAY_DS_JDBC_LIBS}/*.jar" ]
+    then
+        echo "FATAL: Nessuna libreria JDBC è presente in ${GOVWAY_DS_JDBC_LIBS}."
+        exit 1
+    elif [ ${#lista_jar[@]} -eq 1 ]
+    then
+        # è presente solo un jar: lo utilizzo
+        LIBRERIE="${lista_jar[0]}" 
+    elif [ ${#lista_jar[@]} -gt 1 ]
+    then
+        # sono presenti diversi jar concateno i path separati da ':'
+        LIBRERIE="${lista_jar[0]}"
+        for j in ${lista_jar[@]:1}
+        do
+            LIBRERIE="${j}:${LIBRERIE}"
+        done
+    fi
+
+    cat - << EOCLI > /tmp/__standalone_fix_module.cli   
+embed-server --server-config=standalone.xml --std-out=echo
+echo "Rimuovo modulo {GOVWAY_DB_TYPE:-hsql}Mod"
+module remove --name={GOVWAY_DB_TYPE:-hsql}Mod
+echo "Ricreo moduleo {GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
+module add --name={GOVWAY_DB_TYPE:-hsql}Mod --resources="${LIBRERIE}" --dependencies=javax.api,javax.transaction.api
+EOCLI
+
+ ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
+fi
+
 if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
 then
     local f
@@ -187,7 +229,7 @@ then
 					echo "INFO: Customizzazioni ... eseguo $f"
 					"$f"
 				else
-					echo "INFO: Customizzazioni ... eseguo $f"
+					echo "INFO: Customizzazioni ... importo $f"
 					. "$f"
 				fi
 				;;
@@ -205,12 +247,19 @@ then
 				    ${JBOSS_HOME}/bin/jboss-cli.sh --file="$f"
 				fi
 				;;
-			*) echo "INFO: Customizzazioni ... ignoro $f" ;;
+			*)  
+                if [ -x "$f" ]; then
+					echo "INFO: Customizzazioni ... eseguo $f"
+					"$f"
+				else
+                    echo "INFO: Customizzazioni ... IGNORO $f" ;;
+				fi
 		esac
 		echo
 	done
     touch ${CUSTOM_INIT_FILE}
 fi
+
 
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log

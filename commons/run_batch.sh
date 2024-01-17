@@ -2,6 +2,8 @@
 exec 6<> /tmp/run_batch.log
 exec 2>&6
 set -x
+#Const
+
 
 case "$1" in
 [oO]rari[ea]) TIPO='StatisticheOrarie'
@@ -26,8 +28,9 @@ postgresql|oracle)
     #
     # Sanity check variabili minime attese
     #
-    if [ -n "${GOVWAY_STAT_DB_SERVER}" -a -n  "${GOVWAY_STAT_DB_USER}" -a -n "${GOVWAY_STAT_DB_PASSWORD}" -a -n "${GOVWAY_STAT_DB_NAME}" ] 
+    if [ -n "${GOVWAY_STAT_DB_SERVER}" -a -n  "${GOVWAY_STAT_DB_USER}" -a -n "${GOVWAY_STAT_DB_NAME}" ] 
     then
+            [ -n "${GOVWAY_STAT_DB_PASSWORD}" ] || echo "WARN: La variabile GOVWAY_STAT_DB_PASSWORD non è stata impostata."
             echo "INFO: Sanity check variabili ... ok."
     else
         echo "FATAL: Sanity check variabili ... fallito."
@@ -35,7 +38,6 @@ postgresql|oracle)
 GOVWAY_STAT_DB_SERVER: ${GOVWAY_STAT_DB_SERVER}
 GOVWAY_STAT_DB_NAME: ${GOVWAY_STAT_DB_NAME}
 GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
-GOVWAY_STAT_DB_PASSWORD: ${GOVWAY_STAT_DB_NAME:+xxxxx}
 "
         exit 1
     fi
@@ -79,9 +81,14 @@ GOVWAY_STAT_DB_PASSWORD: ${GOVWAY_STAT_DB_NAME:+xxxxx}
     if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
     
 
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+    then
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}/."
+    fi
     case "${GOVWAY_DB_TYPE}" in
     postgresql)
-        export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
         # JDBC URLS
@@ -91,7 +98,7 @@ GOVWAY_STAT_DB_PASSWORD: ${GOVWAY_STAT_DB_NAME:+xxxxx}
 
     ;;
     oracle)
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_ORACLE_JDBC_PATH}"
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="${GOVWAY_ORACLE_JDBC_PATH}"
         export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
         rm -rf "${GOVWAY_DRIVER_JDBC}"
@@ -169,6 +176,8 @@ factory.statistiche.db.connection.user=${GOVWAY_STAT_DB_USER}
 factory.statistiche.db.connection.password=${GOVWAY_STAT_DB_PASSWORD}
 EOPROP
 
+
+
 ### MAIN ####
 
 # Imposto Timezone
@@ -177,7 +186,7 @@ ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
-    env | sed -r -e 's/([^=]*)=([^=]*)/\1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
+    env | sed -r -e 's/([^=]*)=(.*)/\1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
     cat - << EOCRONTAB > /etc/crontab
 SHELL=/bin/bash
 BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
@@ -187,7 +196,7 @@ EOCRONTAB
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
     exec crond -n 
 else
-    "INFO: Generazione ${TIPO} avviata..."
+    echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false
     echo "INFO: Generazione ${TIPO} completata."
 fi
