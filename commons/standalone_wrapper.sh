@@ -261,6 +261,10 @@ then
 fi
 
 
+# Imposto Timezone
+[ -z "${TZ}" ] && export TZ="Europe/Rome"
+ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
+
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log
 
