@@ -180,6 +180,17 @@ EOPROP
 
 ### MAIN ####
 
+# Aggiungo un javaagent all'avvio
+if [ -f "${GOVWAY_JVM_AGENT_JAR}" ]
+then
+    export JAVA_TOOL_OPTIONS="-javaagent:${GOVWAY_JVM_AGENT_JAR}"
+elif [ -n "${GOVWAY_JVM_AGENT_JAR}" ]
+then
+    echo "WARN: Impossibile caricare all'avvio l'agent: [${GOVWAY_JVM_AGENT_JAR}]"
+    echo "WARN: Verificare che il path indicato sia corretto e leggibile dall'utente $(id -u -n)"
+fi
+
+
 # Imposto Timezone
 [ -z "${TZ}" ] && export TZ="Europe/Rome"
 ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime

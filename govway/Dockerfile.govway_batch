@@ -25,6 +25,7 @@ JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
 POSTGRES_JDBC_VERSION=42.6.0
 
 RUN set -eux; \
+ulimit -n 1024; \
 yum -q -y install cronie unzip java-11-openjdk-headless; \
 yum -q -y update; \
 yum clean all; \

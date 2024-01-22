@@ -149,7 +149,7 @@ TZ="Europe/Rome" \
 LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
-ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime \
+ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime; \
 echo -e "\n\
 wildfly\tsoft\tnofile\t8192\n\
 wildfly\thard\tnofile\t8192\n\

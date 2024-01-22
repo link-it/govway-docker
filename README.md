@@ -213,6 +213,10 @@ Quando ci si connette ad un databse esterno Oracle devono essere indicate anche 
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (obbligatorio: deve essere obbligatoriamente montato come volume all'avvio)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
+#### Driver JDBC
+* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
+di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver
+
 ### Pooling connessioni database
 
 * GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite(default: 50)
@@ -252,7 +256,12 @@ TRACCIAMENTO
 I listener HTTP configurati sul wildfly possono 
 * WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in erogazione, (default: 100)
 * WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in fruizione, (default: 100)
-* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, ##(default: 20)
+* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, (default: 20)
+
+### Configurazioni avanzate  
+* WILDFLY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly (default: 20s)
+* WILDFLY_MAX-POST-SIZE: Dimesione massima consentita per i messaggi POST (default: 25485760 bytes)
+* GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 
 ## Personalizzazioni Batch
 Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti categorie CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
@@ -282,3 +291,10 @@ TRACCIAMENTO
 ### Modalita Cron
 * GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])
 * GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere) 
+
+#### Driver JDBC
+* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
+di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver
+
+### Configurazioni avanzate
+* GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'applicazione (Ex. OpenTelemetry)

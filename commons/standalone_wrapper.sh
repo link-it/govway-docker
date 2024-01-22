@@ -267,6 +267,16 @@ then
     touch ${CUSTOM_INIT_FILE}
 fi
 
+# Aggiungo un javaagent all'avvio
+if [ -f "${GOVWAY_JVM_AGENT_JAR}" ]
+then
+    echo "INFO: Carico all'avvio l'agent: [${GOVWAY_JVM_AGENT_JAR}]"
+    export JAVA_TOOL_OPTIONS="-javaagent:${GOVWAY_JVM_AGENT_JAR}"
+elif [ -n "${GOVWAY_JVM_AGENT_JAR}" ]
+then
+    echo "WARN: Impossibile caricare all'avvio l'agent: [${GOVWAY_JVM_AGENT_JAR}]"
+    echo "WARN: Verificare che il path indicato sia corretto e leggibile dall'utente $(id -u -n)"
+fi
 
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log
