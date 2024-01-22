@@ -145,9 +145,11 @@ POSTGRES_JDBC_VERSION=42.6.0 \
 WILDFLY_VERSION=26.1.3.Final \
 WILDFLY_SHA1=b9f52ba41df890e09bb141d72947d2510caf758c \
 JBOSS_HOME=/opt/wildfly-26.1.3.Final \
+TZ="Europe/Rome" \
 LAUNCH_JBOSS_IN_BACKGROUND=true
 
 RUN set -eux; \
+ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime \
 echo -e "\n\
 wildfly\tsoft\tnofile\t8192\n\
 wildfly\thard\tnofile\t8192\n\

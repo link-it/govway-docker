@@ -125,10 +125,9 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
     # [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
     # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
-    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
-    then
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
-    fi
+
+    [ -n "${GOVWAY_DS_JDBC_LIBS}" ] && export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+    
 
     case "${GOVWAY_DB_TYPE:-hsql}" in
     postgresql)
@@ -140,8 +139,15 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
         export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
-        rm -rf "${GOVWAY_DRIVER_JDBC}"
-        cp "${GOVWAY_ORACLE_JDBC_PATH}"  "${GOVWAY_DRIVER_JDBC}"
+
+        # Se è valorizzata GOVWAY_DS_JDBC_LIBS mi aspetto che il driver sia dentro la directory
+        #  altrimenti lo copio da GOVWAY_ORACLE_JDBC_PATH
+        # ATTENZIONE non c'è verifica che il driver sia effettivamente presente.
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            rm -rf "${GOVWAY_DRIVER_JDBC}"
+            cp "${GOVWAY_ORACLE_JDBC_PATH}"  "${GOVWAY_DRIVER_JDBC}"
+        fi
 
         if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
         then
@@ -199,7 +205,7 @@ then
         LIBRERIE="${lista_jar[0]}" 
     elif [ ${#lista_jar[@]} -gt 1 ]
     then
-        # sono presenti diversi jar concateno i path separati da ':'
+        # sono presenti diversi jar concateno i path separandoli con ':'
         LIBRERIE="${lista_jar[0]}"
         for j in ${lista_jar[@]:1}
         do
@@ -211,7 +217,7 @@ then
 embed-server --server-config=standalone.xml --std-out=echo
 echo "Rimuovo modulo {GOVWAY_DB_TYPE:-hsql}Mod"
 module remove --name={GOVWAY_DB_TYPE:-hsql}Mod
-echo "Ricreo moduleo {GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
+echo "Ricreo modulo {GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
 module add --name={GOVWAY_DB_TYPE:-hsql}Mod --resources="${LIBRERIE}" --dependencies=javax.api,javax.transaction.api
 EOCLI
 
@@ -261,10 +267,6 @@ then
     touch ${CUSTOM_INIT_FILE}
 fi
 
-
-# Imposto Timezone
-[ -z "${TZ}" ] && export TZ="Europe/Rome"
-ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log
