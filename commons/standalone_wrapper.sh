@@ -17,6 +17,8 @@ declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
 declare -r ENTRYPOINT_D='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
+declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
+declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
 then
@@ -64,14 +66,47 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
 "
         exit 1
     fi
-    if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+
+
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ] 
     then
-        if [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -o ! -f "${GOVWAY_ORACLE_JDBC_PATH}" ]
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+        if [ ! -d "${GOVWAY_DS_JDBC_LIBS}" ]
         then
             echo "FATAL: Sanity check variabili ... fallito."
-            echo "FATAL: Il path al driver jdbc oracle, non è stato indicato o non è leggibile: [GOVWAY_ORACLE_JDBC_PATH=${GOVWAY_ORACLE_JDBC_PATH}] "
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, non è leggibile o non è una directory: [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}] "
             exit 1
         fi
+    fi
+
+    case "${GOVWAY_DB_TYPE:-hsql}" in
+    postgresql)
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    ;;
+    oracle)
+        # ATTENZIONE la variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS.
+        # se solo GOVWAY_ORACLE_JDBC_PATH è valorizzata provo a mantenere la compatibilità usando il nome della directory 
+        # se nessuna delle due viene specificata si tratta di un errore per il db oracle
+        # se sono valorizzate entrambe viene usata GOVWAY_DS_JDBC_LIBS
+        if [ -n "${GOVWAY_ORACLE_JDBC_PATH}" ]
+        then
+            echo "WARN: La variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS."
+            if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+            then
+                export GOVWAY_DS_JDBC_LIBS="$(dirname ${GOVWAY_ORACLE_JDBC_PATH})"
+                export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+            else
+                echo "WARN: Recupero librerie per il driver jdbc da [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}]."
+            fi
+        elif [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -a -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+
         if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' -a "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
         then
             echo "FATAL: Sanity check variabili ... fallito."
@@ -79,7 +114,23 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             echo "       Valori consentiti: [ servicename , sid ]"
             exit 1
         fi
-    fi
+
+        export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
+
+
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
+        then
+            export ORACLE_JDBC_SERVER_PREFIX='//'
+            export ORACLE_JDBC_DB_SEPARATOR='/'
+        else
+            export ORACLE_JDBC_SERVER_PREFIX=''
+            export ORACLE_JDBC_DB_SEPARATOR=':'
+        fi
+    ;;
+    esac
+
+
     # Setting valori di Default per i datasource GOVWAY
     [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_DB_SERVER}"
     [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_DB_SERVER}"
@@ -125,40 +176,6 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
     # [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
     # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
-
-    [ -n "${GOVWAY_DS_JDBC_LIBS}" ] && export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
-    
-
-    case "${GOVWAY_DB_TYPE:-hsql}" in
-    postgresql)
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
-        export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
-        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
-    ;;
-    oracle)
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="${JBOSS_HOME}/modules/oracleMod/main/oracle-jdbc.jar"
-        export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
-        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
-
-        # Se è valorizzata GOVWAY_DS_JDBC_LIBS mi aspetto che il driver sia dentro la directory
-        #  altrimenti lo copio da GOVWAY_ORACLE_JDBC_PATH
-        # ATTENZIONE non c'è verifica che il driver sia effettivamente presente.
-        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
-        then
-            rm -rf "${GOVWAY_DRIVER_JDBC}"
-            cp "${GOVWAY_ORACLE_JDBC_PATH}"  "${GOVWAY_DRIVER_JDBC}"
-        fi
-
-        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
-        then
-            export ORACLE_JDBC_SERVER_PREFIX='//'
-            export ORACLE_JDBC_DB_SEPARATOR='/'
-        else
-            export ORACLE_JDBC_SERVER_PREFIX=''
-            export ORACLE_JDBC_DB_SEPARATOR=':'
-        fi
-    ;;
-    esac
 ;;
 hsql|*)
     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
@@ -191,37 +208,87 @@ ${JBOSS_HOME}/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; 
 ${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
-if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+if [ ! -f "${MODULE_INIT_FILE}" ]
 then
 
-    declare -a lista_jar=( ${GOVWAY_DS_JDBC_LIBS}/*.jar )
-    if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${GOVWAY_DS_JDBC_LIBS}/*.jar" ]
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
     then
-        echo "FATAL: Nessuna libreria JDBC è presente in ${GOVWAY_DS_JDBC_LIBS}."
-        exit 1
-    elif [ ${#lista_jar[@]} -eq 1 ]
-    then
-        # è presente solo un jar: lo utilizzo
-        LIBRERIE="${lista_jar[0]}" 
-    elif [ ${#lista_jar[@]} -gt 1 ]
-    then
-        # sono presenti diversi jar concateno i path separandoli con ':'
-        LIBRERIE="${lista_jar[0]}"
-        for j in ${lista_jar[@]:1}
-        do
-            LIBRERIE="${j}:${LIBRERIE}"
-        done
-    fi
 
-    cat - << EOCLI > /tmp/__standalone_fix_module.cli   
+        declare -a lista_jar=( ${GOVWAY_DS_JDBC_LIBS}/*.jar )
+        if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${GOVWAY_DS_JDBC_LIBS}/*.jar" ]
+        then
+            echo "FATAL: Nessuna libreria JDBC è presente in ${GOVWAY_DS_JDBC_LIBS}."
+            exit 1
+        elif [ ${#lista_jar[@]} -eq 1 ]
+        then
+            # è presente solo un jar: lo utilizzo
+            LIBRERIE="${lista_jar[0]}" 
+        elif [ ${#lista_jar[@]} -gt 1 ]
+        then
+            # sono presenti diversi jar concateno i path separandoli con ':'
+            LIBRERIE="${lista_jar[0]}"
+            for j in ${lista_jar[@]:1}
+            do
+                LIBRERIE="${j}:${LIBRERIE}"
+            done
+        fi
+
+        cat - << EOCLI > /tmp/__standalone_fix_module.cli   
 embed-server --server-config=standalone.xml --std-out=echo
-echo "Rimuovo modulo {GOVWAY_DB_TYPE:-hsql}Mod"
-module remove --name={GOVWAY_DB_TYPE:-hsql}Mod
-echo "Ricreo modulo {GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
-module add --name={GOVWAY_DB_TYPE:-hsql}Mod --resources="${LIBRERIE}" --dependencies=javax.api,javax.transaction.api
+echo "Rimuovo modulo ${GOVWAY_DB_TYPE:-hsql}Mod"
+module remove --name=${GOVWAY_DB_TYPE:-hsql}Mod
+echo "Ricreo modulo ${GOVWAY_DB_TYPE:-hsql}Mod con risorse aggiornate"
+module add --name=${GOVWAY_DB_TYPE:-hsql}Mod --resources="${LIBRERIE}" --dependencies=javax.api,javax.transaction.api
 EOCLI
 
-    ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
+    fi
+    
+    touch "${MODULE_INIT_FILE}"
+fi
+if [ ! -f "${CONNETTORI_INIT_FILE}" ]
+then
+    if [ "${WILDFLY_AJP_ABILITATO^^}" == 'TRUE' ]
+    then
+        cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
+embed-server --server-config=standalone.xml --std-out=echo
+echo "Aggiungo Worker e Listener ajp"
+/subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.WILDFLY_AJP_OUT_WORKER-MAX-THREADS:100})
+/socket-binding-group=standard-sockets/socket-binding=ajp-out:add(port=\${jboss.ajp.out.port:8010})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
+/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GET_WORKER-MAX-THREADS:20})
+/socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
+EOCLI
+    elif  [ "${WILDFLY_AJP_ABILITATO^^}" == 'FALSE' ]
+    then
+        # Elimino il connettore AJP solo se esplicitmante richiesto
+        # per mantenere la compatibilità con le immagini preesistenti che
+        #   lo avevano attivo all'avvio comunque
+        cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
+embed-server --server-config=standalone.xml --std-out=echo
+echo "Elimino Worker e Listener ajp"
+/subsystem=undertow/server=default-server/ajp-listener=ajplistener:remove()
+/subsystem=io/worker=ajp-worker:remove()
+EOCLI
+    fi
+
+    # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
+    if [ "${WILDFLY_HTTP_ABILITATO^^}" == 'FALSE'  ]
+    then      
+        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
+echo "Elimino Worker e Listener http"
+/subsystem=undertow/server=default-server/http-listener=fruizioni:remove()
+/subsystem=undertow/server=default-server/http-listener=gestione:remove()
+/subsystem=io/worker=http-out-worker:remove()
+/subsystem=io/worker=http-gest-worker:remove()
+EOCLI
+
+    fi
+
+    [ -f /tmp/__standalone_fix_connettori.cli ] && ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
+    touch "${CONNETTORI_INIT_FILE}"
 fi
 
 if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
@@ -314,7 +381,7 @@ PID=$!
 trap "kill -TERM $PID; export NUM_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY};" TERM INT
 
 
-if [ "${GOVWAY_STARTUP_CHECK_SKIP}" == "FALSE" ]
+if [ "${GOVWAY_STARTUP_CHECK_SKIP^^}" == "FALSE" ]
 then
 
 	/bin/rm -f  /tmp/govway_ready
