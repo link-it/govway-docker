@@ -79,11 +79,12 @@ si possono rendere queste location persistenti, montando dei volumi su queste di
 
 ### Servizi attivi
 
-Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto per default sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
 - **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
 
+E' possibile personalizzare i listener da attivare tramite variabili d'ambiente descritte nei paragrafi successivi.
 Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno si devono pubblicare al momento dell'avvio del immagine. 
 Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
 
@@ -210,12 +211,12 @@ TRACCIAMENTO
 Quando ci si connette ad un databse esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
 
-* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (obbligatorio: deve essere obbligatoriamente montato come volume all'avvio)
+* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
 #### Driver JDBC
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver
+di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver
 
 ### Pooling connessioni database
 
@@ -252,15 +253,30 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
 
-### Pooling connessioni Http
-I listener HTTP configurati sul wildfly possono 
-* WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in erogazione, (default: 100)
-* WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico in fruizione, (default: 100)
-* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener traffico di gestione, (default: 20)
+### Configurazione Listener 
+Per configurare con quali protocolli i listener di wildfly accetteranno le richieste, è possibile utilizzare le seguenti variabili:
+
+* WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: true, valori ammissibili [true, false, ajp-8009] )
+* WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
+
+A seconda del protocollo che si vuole configurare, valorizzando la relativa variabile a **true** si abiliteranno tutti e tre listener previsti di erogazione, fruizione e gestione. Viceversa valorizzando a **false** i tre listener verranno disabilitati.
+Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un solo un listener per il protocollo scelto, sulla rispettiva porta di default.
+
+
+I listener pssono essere ulteriormente configurati tramite le seguenti variabili:
+
+* WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)
+* WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)
+* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)
+
+* WILDFLY_AJP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)
+* WILDFLY_AJP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)
+* WILDFLY_AJP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)
+
+* WILDFLY_MAX-POST-SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)
 
 ### Configurazioni avanzate  
 * WILDFLY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly (default: 20s)
-* WILDFLY_MAX-POST-SIZE: Dimesione massima consentita per i messaggi POST (default: 25485760 bytes)
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 
 ## Personalizzazioni Batch
