@@ -103,10 +103,10 @@ echo "Rimuovo connettore https" \n\
 echo "Abilitazione Non standard wrapper" \n\
 /subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
 echo "Correggo max post size" \n\
-/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
-/subsystem=undertow/server=default-server/http-listener=fruizioni:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
-/subsystem=undertow/server=default-server/http-listener=gestione:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
-/subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:25485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=fruizioni:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=gestione:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
 echo "Abilitazione Acces Log"\n\
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
 echo "Sposto Server Log"\n\

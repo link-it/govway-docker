@@ -258,10 +258,10 @@ embed-server --server-config=standalone.xml --std-out=echo
 echo "Aggiungo Worker e Listener ajp"
 /subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.WILDFLY_AJP_OUT_WORKER-MAX-THREADS:100})
 /socket-binding-group=standard-sockets/socket-binding=ajp-out:add(port=\${jboss.ajp.out.port:8010})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
 /subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GEST_WORKER-MAX-THREADS:20})
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
 EOCLI
     elif  [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' ]
     then
