@@ -249,7 +249,9 @@ EOCLI
 fi
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    if [ "${WILDFLY_AJP_LISTENER^^}" == 'TRUE' -o "${WILDFLY_AJP_LISTENER^^}" == 'ABILITATO' ]
+    [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' -a "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
+
+    if [ "${WILDFLY_AJP_LISTENER^^}" == 'TRUE' ]
     then
         cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
 embed-server --server-config=standalone.xml --std-out=echo
@@ -261,7 +263,7 @@ echo "Aggiungo Worker e Listener ajp"
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
 /subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
 EOCLI
-    elif  [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' -o "${WILDFLY_AJP_LISTENER^^}" == 'DISABILITATO' ]
+    elif  [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' ]
     then
         # Elimino il connettore AJP solo se esplicitmante richiesto
         # per mantenere la compatibilità con le immagini preesistenti che
@@ -281,7 +283,7 @@ EOCLI
 
 
     # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
-    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' -o "${WILDFLY_HTTP_LISTENER^^}" == 'DISABILITATO' ]
+    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' ]
     then      
         [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
         cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
@@ -293,7 +295,7 @@ echo "Elimino Worker e Listener http"
 /subsystem=io/worker=http-out-worker:remove()
 /subsystem=io/worker=http-gest-worker:remove()
 EOCLI
-    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'TRUE' -o "${WILDFLY_HTTP_LISTENER^^}" == 'ABILITATO' ]
+    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'TRUE' ]
     then
         # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_HTTP_LISTENER
         # non faccio nulla
