@@ -268,7 +268,7 @@ EOSQL
         - GOVWAY_DB_NAME=GOVWAYPDB
         - GOVWAY_DB_USER=GOVWAY
         - GOVWAY_DB_PASSWORD=GOVWAY
-        - GOVWAY_DS_JDBC_IBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/tmp
         - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
         - GOVWAY_POP_DB_SKIP=false
         # il container oracle puo impiegare anche 20 minuti ad avviarsi
