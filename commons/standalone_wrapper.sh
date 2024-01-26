@@ -73,7 +73,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
         if [ ! -d "${GOVWAY_DS_JDBC_LIBS}" ]
         then
-            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Sanity check JDBC ... fallito."
             echo "FATAL: Il path alla directory che contiene il driver JDBC, non è leggibile o non è una directory: [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}] "
             exit 1
         fi
@@ -92,7 +92,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         # se sono valorizzate entrambe viene usata GOVWAY_DS_JDBC_LIBS
         if [ -n "${GOVWAY_ORACLE_JDBC_PATH}" ]
         then
-            echo "WARN: La variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS."
+            echo "WARN: Sanity check JDBC ... La variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS."
             if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
             then
                 export GOVWAY_DS_JDBC_LIBS="$(dirname ${GOVWAY_ORACLE_JDBC_PATH})"
@@ -102,14 +102,14 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             fi
         elif [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -a -z "${GOVWAY_DS_JDBC_LIBS}" ]
         then
-            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Sanity check JDBC ... fallito."
             echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
             exit 1
         fi
 
         if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' -a "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
         then
-            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Sanity check JDBC ... fallito."
             echo "FATAL: Valore non consentito per la variabile GOVWAY_ORACLE_JDBC_URL_TYPE: [GOVWAY_ORACLE_JDBC_URL_TYPE=${GOVWAY_ORACLE_JDBC_URL_TYPE}]."
             echo "       Valori consentiti: [ servicename , sid ]"
             exit 1
@@ -217,6 +217,7 @@ then
         declare -a lista_jar=( ${GOVWAY_DS_JDBC_LIBS}/*.jar )
         if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${GOVWAY_DS_JDBC_LIBS}/*.jar" ]
         then
+            echo "FATAL: Sanity check JDBC ... fallito"
             echo "FATAL: Nessuna libreria JDBC è presente in ${GOVWAY_DS_JDBC_LIBS}."
             exit 1
         elif [ ${#lista_jar[@]} -eq 1 ]
@@ -243,12 +244,12 @@ EOCLI
 
         ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_module.cli"
     fi
-    
+
     touch "${MODULE_INIT_FILE}"
 fi
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    if [ "${WILDFLY_AJP_ABILITATO^^}" == 'TRUE' ]
+    if [ "${WILDFLY_AJP_LISTENER^^}" == 'TRUE' -o "${WILDFLY_AJP_LISTENER^^}" == 'ABILITATO' ]
     then
         cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
 embed-server --server-config=standalone.xml --std-out=echo
@@ -256,11 +257,11 @@ echo "Aggiungo Worker e Listener ajp"
 /subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.WILDFLY_AJP_OUT_WORKER-MAX-THREADS:100})
 /socket-binding-group=standard-sockets/socket-binding=ajp-out:add(port=\${jboss.ajp.out.port:8010})
 /subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
-/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GET_WORKER-MAX-THREADS:20})
+/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GEST_WORKER-MAX-THREADS:20})
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
 /subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:25485760})
 EOCLI
-    elif  [ "${WILDFLY_AJP_ABILITATO^^}" == 'FALSE' ]
+    elif  [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' -o "${WILDFLY_AJP_LISTENER^^}" == 'DISABILITATO' ]
     then
         # Elimino il connettore AJP solo se esplicitmante richiesto
         # per mantenere la compatibilità con le immagini preesistenti che
@@ -271,11 +272,35 @@ echo "Elimino Worker e Listener ajp"
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:remove()
 /subsystem=io/worker=ajp-worker:remove()
 EOCLI
+    elif [ "${WILDFLY_AJP_LISTENER^^}" == 'AJP-8009' ]
+    then
+        # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_AJP_LISTENER
+        # non faccio nulla
+        true
     fi
 
+    HTTP-8080
+    ALL
     # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
-    if [ "${WILDFLY_HTTP_ABILITATO^^}" == 'FALSE'  ]
+    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' -o"${WILDFLY_HTTP_LISTENER^^}" == 'DISABILITATO' ]
     then      
+        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
+echo "Elimino Worker e Listener http"
+/interface=sololocalhost:add(inet-address=127.0.0.1)
+/socket-binding-group=standard-sockets/socket-binding=http:write-attribute(name=interface, value="sololocalhost")
+/subsystem=undertow/server=default-server/http-listener=fruizioni:remove()
+/subsystem=undertow/server=default-server/http-listener=gestione:remove()
+/subsystem=io/worker=http-out-worker:remove()
+/subsystem=io/worker=http-gest-worker:remove()
+EOCLI
+    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'TRUE' -o "${WILDFLY_HTTP_LISTENER^^}" == 'ABILITATO' ]
+    then
+        # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_HTTP_LISTENER
+        # non faccio nulla
+        true
+    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'HTTP-8080' ]
+    then
         [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
         cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
 echo "Elimino Worker e Listener http"
