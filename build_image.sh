@@ -290,7 +290,7 @@ EOSQL
 #        - GOVWAY_STAT_DB_NAME=GOVWAYPDB
 #        - GOVWAY_STAT_DB_USER=GOVWAY
 #        - GOVWAY_STAT_DB_PASSWORD=GOVWAY
-#        - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc10.jar
+#        - GOVWAY_DS_JDBC_LIBS=/tmp
 #        - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
 #        - GOVWAY_BATCH_USA_CRON=yes
   database:

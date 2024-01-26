@@ -41,22 +41,7 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 "
         exit 1
     fi
-    if [ "${GOVWAY_DB_TYPE}" == 'oracle' ]
-    then
-        if [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -o ! -f "${GOVWAY_ORACLE_JDBC_PATH}" ]
-        then
-            echo "FATAL: Sanity check variabili ... fallito."
-            echo "FATAL: Il path al driver jdbc oracle, non è stato indicato o non è leggibile: [GOVWAY_ORACLE_JDBC_PATH=${GOVWAY_ORACLE_JDBC_PATH}] "
-            exit 1
-        fi
-        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' -a "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
-        then
-            echo "FATAL: Sanity check variabili ... fallito."
-            echo "FATAL: Valore non consentito per la variabile GOVWAY_ORACLE_JDBC_URL_TYPE: [GOVWAY_ORACLE_JDBC_URL_TYPE=${GOVWAY_ORACLE_JDBC_URL_TYPE}]."
-            echo "       Valori consentiti: [ servicename , sid ]"
-            exit 1
-        fi
-    fi
+
     # Setting valori di Default per i datasource GOVWAY
     [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
     [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
@@ -79,16 +64,24 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
     [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] &&  export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"
     if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
     if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
-    
 
-    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+
+    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ] 
     then
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}/."
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+        if [ ! -d "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, non è leggibile o non è una directory: [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}] "
+            exit 1
+        fi
     fi
     case "${GOVWAY_DB_TYPE}" in
     postgresql)
-
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        # 
+        # il driver postgres si trova in "/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        #
+        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt"
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
         # JDBC URLS
@@ -98,11 +91,39 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 
     ;;
     oracle)
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="${GOVWAY_ORACLE_JDBC_PATH}"
+
+        # ATTENZIONE la variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS.
+        # se solo GOVWAY_ORACLE_JDBC_PATH è valorizzata provo a mantenere la compatibilità usando il nome della directory 
+        # se nessuna delle due viene specificata si tratta di un errore per il db oracle
+        # se sono valorizzate entrambe viene usata GOVWAY_DS_JDBC_LIBS
+        if [ -n "${GOVWAY_ORACLE_JDBC_PATH}" ]
+        then
+            echo "WARN: Sanity check JDBC ... La variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS."
+            if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+            then
+                export GOVWAY_DS_JDBC_LIBS="$(dirname ${GOVWAY_ORACLE_JDBC_PATH})"
+                export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+            else
+                echo "WARN: Recupero librerie per il driver jdbc da [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}]."
+            fi
+        elif [ -z "${GOVWAY_ORACLE_JDBC_PATH}" -a -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SERVICENAME' -a "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
+        then
+            echo "FATAL: Sanity check variabili ... fallito."
+            echo "FATAL: Valore non consentito per la variabile GOVWAY_ORACLE_JDBC_URL_TYPE: [GOVWAY_ORACLE_JDBC_URL_TYPE=${GOVWAY_ORACLE_JDBC_URL_TYPE}]."
+            echo "       Valori consentiti: [ servicename , sid ]"
+            exit 1
+        fi
+
         export GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
-        rm -rf "${GOVWAY_DRIVER_JDBC}"
-        cp "${GOVWAY_ORACLE_JDBC_PATH}"  "${GOVWAY_DRIVER_JDBC}"
+
 
         if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
         then
@@ -119,6 +140,8 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 
     ;;
     esac
+
+
 ;;
 # Temporanemaente disabilitato
 # hsql)
@@ -146,7 +169,8 @@ esac
 export GOVWAY_BATCH_STATISTICHE="${GOVWAY_BATCH_HOME}/generatoreStatistiche"
 export BATCH_CLASSPATH="${GOVWAY_BATCH_STATISTICHE}/lib"
 export BATCH_CONFIG='/tmp/runtime_properties'
-export BATCH_JDBC="$(dirname ${GOVWAY_DRIVER_JDBC})"
+# mi aspetto che GOVWAY_DRIVER_JDBC punti già ad una directory
+export BATCH_JDBC="${GOVWAY_DRIVER_JDBC}"
 
 
 
