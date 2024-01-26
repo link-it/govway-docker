@@ -279,10 +279,9 @@ EOCLI
         true
     fi
 
-    HTTP-8080
-    ALL
+
     # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
-    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' -o"${WILDFLY_HTTP_LISTENER^^}" == 'DISABILITATO' ]
+    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' -o "${WILDFLY_HTTP_LISTENER^^}" == 'DISABILITATO' ]
     then      
         [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
         cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
