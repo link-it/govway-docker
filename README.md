@@ -123,15 +123,16 @@ docker cp ${CONTAINER_ID}:/opt/postgresql .
 
 ### Comandi di inizializzazione aggiuntiva
 
-La sequenza di avvio avvio del container, sia in modalità standalone che con immagini orchestrate, consente di valuta dei comandi di inizializzazione aggiuntiva, inserendoli sotto la directory **/docker-entrypoint-govway.d/**
+La sequenza di avvio avvio del container, sia in modalità standalone che con immagini orchestrate, consente di valutare dei comandi di inizializzazione aggiuntiva, inserendoli sotto la directory **/docker-entrypoint-govway.d/**
 
 Tutti i files trovati sotto quella directory vengono valutati in ordine alfabetico, suddivisi e gestiti come segue:
 - files con estensione **'.sh'** non eseguibili:  vengono trattati come scripts di shell e viene fatto il source del contenuto (import nella shell attuale)
 - files con estensione **'.sh'** eseguibili:  vengono eseguiti con l'utente di sistema **wildfly**
 - files con estensione **'.cli'**: vengono trattati come script di command line wildfly e vengono passati all 'interprete **${JBOSS_HOME}/bin/jboss-cli.sh** 
-- tutti li altri files : vengono ignorati
+- tutti gli altri files : vengono ignorati
 
-La valutazione dei comandi di inizializzazione viene fatta dopo le verifiche e l'eventuale inizializzazione del database, ma prima dell'avvio dell'application server wildfly; inoltre la valutazione avviene solamente al primo avvio del container 
+La valutazione dei comandi di inizializzazione viene fatta dopo le verifiche e l'eventuale inizializzazione del database, ma prima dell'avvio dell'application server wildfly; inoltre la valutazione avviene solamente al primo avvio del container. 
+
 Qualsiasi errore generato da uno qualsiasi dei comandi eseguiti viene ignorato, ed il processo di valutazione avanza al file successivo.
 
 ## Informazioni sulle immagini batch
@@ -196,6 +197,8 @@ E' possibile personalizzare il ciclo di controllo di avvio di govway impostando 
 * GOVWAY_DB_NAME: Nome del database (obbligatorio in modalita orchestrate)
 * GOVWAY_DB_USER: username da utiliizare per l'accesso al database (obbligatorio in modalita orchestrate)
 * GOVWAY_DB_PASSWORD: password di accesso al database (obbligatorio in modalita orchestrate)
+* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
+di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio sono per database Oracle)
 
 Se la configurazione lo richiede è possibile suddividere i dati prodotti o utilizzati da govway, su piu' database, a seconda della categoria di dati contenuti.
 Le categorie di dati gestite sono:  CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
@@ -227,9 +230,6 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
-#### Driver JDBC
-* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver
 
 ### Pooling connessioni database
 
@@ -293,13 +293,24 @@ I listener possono essere ulteriormente configurati tramite le seguenti variabil
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 
 ## Personalizzazioni Batch
+
+### Modalita Cron
+
+* GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])
+* GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere) 
+
+
+### Connessione a database esterni 
+
 Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti categorie CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
-Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguneti variabili obbligatorie.:
+Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguenti variabili obbligatorie:
 
 * GOVWAY_STAT_DB_SERVER: nome dns o ip address del server database (obbligatorio)
 * GOVWAY_STAT_DB_NAME: Nome del database delle statistiche (obbligatorio)
 * GOVWAY_STAT_DB_USER: username da utilizzare per l'accesso al database (obbligatorio)
 * GOVWAY_STAT_DB_PASSWORD: password di accesso al database (obbligatorio)
+* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
+di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver (obbligatorio sono per database Oracle)
 
 
 Se la configurazione lo richiede è possibile
@@ -324,13 +335,6 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
-### Modalita Cron
-* GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])
-* GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere) 
-
-#### Driver JDBC
-* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver
 
 ### Configurazioni avanzate
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'applicazione (Ex. OpenTelemetry)
