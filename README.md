@@ -110,9 +110,9 @@ Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
  http://<indirizzo IP>:8081/govway/
 ```
 
-### Script SQL di inizializzazione della BaseDati 
+### Script SQL di inizializzazione della Base Dati 
 
-All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzatti gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
+All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto uno o più database non inizializzati è possibile utilizzare gli scripts SQL interni per effettuare l'inizializzazione, valorizzando la variabile **'GOVWAY_POP_DB_SKIP'** al valore **false**.
 
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
@@ -120,6 +120,19 @@ Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuper
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.12_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
+
+### Comandi di inizializzazione aggiuntiva
+
+La sequenza di avvio avvio del container, sia in modalità standalone che con immagini orchestrate, consente di valuta dei comandi di inizializzazione aggiuntiva, inserendoli sotto la directory **/docker-entrypoint-govway.d/**
+
+Tutti i files trovati sotto quella directory vengono valutati in ordine alfabetico, suddivisi e gestiti come segue:
+- files con estensione **'.sh'** non eseguibili:  vengono trattati come scripts di shell e viene fatto il source del contenuto (import nella shell attuale)
+- files con estensione **'.sh'** eseguibili:  vengono eseguiti con l'utente di sistema **wildfly**
+- files con estensione **'.cli'**: vengono trattati come script di command line wildfly e vengono passati all 'interprete **${JBOSS_HOME}/bin/jboss-cli.sh** 
+- tutti li altri files : vengono ignorati
+
+La valutazione dei comandi di inizializzazione viene fatta dopo le verifiche e l'eventuale inizializzazione del database, ma prima dell'avvio dell'application server wildfly; inoltre la valutazione avviene solamente al primo avvio del container 
+Qualsiasi errore generato da uno qualsiasi dei comandi eseguiti viene ignorato, ed il processo di valutazione avanza al file successivo.
 
 ## Informazioni sulle immagini batch
 Utilizzando lo switch "-a" dello script di build è possibile costruire una immmagine contenente solamente il software necessario all'esecuzione dei batch di generazione statistiche.
@@ -208,7 +221,7 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
 
 #### Connessione a database Oracle ####
-Quando ci si connette ad un databse esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
+Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
 
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
@@ -256,14 +269,14 @@ TRACCIAMENTO
 ### Configurazione Listener 
 Per configurare con quali protocolli i listener di wildfly accetteranno le richieste, è possibile utilizzare le seguenti variabili:
 
-* WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: true, valori ammissibili [true, false, ajp-8009] )
+* WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )
 * WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
 
 A seconda del protocollo che si vuole configurare, valorizzando la relativa variabile a **true** si abiliteranno tutti e tre listener previsti di erogazione, fruizione e gestione. Viceversa valorizzando a **false** i tre listener verranno disabilitati.
 Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un solo un listener per il protocollo scelto, sulla rispettiva porta di default.
 
 
-I listener pssono essere ulteriormente configurati tramite le seguenti variabili:
+I listener possono essere ulteriormente configurati tramite le seguenti variabili:
 
 * WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)
 * WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)
@@ -303,6 +316,13 @@ TRACCIAMENTO
 * GOVWAY_TRAC_DB_NAME (default: GOVWAY_DB_NAME)
 * GOVWAY_TRAC_DB_USER (default: GOVWAY_DB_USER)
 * GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+
+#### Connessione a database Oracle ####
+Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
+
+
+* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
+* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 
 ### Modalita Cron
 * GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])

@@ -15,7 +15,7 @@ declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 
 
 declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
-declare -r ENTRYPOINT_D='/docker-entrypoint-widlflycli.d/'
+declare -r ENTRYPOINT_D='/docker-entrypoint-govway.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
@@ -347,12 +347,7 @@ then
 				fi
 				;;
 			*)  
-                if [ -x "$f" ]; then
-					echo "INFO: Customizzazioni ... eseguo $f"
-					"$f"
-				else
-                    echo "INFO: Customizzazioni ... IGNORO $f"
-				fi
+                echo "INFO: Customizzazioni ... IGNORO $f"
                 ;;
 		esac
 		echo
