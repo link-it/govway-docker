@@ -207,6 +207,7 @@ EOPROP
 # Aggiungo un javaagent all'avvio
 if [ -f "${GOVWAY_JVM_AGENT_JAR}" ]
 then
+    echo "INFO: Carico all'avvio l'agent: [${GOVWAY_JVM_AGENT_JAR}]"
     export JAVA_TOOL_OPTIONS="-javaagent:${GOVWAY_JVM_AGENT_JAR}"
 elif [ -n "${GOVWAY_JVM_AGENT_JAR}" ]
 then
@@ -215,13 +216,14 @@ then
 fi
 
 
+
 # Imposto Timezone
 [ -z "${TZ}" ] && export TZ="Europe/Rome"
 ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
-    env | sed -r -e 's/([^=]*)=(.*)/\1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
+    env | sed -r -e 's/([^=]*)=(.*)/export \1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
     cat - << EOCRONTAB > /etc/crontab
 SHELL=/bin/bash
 BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
