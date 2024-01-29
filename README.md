@@ -153,7 +153,7 @@ linkitaly/govway:3.3.12.p1_postgres_batch_postgres giornaliera
 ```
 
 ### Modalita Cron ###
-il batch è stato creato per essere eseguito da uno schedulatore orchestrato (es Cronjobs kubernetes), quindi la schedulazione è demandata a questi sistemi. 
+Il batch è stato creato per essere eseguito da uno schedulatore orchestrato (es Cronjobs kubernetes), quindi la schedulazione è demandata a questi sistemi. 
 
 Se non disponibile è possibile abilitare la modalità cron. In questa modalità, il container creato schedula autonomamente l'esecuzione del batch; inoltre è possibile indicare con quali intervallo eseguire il batch.
 
@@ -198,7 +198,7 @@ E' possibile personalizzare il ciclo di controllo di avvio di govway impostando 
 * GOVWAY_DB_USER: username da utiliizare per l'accesso al database (obbligatorio in modalita orchestrate)
 * GOVWAY_DB_PASSWORD: password di accesso al database (obbligatorio in modalita orchestrate)
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio sono per database Oracle)
+di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio solo per database Oracle)
 
 Se la configurazione lo richiede è possibile suddividere i dati prodotti o utilizzati da govway, su piu' database, a seconda della categoria di dati contenuti.
 Le categorie di dati gestite sono:  CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
@@ -226,10 +226,8 @@ TRACCIAMENTO
 #### Connessione a database Oracle ####
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
-
-* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
-
+* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 
 ### Pooling connessioni database
 
@@ -310,7 +308,7 @@ Per default si suppone che queste siano presenti sullo stesso database indicato 
 * GOVWAY_STAT_DB_USER: username da utilizzare per l'accesso al database (obbligatorio)
 * GOVWAY_STAT_DB_PASSWORD: password di accesso al database (obbligatorio)
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver (obbligatorio sono per database Oracle)
+di cui almeno uno deve implementare l'interfaccai JDBc java.sql.Driver (obbligatorio solo per database Oracle)
 
 
 Se la configurazione lo richiede è possibile
@@ -332,8 +330,8 @@ TRACCIAMENTO
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
 
-* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 * GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
+* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 
 
 ### Configurazioni avanzate
