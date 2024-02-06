@@ -5,16 +5,25 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.13`, `3.3.13_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.13_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13/govway/Dockerfile.govway)
-* [`3.3.12`, `3.3.12_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
+* [`3.3.14`, `3.3.14_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.14_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.13.p1`, `3.3.13.p1_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.13.p1_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
+* [`3.3.12`, `3.3.12_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
@@ -23,15 +32,6 @@
 * [`3.3.12_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 * [`3.3.12_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.11`, `3.3.11_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
-* [`3.3.11_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.11/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -147,7 +147,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.13_postgres
+    image: linkitaly/govway:3.3.14_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -166,14 +166,14 @@ version: '2'
         - GOVWAY_POP_DB_SKIP=true
 ```
 
-Un esempio di docker-compose per oracle è invece il seguente:
+Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracle11g/jdbc-driver deve essere presente il driver jdbc):
 
 ```yaml
 version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.13_oracle
+    image: linkitaly/govway:3.3.14_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -182,16 +182,16 @@ version: '2'
     volumes:
         - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
-        - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
+        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     environment:
         - TZ=Europe/Rome
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
-        - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
+        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+        - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
         - GOVWAY_DB_SERVER=oracle_hostname:1521
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_ORACLE_JDBC_URL_TYPE=ServiceName
         - GOVWAY_POP_DB_SKIP=true
 ```
 
@@ -257,7 +257,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.13_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.14_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -318,7 +318,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.13_batch_postgres
+    image: linkitaly/govway:3.3.14_batch_postgres
     command: 
       - orarie
     environment:
@@ -332,7 +332,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.13_batch_postgres
+    image: linkitaly/govway:3.3.14_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -345,7 +345,7 @@ version: '2'
       - TZ=Europe/Rome
 ```
 
-Un esempio di docker-compose per oracle è invece il seguente:
+Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracle11g/jdbc-driver deve essere presente il driver jdbc):
 
 ```yaml
 version: '2'
@@ -353,16 +353,16 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.13_batch_oracle
+    image: linkitaly/govway:3.3.14_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
-       - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
+       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     command: 
       - orarie
     environment:
-      - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=ServiceName
+      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
       - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
       - GOVWAY_STAT_DB_NAME=govwaydb
       - GOVWAY_STAT_DB_USER=govway
@@ -373,16 +373,16 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.13_batch_oracle
+    image: linkitaly/govway:3.3.14_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
-       - ~/oracle11g/ojdbc7.jar:/tmp/ojdbc7.jar
+       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     command: 
       - giornaliere
     environment:
-      - GOVWAY_ORACLE_JDBC_PATH=/tmp/ojdbc7.jar
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=ServiceName
+      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
       - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
       - GOVWAY_STAT_DB_NAME=govwaydb
       - GOVWAY_STAT_DB_USER=govway

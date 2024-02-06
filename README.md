@@ -6,36 +6,10 @@ Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova G
 
 ## Build immagine Docker
 Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente uno script di shell che si occupa di prepare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari. 
+
 Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, ossia una immagine in modalità standalone realizzata a partire dalla release binaria disponibile su GitHub.
-Lo script di build consente did personalizzare l'immagine prodotta, impostando opportunamente i parametri, come descritti qui di seguito:
 
-```console
-Usage build_image.sh [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]
-
-Options
--t <TAG>       : Imposta il nome del TAG ed il repository locale utilizzati per l'immagine prodotta 
-                 NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--h             : Mostra questa pagina di aiuto
-
-Installer Sorgente:
--v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: 3.3.9.p1)
--l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
--j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
-
-Personalizzazioni:
--d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
--a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
--e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
--f <PATH>      : Imposta il path interno utilizzato per i log di govway
-
-Avanzate:
--i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
--r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
--m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
--w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory indicata
--o <DIRECTORY> : Utilizza il driver JDBC Oracle contenuto dentro la directory per configurare l'immagine (il file viene cancellato al termine)
-
-```
+Eseguendo invece lo scropt con il parametro '-h' è possibile conoscere i parametri di personalizzazione esistenti.
 
 ## Avvio immagine Docker
 
@@ -49,7 +23,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.3.12
+linkitaly/govway:3.3.14
 
 ```
 
@@ -117,7 +91,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.12_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.14_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -149,7 +123,7 @@ Es:
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.3.12.p1_postgres_batch_postgres giornaliera
+linkitaly/govway:3.3.14_postgres_batch_postgres giornaliera
 ```
 
 ### Modalita Cron ###
@@ -226,7 +200,7 @@ TRACCIAMENTO
 #### Connessione a database Oracle ####
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
-* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
+* GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 
 ### Pooling connessioni database
@@ -330,7 +304,7 @@ TRACCIAMENTO
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
 
-* GOVWAY_ORACLE_JDBC_URL_TYPE: indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
+* GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
 
 
