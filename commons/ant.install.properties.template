@@ -56,6 +56,7 @@ antinstaller_gestione_nodi_numeric_id_mode=dynamic
 antinstaller_gestione_nodi_proxy_password=
 antinstaller_gestione_nodi_proxy_url=http\://localhost\:8080/govway/proxy
 antinstaller_gestione_nodi_proxy_username=GovWayProxy
+antinstaller_gestione_nodi_proxy_asyncUpdate_checkInterval=60
 antinstaller_index_statistiche=full
 antinstaller_index_transazioni=full
 antinstaller_log_db=log

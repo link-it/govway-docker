@@ -26,6 +26,55 @@ postgresql)
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
 
 ;;
+
+mysql)
+    GOVWAY_DRIVER_JDBC="/opt/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar"
+    GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
+    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+
+    # Le variabili DATASOURCE_CONN_PARAM, DATASOURCE_{CONF,TRAC,STAT}_CONN_PARAM, sono impostate dallo standalone_wrapper.sh
+    JDBC_RUN_URL='jdbc:mysql://\${env.GOVWAY_DB_SERVER}/\${env.GOVWAY_DB_NAME}\${env.DATASOURCE_CONN_PARAM:}'
+    JDBC_RUN_AUTH="/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=user-name, value=\${env.GOVWAY_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=password, value=\${env.GOVWAY_DB_PASSWORD})"
+
+    JDBC_CONF_URL='jdbc:mysql://\${env.GOVWAY_CONF_DB_SERVER}/\${env.GOVWAY_CONF_DB_NAME}\${env.DATASOURCE_CONF_CONN_PARAM:}'
+    JDBC_CONF_AUTH="/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=user-name, value=\${env.GOVWAY_CONF_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=password, value=\${env.GOVWAY_CONF_DB_PASSWORD})"
+
+    JDBC_TRAC_URL='jdbc:mysql://\${env.GOVWAY_TRAC_DB_SERVER}/\${env.GOVWAY_TRAC_DB_NAME}\${env.DATASOURCE_TRAC_CONN_PARAM:}'
+    JDBC_TRAC_AUTH="/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=user-name, value=\${env.GOVWAY_TRAC_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=password, value=\${env.GOVWAY_TRAC_DB_PASSWORD})"
+
+    JDBC_STAT_URL='jdbc:mysql://\${env.GOVWAY_STAT_DB_SERVER}/\${env.GOVWAY_STAT_DB_NAME}\${env.DATASOURCE_STAT_CONN_PARAM:}'
+    JDBC_STAT_AUTH="/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=user-name, value=\${env.GOVWAY_STAT_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
+
+;;
+mariadb)
+    GOVWAY_DRIVER_JDBC="/var/tmp/mariadb-jdbc.jar"
+    GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
+    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+
+
+    # Le variabili DATASOURCE_CONN_PARAM, DATASOURCE_{CONF,TRAC,STAT}_CONN_PARAM, sono impostate dallo standalone_wrapper.sh
+    JDBC_RUN_URL='jdbc:mariadb://\${env.GOVWAY_DB_SERVER}/\${env.GOVWAY_DB_NAME}\${env.DATASOURCE_CONN_PARAM:}'
+    JDBC_RUN_AUTH="/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=user-name, value=\${env.GOVWAY_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=password, value=\${env.GOVWAY_DB_PASSWORD})"
+
+    JDBC_CONF_URL='jdbc:mariadb://\${env.GOVWAY_CONF_DB_SERVER}/\${env.GOVWAY_CONF_DB_NAME}\${env.DATASOURCE_CONF_CONN_PARAM:}'
+    JDBC_CONF_AUTH="/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=user-name, value=\${env.GOVWAY_CONF_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=password, value=\${env.GOVWAY_CONF_DB_PASSWORD})"
+
+    JDBC_TRAC_URL='jdbc:mariadb://\${env.GOVWAY_TRAC_DB_SERVER}/\${env.GOVWAY_TRAC_DB_NAME}\${env.DATASOURCE_TRAC_CONN_PARAM:}'
+    JDBC_TRAC_AUTH="/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=user-name, value=\${env.GOVWAY_TRAC_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=password, value=\${env.GOVWAY_TRAC_DB_PASSWORD})"
+
+    JDBC_STAT_URL='jdbc:mariadb://\${env.GOVWAY_STAT_DB_SERVER}/\${env.GOVWAY_STAT_DB_NAME}\${env.DATASOURCE_STAT_CONN_PARAM:}'
+    JDBC_STAT_AUTH="/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=user-name, value=\${env.GOVWAY_STAT_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
+
+
+;;
 oracle)
     ORACLE_DRIVER_JDBC=
     declare -a lista_jar=( /var/tmp/oracle_custom_jdbc/*.jar )

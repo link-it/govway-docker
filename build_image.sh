@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 function printHelp() {
 echo "Usage $(basename $0) [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]"
@@ -14,7 +14,7 @@ Installer Sorgente:
 -j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
--d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, oracle] , default: hsql)
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, mysql, mariadb, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
@@ -55,7 +55,7 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
-    d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
+    d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle);;mysql);;mariadb);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
         [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
@@ -101,7 +101,6 @@ cp -fr commons buildcontext/
 
 DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
-[ -n "${DB}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
 [ -n "${CUSTOM_GOVWAY_LOG}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_log=${CUSTOM_GOVWAY_LOG}")
@@ -128,6 +127,15 @@ else
   INSTALLER_DOCKERFILE="govway/Dockerfile.github"
 fi
 
+if [ -n "${DB}" ]
+then
+  if [ "${DB}" == 'mariadb' ]
+  then
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=mysql")
+  else
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
+  fi
+fi
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   -t linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}} \
@@ -135,6 +143,12 @@ fi
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
  
+if [ "${DB}" == 'mariadb' ]
+then
+  c=$(( ${#DOCKERBUILD_OPTS[@]} - 1 ))
+  unset  DOCKERBUILD_OPTS[$c]
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} "govway_database_vendor=mariadb")
+fi
 # Build imagini GovWAY
 
 [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
@@ -148,7 +162,7 @@ then
   case "${DB:-hsql}" in
   hsql) TAG="${REPO}:${TAGNAME}" ;;
   postgresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
-  oracle) TAG="${REPO}:${TAGNAME}_oracle" ;;
+  *) TAG="${REPO}:${TAGNAME}_${DB}" ;;
   esac
 fi
 
@@ -243,6 +257,107 @@ EOYAML
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 EOYAML
+  elif [ "${DB:-hsql}" == 'mariadb' ]
+  then
+    cat - << EOYAML >> compose/docker-compose.yaml
+        # Il driver deve essere compiato manualmente nella directory corrente
+        - ./mariadb-java-client-3.0.6.jar:/tmp/mariadb-java-client-3.0.6.jar 
+    environment:
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
+        - GOVWAY_DB_SERVER=my_govway_${SHORT}
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_POP_DB_SKIP=false
+# Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
+#  batch_stat_orarie:
+#    container_name: govway_batch_${SHORT}
+#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
+#    #command: Giornaliere
+#    #command: Orarie # << default
+#    depends_on:
+#        - database
+#    volumes:
+#        - ./mariadb-java-client-3.0.6.jar:/tmp/mariadb-java-client-3.0.6.jar 
+#    environment:
+#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_STAT_DB_SERVER=my_govway_${SHORT}
+#        - GOVWAY_STAT_DB_NAME=govwaydb
+#        - GOVWAY_STAT_DB_USER=govway
+#        - GOVWAY_STAT_DB_PASSWORD=govway
+#        - GOVWAY_BATCH_USA_CRON=yes
+  database:
+    container_name: my_govway_${SHORT}
+    image: mariadb:10.6
+    ## Il pagesize di InnoDB deve essere a 64K per evitare errori di caricamento
+    command:
+      - "--innodb-page-size=64k"
+      - "--innodb-log-buffer-size=32M"
+      - "--innodb-buffer-pool-size=512M"    
+    environment:
+      - MARIADB_DATABASE=govwaydb
+      - MARIADB_USER=govway
+      - MARIADB_PASSWORD=govway
+      - MARIADB_ROOT_PASSWORD=my-secret-pw
+    ports:
+       - 3306:3306
+EOYAML
+    echo 
+    echo "ATTENZIONE: Copiare il driver jdbc Mariadb 'mariadb-java-client-3.0.6.jar' dentro la directory './compose/'"
+    echo "ATTENZIONE: Verificare il che il parametro innodb_page_size di MariaDB sia impostato 64K per evitare problemi"
+    echo "            Row size too large (> 8126)"
+    echo
+    echo "ATTENZIONE: Copiare il driver jdbc Mariadb 'mariadb-java-client-3.0.6.jar' dentro la directory './compose/'" > compose/README.first
+    echo "ATTENZIONE: Verificare il che il parametro innodb_page_size di MariaDB sia impostato 64K per evitare problemi" >> compose/README.first
+    echo "            Row size too large (> 8126)" >> compose/README.first
+  elif [ "${DB:-hsql}" == 'mysql' ]
+  then
+    cat - << EOYAML >> compose/docker-compose.yaml
+        # Il driver deve essere compiato manualmente nella directory corrente
+        - ./mysql-connector-java-8.0.29.jar:/tmp/mysql-connector-java-8.0.29.jar 
+    environment:
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
+        - GOVWAY_DB_SERVER=my_govway_${SHORT}
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_POP_DB_SKIP=false
+# Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
+#  batch_stat_orarie:
+#    container_name: govway_batch_${SHORT}
+#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
+#    #command: Giornaliere
+#    #command: Orarie # << default
+#    depends_on:
+#        - database
+#    volumes:
+#        - ./mysql-connector-java-8.0.29.jar:/tmp/mysql-connector-java-8.0.29.jar 
+#    environment:
+#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_STAT_DB_SERVER=my_govway_${SHORT}
+#        - GOVWAY_STAT_DB_NAME=govwaydb
+#        - GOVWAY_STAT_DB_USER=govway
+#        - GOVWAY_STAT_DB_PASSWORD=govway
+#        - GOVWAY_BATCH_USA_CRON=yes
+  database:
+    container_name: my_govway_${SHORT}
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=govwaydb
+      - MYSQL_USER=govway
+      - MYSQL_PASSWORD=govway
+      - MYSQL_ROOT_PASSWORD=my-secret-pw
+    ports:
+       - 3306:3306
+EOYAML
+    echo 
+    echo "ATTENZIONE: Copiare il driver jdbc Mysql 'mysql-connector-java-8.0.29.jar' dentro la directory './compose/'"
+    echo
+    echo "ATTENZIONE: Copiare il driver jdbc Mysql 'mysql-connector-java-8.0.29.jar' dentro la directory './compose/'" > compose/README.first
+
+
   elif [ "${DB:-hsql}" == 'oracle' ]
   then
     mkdir -p compose/oracle_startup

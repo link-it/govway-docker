@@ -39,6 +39,9 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
+if [ ${govway_database_vendor} == 'mysql' -o ${govway_database_vendor} == 'mariadb' ]; then \
+sed -i -e 's/antinstaller_index_statistiche=full/antinstaller_index_statistiche=standard/' -e 's/antinstaller_index_transazioni=full/antinstaller_index_transazioni=standard/' /var/tmp/ant.install.properties.template; \
+fi; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
 mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ ; 

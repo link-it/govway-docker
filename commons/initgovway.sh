@@ -76,6 +76,16 @@ do
         JDBC_URL="jdbc:postgresql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
     ;;
+    mysql) 
+        [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=3306
+        JDBC_URL="jdbc:mysql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
+        START_TRANSACTION="START TRANSACTION;"
+    ;;
+    mariadb) 
+        [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=3306
+        JDBC_URL="jdbc:mariadb://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
+        START_TRANSACTION="START TRANSACTION;"
+    ;;
     hsql|*)
         DBNAME=govway
         DBUSER=govway
@@ -158,6 +168,9 @@ fi
         else
             EXIST_QUERY="SELECT count(tablename) FROM pg_catalog.pg_tables WHERE LOWER(tablename)='${DBINFO,,}' AND schemaname <> 'information_schema' AND schemaname <> 'pg_catalog';"
         fi
+        ;;
+        mysql|mariadb)
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_schema)='${DBNAME,,}';" 
         ;;
         hsql)
         EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='public';" 
@@ -242,6 +255,21 @@ fi
                         -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
                         /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
                     fi
+                fi
+                #
+                # Aggiusto l'SQL per i database MySQL e MariaDB 
+                #
+                if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'mariadb' ]
+                then
+                    # Impostazione sql_mode per Mysql 8
+                    SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
+                    sed -i -r -e "s/^SET @@SESSION.sql_mode=(.*)/-- SET @@SESSION.sql_mode=\1\n\n-- Per MySQL 8\nSET @@SESSION.sql_mode='${SQL_MODE}';/" /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+
+                    # I COMMENT delle colonne e delle tabelle contengono il carattere apice con escape; "\'"
+                    # sembra che questo causi dei problemi nell'interpretare corettamente lo script al client 
+                    # Sostituisco la coppia di caratteri con uno spazio singolo
+                    #
+                    sed -i -e "/COMMENT/s%\\\'% %g" /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
                 fi
                 #
                 # Aggiusto l'SQL per il database oracle 

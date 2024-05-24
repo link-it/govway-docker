@@ -65,10 +65,12 @@ ARG source_image
 ARG govway_archives_type=all
 ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
 GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
+ARG govway_database_vendor=hsql
+ENV GOVWAY_DB_TYPE=${govway_database_vendor}
 
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${JBOSS_HOME}/standalone/deployments/
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
-COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/ /opt/${govway_database_vendor}
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/* /opt/${govway_database_vendor}
 
 ARG wildfly_custom_scripts=commons/standalone_wrapper.sh
 COPY ${wildfly_custom_scripts}* /var/tmp/custom_cli
@@ -122,7 +124,7 @@ stop-embedded-server \n\
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chown -R wildfly:0 ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/${govway_database_vendor} \
+&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod ug=rx ${JBOSS_HOME}/bin/standalone_wrapper.sh ${JBOSS_HOME}/bin/initgovway.sh ${JBOSS_HOME}/bin/initsql.sh
 
 

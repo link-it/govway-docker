@@ -24,7 +24,7 @@ CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * root ${GOVWAY_BATCH_HOME}/crond/g
 
 
 case "${GOVWAY_DB_TYPE}" in
-postgresql|oracle)
+mysql|mariadb|postgresql|oracle)
     #
     # Sanity check variabili minime attese
     #
@@ -41,29 +41,6 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 "
         exit 1
     fi
-
-    # Setting valori di Default per i datasource GOVWAY
-    [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
-    [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
-
-
-    [ -n "${GOVWAY_TRAC_DB_NAME}" ] || export GOVWAY_TRAC_DB_NAME="${GOVWAY_STAT_DB_NAME}"
-    [ -n "${GOVWAY_CONF_DB_NAME}" ] || export GOVWAY_CONF_DB_NAME="${GOVWAY_STAT_DB_NAME}"
-
-    [ -n "${GOVWAY_TRAC_DB_USER}" ] || export GOVWAY_TRAC_DB_USER="${GOVWAY_STAT_DB_USER}"
-    [ -n "${GOVWAY_CONF_DB_USER}" ] || export GOVWAY_CONF_DB_USER="${GOVWAY_STAT_DB_USER}"
-
-    [ -n "${GOVWAY_TRAC_DB_PASSWORD}" ] || export GOVWAY_TRAC_DB_PASSWORD="${GOVWAY_STAT_DB_PASSWORD}"
-    [ -n "${GOVWAY_CONF_DB_PASSWORD}" ] || export GOVWAY_CONF_DB_PASSWORD="${GOVWAY_STAT_DB_PASSWORD}"
-
-
-    [ -n "${GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
-    [ -n "${GOVWAY_CONF_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_CONF_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
-
-    ## parametri di connessione URL JDBC (default vuoto)
-    [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] &&  export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"
-    if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
-    if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
 
 
     if [ -n "${GOVWAY_DS_JDBC_LIBS}" ] 
@@ -84,12 +61,86 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
         [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt"
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
-        # JDBC URLS
-        export JDBC_CONF_URL="jdbc:postgresql://${GOVWAY_CONF_DB_SERVER}/${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
-        export JDBC_TRAC_URL="jdbc:postgresql://${GOVWAY_TRAC_DB_SERVER}/${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
-        export JDBC_STAT_URL="jdbc:postgresql://${GOVWAY_STAT_DB_SERVER}/${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
-
     ;;
+    mysql)
+
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    ;;
+
+    mariadb)
+
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    ;;
+
+
     oracle)
 
         # ATTENZIONE la variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS.
@@ -133,6 +184,61 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
             export ORACLE_JDBC_SERVER_PREFIX=''
             export ORACLE_JDBC_DB_SEPARATOR=':'
         fi
+
+    ;;
+    esac
+
+    # Setting valori di Default per i datasource GOVWAY
+    [ -n "${GOVWAY_TRAC_DB_SERVER}" ] || export GOVWAY_TRAC_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
+    [ -n "${GOVWAY_CONF_DB_SERVER}" ] || export GOVWAY_CONF_DB_SERVER="${GOVWAY_STAT_DB_SERVER}"
+
+
+    [ -n "${GOVWAY_TRAC_DB_NAME}" ] || export GOVWAY_TRAC_DB_NAME="${GOVWAY_STAT_DB_NAME}"
+    [ -n "${GOVWAY_CONF_DB_NAME}" ] || export GOVWAY_CONF_DB_NAME="${GOVWAY_STAT_DB_NAME}"
+
+    [ -n "${GOVWAY_TRAC_DB_USER}" ] || export GOVWAY_TRAC_DB_USER="${GOVWAY_STAT_DB_USER}"
+    [ -n "${GOVWAY_CONF_DB_USER}" ] || export GOVWAY_CONF_DB_USER="${GOVWAY_STAT_DB_USER}"
+
+    [ -n "${GOVWAY_TRAC_DB_PASSWORD}" ] || export GOVWAY_TRAC_DB_PASSWORD="${GOVWAY_STAT_DB_PASSWORD}"
+    [ -n "${GOVWAY_CONF_DB_PASSWORD}" ] || export GOVWAY_CONF_DB_PASSWORD="${GOVWAY_STAT_DB_PASSWORD}"
+
+
+    [ -n "${GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_TRAC_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
+    [ -n "${GOVWAY_CONF_ORACLE_JDBC_URL_TYPE}" ] || export GOVWAY_CONF_ORACLE_JDBC_URL_TYPE="${GOVWAY_ORACLE_JDBC_URL_TYPE}"
+
+    ## parametri di connessione URL JDBC (default vuoto)
+    [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] &&  export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"
+    if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
+    if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
+
+
+
+
+    case "${GOVWAY_DB_TYPE}" in
+    postgresql)
+        # JDBC URLS
+        export JDBC_CONF_URL="jdbc:postgresql://${GOVWAY_CONF_DB_SERVER}/${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
+        export JDBC_TRAC_URL="jdbc:postgresql://${GOVWAY_TRAC_DB_SERVER}/${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
+        export JDBC_STAT_URL="jdbc:postgresql://${GOVWAY_STAT_DB_SERVER}/${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
+
+    ;;
+    mysql)
+        # JDBC URLS
+        export JDBC_CONF_URL="jdbc:mysql://${GOVWAY_CONF_DB_SERVER}/${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
+        export JDBC_TRAC_URL="jdbc:mysql://${GOVWAY_TRAC_DB_SERVER}/${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
+        export JDBC_STAT_URL="jdbc:mysql://${GOVWAY_STAT_DB_SERVER}/${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
+
+    ;;
+
+    mariadb)
+        # JDBC URLS
+        export JDBC_CONF_URL="jdbc:mariadb://${GOVWAY_CONF_DB_SERVER}/${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
+        export JDBC_TRAC_URL="jdbc:mariadb://${GOVWAY_TRAC_DB_SERVER}/${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
+        export JDBC_STAT_URL="jdbc:mariadb://${GOVWAY_STAT_DB_SERVER}/${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
+
+    ;;
+
+    oracle)
         # JDBC URLS
         export JDBC_CONF_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_CONF_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
         export JDBC_TRAC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_TRAC_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}" 
@@ -155,6 +261,10 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 
 
 # ;;
+
+
+
+
 *) 
     echo "FATAL: Sanity check variabili ... fallito."
     echo "FATAL: la variabile GOVWAY_DB_TYPE non è valida: '${GOVWAY_DB_TYPE}'"
@@ -179,13 +289,20 @@ mkdir -p "${BATCH_CONFIG}"
 cp ${GOVWAY_BATCH_STATISTICHE}/properties/* "${BATCH_CONFIG}"
 
 
+if [ "${GOVWAY_DB_TYPE}" == 'mariadb' ]
+then
+    DB_TIPODATABASE=mysql
+else
+    DB_TIPODATABASE="${GOVWAY_DB_TYPE}"
+fi
+
 cat - << EOPROP > "${BATCH_CONFIG}/daoFactory.properties"
 db.showSql=true
 db.secondsToRefreshConnection=300
 db.tipo=connection
 
 # DB config
-db.tipoDatabase=${GOVWAY_DB_TYPE}				
+db.tipoDatabase=${DB_TIPODATABASE}				
 db.connection.driver=${GOVWAY_DS_DRIVER_CLASS}				
 db.connection.url=${JDBC_CONF_URL}				
 db.connection.user=${GOVWAY_CONF_DB_USER}			

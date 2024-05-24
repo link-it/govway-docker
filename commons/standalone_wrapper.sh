@@ -48,7 +48,7 @@ fi
 
 
 case "${GOVWAY_DB_TYPE:-hsql}" in
-postgresql|oracle)
+mysql|mariadb|postgresql|oracle)
 
     #
     # Sanity check variabili minime attese
@@ -85,6 +85,82 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
     ;;
+    mysql)
+
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    ;;
+
+    mariadb)
+
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
+        else
+            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
+    ;;
+
+
+
     oracle)
         # ATTENZIONE la variabile GOVWAY_ORACLE_JDBC_PATH è stata deprecata in favore di GOVWAY_DS_JDBC_LIBS.
         # se solo GOVWAY_ORACLE_JDBC_PATH è valorizzata provo a mantenere la compatibilità usando il nome della directory 
