@@ -1,5 +1,5 @@
 # GovWay installer
-FROM centos:centos7.9.2009 AS INSTALLER
+FROM registry.access.redhat.com/ubi9-minimal:9.4 AS INSTALLER
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
@@ -10,8 +10,8 @@ ARG govway_log=/var/log/govway
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
 ulimit -n 1024; \
-yum -y install zip unzip java-11-openjdk  \
-&& yum clean all \
+microdnf install -y zip unzip tar java-11-openjdk  \
+&& microdnf clean all \
 && rm -rf /var/cache/yum
 
 

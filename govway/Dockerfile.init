@@ -22,9 +22,9 @@ GOVWAY_ARCHIVES_TYPE=${govway_archives_type} \
 HSQLDB_FULLVERSION=2.4.1 \
 POSTGRES_JDBC_VERSION=42.2.10 
 
-RUN yum -q -y install unzip java-11-openjdk-headless nmap-ncat \
-&& yum -q -y update \
-&& yum clean all \
+RUN microdnf -q -y install unzip java-11-openjdk-headless nmap-ncat \
+&& microdnf -q -y update \
+&& microdnf clean all \
 && rm -rf /var/cache/yum \
 curl -q -sS -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_4/hsqldb-${HSQLDB_FULLVERSION}.zip/download \
 && unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/* \

@@ -26,9 +26,9 @@ POSTGRES_JDBC_VERSION=42.6.0
 
 RUN set -eux; \
 ulimit -n 1024; \
-yum -q -y install cronie unzip java-11-openjdk-headless; \
-yum -q -y update; \
-yum clean all; \
+microdnf -q -y install cronie unzip java-11-openjdk-headless; \
+microdnf -q -y update; \
+microdnf clean all; \
 rm -rf /var/cache/yum; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
 
