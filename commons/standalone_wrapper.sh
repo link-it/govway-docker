@@ -9,6 +9,8 @@ GOVWAY_STARTUP_CHECK_SKIP=${GOVWAY_STARTUP_CHECK_SKIP:=FALSE}
 GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_FIRST_SLEEP_TIME:=20}
 GOVWAY_STARTUP_CHECK_SLEEP_TIME=${GOVWAY_STARTUP_CHECK_SLEEP_TIME:=5}
 GOVWAY_STARTUP_CHECK_MAX_RETRY=${GOVWAY_STARTUP_CHECK_MAX_RETRY:=60}
+GOVWAY_STARTUP_NOFILES=${GOVWAY_STARTUP_NOFILES:=8192}
+
 declare -r GOVWAY_STARTUP_CHECK_REGEX='GovWay/?.* \(www.govway.org\) avviata correttamente in .* secondi'
 declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 
@@ -46,6 +48,24 @@ then
     fi
 fi
 
+#
+# Sanity check parametri sistema
+#
+
+NOFILE=$(ulimit -n)
+if [ ${NOFILE} -lt ${GOVWAY_STARTUP_NOFILES} ] 
+then
+
+    MAX_NOFILE=$(ulimit -n -H)
+    if [ ${MAX_NOFILE} -lt ${GOVWAY_STARTUP_NOFILES} ]
+    then
+        ulimit -n ${MAX_NOFILE} 2> /dev/null
+        echo "WARNING: La configurazione del container non consente di avere almeno ${GOVWAY_STARTUP_NOFILES} files aperti contemporaneamente"
+        echo "WARNING: Limite attuale nofiles: $(ulimit -n)"
+    else
+        ulimit -n ${GOVWAY_STARTUP_NOFILES} 2> /dev/null
+    fi
+fi
 
 case "${GOVWAY_DB_TYPE:-hsql}" in
 postgresql|oracle)
