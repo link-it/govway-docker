@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 function printHelp() {
 echo "Usage $(basename $0) [ -t <repository>:<tagname> | <Installer Sorgente> | <Personalizzazioni> | <Avanzate> | -h ]"
