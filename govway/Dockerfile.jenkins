@@ -1,5 +1,5 @@
 # GovWay installer
-FROM centos:centos7.9.2009
+FROM registry.access.redhat.com/ubi9-minimal:9.4 AS INSTALLER
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
@@ -48,9 +48,17 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
-mv /var/tmp/ant.install.properties.template installer/setup/; \
+mv -f /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
-mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
+mv -f dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv -f dist/${govway_database_vendor} dist/sql/ 
+
+ARG runtime_custom_archives=commons/ant.install.properties.template
+ARG manager_custom_archives=commons/ant.install.properties.template
+COPY ${runtime_custom_archives}* /var/tmp/runtime
+RUN [ -d /var/tmp/runtime ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime ||echo "Personalizzazioni runtime non presenti"
+ 
+COPY ${manager_custom_archives}* /var/tmp/manager
+RUN [ -d /var/tmp/manager ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager || echo "Personalizzazioni manager non presenti"
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties/*; \
@@ -68,13 +76,6 @@ cd /tmp; \
 zip -r /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime/govway.ear properties; \
 rm -rf /tmp/properties
 
-ARG runtime_custom_archives=commons/ant.install.properties.template
-ARG manager_custom_archives=commons/ant.install.properties.template
-COPY ${runtime_custom_archives}* /var/tmp/runtime
-RUN [ -d /var/tmp/runtime ] && cp /var/tmp/runtime/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/runtime ||echo "Personalizzazioni runtime non presenti"
- 
-COPY ${manager_custom_archives}* /var/tmp/manager
-RUN [ -d /var/tmp/manager ] && cp /var/tmp/manager/* /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager || echo "Personalizzazioni manager non presenti"
 
 RUN set -eux;\
 unzip -d /tmp /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/govwayConsole.war WEB-INF/classes/* ; \

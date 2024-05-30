@@ -25,6 +25,8 @@ GOVWAY_FULLVERSION=${govway_fullversion}
 
 COPY commons/ant.install.properties.template /var/tmp/
 
+
+
 ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
 RUN set -eux; \
@@ -41,7 +43,7 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv -f /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
-mv -f dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv -f dist/${govway_database_vendor} dist/sql/ ; 
+mv -f dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv -f dist/${govway_database_vendor} dist/sql/ 
 
 ARG runtime_custom_archives=commons/ant.install.properties.template
 ARG manager_custom_archives=commons/ant.install.properties.template

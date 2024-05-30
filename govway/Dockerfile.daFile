@@ -10,7 +10,7 @@ ARG govway_log=/var/log/govway
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; }; \ 
 ulimit -n 1024; \
-microdnf install -y zip unzip tar java-11-openjdk  \
+microdnf -y install zip unzip tar java-11-openjdk  \
 && microdnf clean all \
 && rm -rf /var/cache/yum
 
@@ -41,9 +41,9 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
-mv /var/tmp/ant.install.properties.template installer/setup/; \
+mv -f /var/tmp/ant.install.properties.template installer/setup/; \
 ./install.sh text-auto; \
-mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
+mv -f dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv -f dist/${govway_database_vendor} dist/sql/ 
 
 ARG runtime_custom_archives=commons/ant.install.properties.template
 ARG manager_custom_archives=commons/ant.install.properties.template
