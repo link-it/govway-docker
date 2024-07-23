@@ -168,7 +168,7 @@ then
   esac
 
   # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato
-  [ "${APPSERV:-tomcat9}" != "tomcat9" ] && TAG="${TAG}_${APPSERV}"
+  [ "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
 
 fi
 
