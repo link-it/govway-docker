@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec 6<> /tmp/standalone_wrapper_debug.log
+exec 6<> /tmp/entrypoint_debug.log
 exec 2>&6
 set -x
 
