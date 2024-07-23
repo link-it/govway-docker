@@ -14,9 +14,10 @@ declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 
 
 
-declare -r JVM_PROPERTIES_FILE='/etc/wildfly/wildfly.properties'
+declare -r JVM_PROPERTIES_FILE='/etc/govway_as_jvm.properties'
+declare -r JVM_PROPERTIES_FILE_DEPRECATO='/etc/wildfly/wildfly.properties'
 declare -r ENTRYPOINT_D='/docker-entrypoint-govway.d/'
-declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_wildlfy_init"
+declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
 
@@ -41,7 +42,7 @@ if [ -n "$1" ]
 then
     if [ "$1" = "initsql" ]
     then
-        ${JBOSS_HOME}/bin/initsql.sh || echo "FATAL: Scripts sql non inizializzati."
+        /usr/local/bin/initsql.sh || echo "FATAL: Scripts sql non inizializzati."
         exit $?
     fi
 fi
@@ -70,7 +71,6 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
 
     if [ -n "${GOVWAY_DS_JDBC_LIBS}" ] 
     then
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
         if [ ! -d "${GOVWAY_DS_JDBC_LIBS}" ]
         then
             echo "FATAL: Sanity check JDBC ... fallito."
@@ -81,7 +81,17 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
 
     case "${GOVWAY_DB_TYPE:-hsql}" in
     postgresql)
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then           
+            echo "WARN: Sanity check JDBC ... in corso."
+            echo "WARN: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            echo "WARN: Verrà utilizzato il driver PostgreSQL interno. Questo comportamento è DEPRECATO è verra rimosso nelle prossime versioni. "
+            echo "WARN: Aggiornate il vostro deploy in modo da eliminare questo warning."
+
+            export GOVWAY_DS_JDBC_LIBS="/tmp/postgresql-jdbc"
+            mkdir /tmp/postgresql-jdbc
+            /bin/cp -f "/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar" ${GOVWAY_DS_JDBC_LIBS}
+        fi
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
     ;;
@@ -172,7 +182,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
             then
                 export GOVWAY_DS_JDBC_LIBS="$(dirname ${GOVWAY_ORACLE_JDBC_PATH})"
-                export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
+                #export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
             else
                 echo "WARN: Recupero librerie per il driver jdbc da [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}]."
             fi
@@ -203,6 +213,23 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             export ORACLE_JDBC_SERVER_PREFIX=''
             export ORACLE_JDBC_DB_SEPARATOR=':'
         fi
+    ;;
+    esac
+
+;;
+hsql|*)
+    #GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
+    export GOVWAY_DS_JDBC_LIBS="/tmp/hsql-jdbc"
+    mkdir /tmp/hsql-jdbc
+    /bin/cp -f "/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar" ${GOVWAY_DS_JDBC_LIBS}
+
+    
+    export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
+    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
+
+    export GOVWAY_DB_USER=govway
+    export GOVWAY_DB_NAME=govway
+    export GOVWAY_DB_PASSWORD=govway
     ;;
     esac
 
@@ -237,7 +264,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
     # [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
 
     ## parametri di connessione URL JDBC (default vuoto)
-    [ -n "${GOVWAY_DS_CONN_PARAM}" ] &&  export DATASOURCE_CONN_PARAM="?${GOVWAY_DS_CONN_PARAM}"
+if [ -n "${GOVWAY_DS_CONN_PARAM}" ]; then export DATASOURCE_CONN_PARAM="?${GOVWAY_DS_CONN_PARAM}"; else export DATASOURCE_CONN_PARAM=""; fi
     if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
     if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
     if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]; then export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"; else export DATASOURCE_STAT_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
@@ -252,13 +279,9 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
     # [ -n "${GOVWAY_TRAC_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_TRAC_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}" 
     # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
-;;
-hsql|*)
-    export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
-    export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
-    export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
-;;
-esac
+
+
+
 
 # Recupero l'indirizzo ip usato dal container (utilizzato dalle funzionalita di clustering / orchestration)
 export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*" /etc/hosts|head -n 1|awk '{print $1}')
@@ -280,8 +303,9 @@ export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${WILDFLY_SUS
 
 
 # Inizializzazione del database
-${JBOSS_HOME}/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
-${JBOSS_HOME}/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
+rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history}
+/usr/local/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
+/usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom widfly
 if [ ! -f "${MODULE_INIT_FILE}" ]
@@ -325,9 +349,14 @@ EOCLI
 fi
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' -a "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
+    # Mantenimento delle variabili precedenti per compatibilita
+    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"
+    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"
 
-    if [ "${WILDFLY_AJP_LISTENER^^}" == 'TRUE' ]
+
+    [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
+
+    if [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'TRUE' ]
     then
         cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
 embed-server --server-config=standalone.xml --std-out=echo
@@ -339,7 +368,7 @@ echo "Aggiungo Worker e Listener ajp"
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
 /subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
 EOCLI
-    elif  [ "${WILDFLY_AJP_LISTENER^^}" == 'FALSE' ]
+    elif  [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ]
     then
         # Elimino il connettore AJP solo se esplicitmante richiesto
         # per mantenere la compatibilità con le immagini preesistenti che
@@ -350,16 +379,16 @@ echo "Elimino Worker e Listener ajp"
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:remove()
 /subsystem=io/worker=ajp-worker:remove()
 EOCLI
-    elif [ "${WILDFLY_AJP_LISTENER^^}" == 'AJP-8009' ]
+    elif [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'AJP-8009' ]
     then
-        # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_AJP_LISTENER
+        # Si tratta della configurazione standard ed è equivalente a non specificare GOVWAY_AS_AJP_LISTENER
         # non faccio nulla
         true
     fi
 
 
     # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
-    if [ "${WILDFLY_HTTP_LISTENER^^}" == 'FALSE' ]
+    if [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ]
     then      
         [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
         cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
@@ -371,12 +400,12 @@ echo "Elimino Worker e Listener http"
 /subsystem=io/worker=http-out-worker:remove()
 /subsystem=io/worker=http-gest-worker:remove()
 EOCLI
-    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'TRUE' ]
+    elif [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'TRUE' ]
     then
         # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_HTTP_LISTENER
         # non faccio nulla
         true
-    elif [ "${WILDFLY_HTTP_LISTENER^^}" == 'HTTP-8080' ]
+    elif [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'HTTP-8080' ]
     then
         [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
         cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
@@ -446,8 +475,12 @@ fi
 > ${GOVWAY_LOGDIR}/govway_startup.log
 
 # Forzo file di un eventuale file di properties jvm da passare all'avvio
-if [ -f ${JVM_PROPERTIES_FILE} ]
+if [ -f "${JVM_PROPERTIES_FILE}" -o -f "${JVM_PROPERTIES_FILE_DEPRECATO}" ]
 then
+    GOVWAY_AS_PROP_FILE="${JVM_PROPERTIES_FILE}"
+    [ ! -f "${JVM_PROPERTIES_FILE}" -a -f "${JVM_PROPERTIES_FILE_DEPRECATO}" ] && GOVWAY_AS_PROP_FILE="${JVM_PROPERTIES_FILE_DEPRECATO}"
+
+
     declare -a CMDLINARGS
     SKIP=0
     FOUND=0
@@ -457,18 +490,18 @@ then
         if [ "$prop" == '-p' ]
         then
             CMDLINARGS+=("-p")
-            CMDLINARGS+=("${JVM_PROPERTIES_FILE}")
+            CMDLINARGS+=("${GOVWAY_AS_PROP_FILE}")
             SKIP=1
             FOUND=1
         elif [ "${prop%%=*}" == '--properties' ]
         then
-            CMDLINARGS+=("--properties=${JVM_PROPERTIES_FILE}")
+            CMDLINARGS+=("--properties=${GOVWAY_AS_PROP_FILE}")
             FOUND=1
         else
             CMDLINARGS+=($prop)
         fi
     done
-    [ $FOUND -eq 0 ] && CMDLINARGS+=("--properties=${JVM_PROPERTIES_FILE}")
+    [ $FOUND -eq 0 ] && CMDLINARGS+=("--properties=${GOVWAY_AS_PROP_FILE}")
     ${JBOSS_HOME}/bin/standalone.sh -b 0.0.0.0 ${CMDLINARGS[@]} &
 else
     ${JBOSS_HOME}/bin/standalone.sh -b 0.0.0.0 $@ &

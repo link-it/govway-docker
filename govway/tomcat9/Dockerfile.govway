@@ -1,0 +1,135 @@
+# stage sorgente da utilizzare per il build dell'immagine finale
+ARG govway_fullversion
+ARG source_image=linkitaly/govway-installer
+ARG govway_home=/etc/govway
+ARG govway_log=/var/log/govway
+
+# Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
+FROM ${source_image}:${govway_fullversion} AS source_image_full
+
+
+
+FROM tomcat:9-jre11-temurin-jammy AS source_image_built
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
+ARG govway_fullversion
+ARG govway_home
+ARG govway_log
+
+USER root
+ENV GOVWAY_HOME=${govway_home} \
+GOVWAY_HOME_HTTPS=${govway_home}_https \
+GOVWAY_LOGDIR=${govway_log} \
+GOVWAY_FULLVERSION=${govway_fullversion} \
+HSQLDB_FULLVERSION=2.7.1 \
+POSTGRES_JDBC_VERSION=42.6.0 \
+TZ="Europe/Rome" 
+
+
+
+RUN set -eux; \
+mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
+apt-get -y update; \
+apt-get -y install unzip xmlstarlet netcat; \
+apt-get -y clean all; \
+rm -rf /var/lib/apt/lists/* \
+echo "${TZ}" > /etc/timezone; \
+groupadd -r tomcat; \
+useradd -r -g tomcat -d ${CATALINA_HOME} -m -s /usr/sbin/nologin tomcat; \
+echo -e "\n\
+tomcat\tsoft\tnofile\t8192\n\
+tomcat\thard\tnofile\t8192\n\
+tomcat\tsoft\tnproc\t4096\n\
+tomcat\thard\tnproc\t4096\n\
+" >> /etc/security/limits.conf; \
+curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
+unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
+rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
+
+# -XX:+PrintFlagsFinal \
+ENV CATALINA_OPTS="-server \
+-XX:+UseContainerSupport \
+-XX:+UseG1GC \
+-XX:+DisableExplicitGC \
+-XX:+UnlockExperimentalVMOptions \
+-Djava.net.preferIPv4Stack=true \
+-Djava.awt.headless=true \
+-Duser.language=it \
+-Duser.country=IT \
+-Dfile.encoding=UTF-8 \
+-DGOVWAY_FORCE_CONFIG_FILE=true"
+
+ARG source_image
+ARG govway_archives_type=all
+ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
+GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
+ARG govway_database_vendor=hsql
+ENV GOVWAY_DB_TYPE=${govway_database_vendor}
+
+COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${CATALINA_HOME}/webapps/
+#COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
+COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/* /opt/${govway_database_vendor}
+
+ARG govway_as_custom_scripts=commons/entrypoint.sh
+COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli
+RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${CATALINA_HOME}/conf || echo "Personalizzazioni per AS  non presenti"
+
+
+COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh commons/tomcat_config_cli.js commons/tomcat-cli.sh /usr/local/bin/
+
+ARG oracle_custom_jdbc=commons/entrypoint.sh
+COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
+RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
+
+RUN  sed -i -e 's/<!--.*-->//g' -e '/<!--/,/-->/d'  ${CATALINA_HOME}/conf/server.xml ${CATALINA_HOME}/conf/context.xml; \
+echo '# Rimuovi Resource UserDatabase \n\
+/Server/GlobalNamingResources/Resource[@name="UserDatabase"]:delete\n\
+# Rimuovi Realm UserDatabase\n\
+/Server/Service/Engine/Realm/Realm[@resourceName="UserDatabase"]:delete\n\
+# Aggiungi Executor http-in-worker\n\
+/Server/Executor:add name=http-in-worker, namePrefix=http-in-worker-, maxThreads=${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS:-100}\n\
+# Aggiungi Executor http-out-worker\n\
+/Server/Executor:add name=http-out-worker, namePrefix=http-out-worker-, maxThreads=${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS:-100}\n\
+# Aggiungi Executor http-gest-worker\n\
+/Server/Executor:add name=http-gest-worker, namePrefix=http-gest-worker-, maxThreads=${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS:-20}\n\
+# Aggiungi Executor ajp-worker\n\
+/Server/Executor:add name=ajp-worker, namePrefix=ajp-worker-, maxThreads=${GOVWAY_AS_AJP_WORKER_MAX_THREADS:-50}\n\
+# Rimuovi connettore HTTPS su porta 8443\n\
+/Server/Service/Connector[@port="8443"]:delete\n\
+# Rimuovi connettore HTTP su porta 8080\n\
+/Server/Service/Connector[@port="8080"]:delete\n\
+# Aggiungi connettore HTTP su porta 8080\n\
+/Server/Service/Connector:add port=8080, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-in-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+# Aggiungi connettore HTTP su porta 8081\n\
+/Server/Service/Connector:add port=8081, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-out-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+# Aggiungi connettore HTTP su porta 8082\n\
+/Server/Service/Connector:add port=8082, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-gest-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+# Aggiungi connettore AJP su porta 8009\n\
+/Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=${GOVWAY_AS_AJP_SECRET:-false}\n\
+# Configura RemoteIpValve\n\
+/Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, remoteIpProxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
+# Configura AccessLogValve\n\
+/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}\n\
+' > /tmp/tomcat_configuration.cli; \
+chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
+/usr/local/bin/config_datasource.sh /tmp/tomcat_configuration.cli; \
+/usr/local/bin/tomcat-cli.sh /tmp/tomcat_configuration.cli; \
+echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> "${CATALINA_HOME}/conf/catalina.properties"; 
+
+RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
+&& chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh
+
+
+
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/LICENSE* \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/COPYING* \
+/usr/share/licenses/govway/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
+USER tomcat
+EXPOSE 8080 8081 8082 8009
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
+CMD []

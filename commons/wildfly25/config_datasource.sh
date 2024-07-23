@@ -2,9 +2,10 @@
 CLI_SCRIPT_FILE="$1"  
 CLI_SCRIPT_CUSTOM_DIR="${JBOSS_HOME}/standalone/configuration/custom_cli"
 
+
 case "${GOVWAY_DB_TYPE:-hsql}" in
 postgresql)
-    GOVWAY_DRIVER_JDBC="/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
+
     GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
 
@@ -28,7 +29,7 @@ postgresql)
 ;;
 
 mysql)
-    GOVWAY_DRIVER_JDBC="/opt/mysql-connector-j-${MYSQL_JDBC_VERSION}.jar"
+
     GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
 
@@ -51,7 +52,7 @@ mysql)
 
 ;;
 mariadb)
-    GOVWAY_DRIVER_JDBC="/var/tmp/mariadb-jdbc.jar"
+
     GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
 
@@ -76,46 +77,7 @@ mariadb)
 
 ;;
 oracle)
-    ORACLE_DRIVER_JDBC=
-    declare -a lista_jar=( /var/tmp/oracle_custom_jdbc/*.jar )
-    if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == '/var/tmp/oracle_custom_jdbc/*.jar' ]
-    then
-        echo "Driver JDBC oracle non presente"
-        #exit 1
-    elif [ ${#lista_jar[@]} -eq 1 ]
-    then
-        # è presente solo un jar: lo utilizzo
-        ORACLE_DRIVER_JDBC="${lista_jar[0]}" 
-    elif [ ${#lista_jar[@]} -gt 1 ]
-    then
-        # sono presenti diversi jar: provo a riconoscere la versione e ad usare il più recente 
-        ORACLE_DRIVER_JDBC=
-        MAX=0
-        for j in ${lista_jar[@]}
-        do
-            JAR_NAME=$(basename $j)
-            if [ "${JAR_NAME:0:5}" == 'ojdbc' ]
-            then
-                OJDBC_VERSION_FULL="${JAR_NAME:5:(-4)}"
-                OJDBC_VERSION="${OJDBC_VERSION_FULL%%[._-]*}"
-                # skippo ojdbc14 che va bene per java 1.4
-                [ ${OJDBC_VERSION} -eq 14 ] && continue
-                [ ${OJDBC_VERSION} -gt ${MAX} ] && ORACLE_DRIVER_JDBC=$j && MAX=${OJDBC_VERSION}
-            fi
-        done
-        if [ ${MAX} -eq  0 ]
-        then
-            # non ho trovato un jar con il nome giusto. Prendo il file con la data piu recente
-            MAX=0
-            for j in ${lista_jar[@]}
-            do
-                AGE=$(stat "$j" --printf '%Z')
-                [ ${AGE} -gt ${MAX} ] && ORACLE_DRIVER_JDBC=$j && MAX=${AGE}
-            done
-        fi
-    fi
-    [ -n "${ORACLE_DRIVER_JDBC}" ] && cp -f ${ORACLE_DRIVER_JDBC} /var/tmp/oracle-jdbc.jar
-    GOVWAY_DRIVER_JDBC='/var/tmp/oracle-jdbc.jar'
+
     GOVWAY_DS_DRIVER_CLASS='oracle.jdbc.OracleDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
 
@@ -139,7 +101,6 @@ oracle)
 
 ;;
 hsql|*)
-    GOVWAY_DRIVER_JDBC="opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 
@@ -164,7 +125,7 @@ esac
 cat - << EOCLI >> "${CLI_SCRIPT_FILE}"
 embed-server --server-config=standalone.xml --std-out=echo
 echo "Carico modulo e driver JDBC per ${GOVWAY_DB_TYPE:-hsql}"
-module add --name=${GOVWAY_DB_TYPE:-hsql}Mod --resources=${GOVWAY_DRIVER_JDBC} --dependencies=javax.api,javax.transaction.api --allow-nonexistent-resources
+module add --name=${GOVWAY_DB_TYPE:-hsql}Mod --resources=/tmp/placeholder-driver-jdbc.jar --dependencies=javax.api,javax.transaction.api --allow-nonexistent-resources
 /subsystem=datasources/jdbc-driver=${GOVWAY_DB_TYPE:-hsql}Driver:add(driver-name=${GOVWAY_DB_TYPE:-hsql}Driver, driver-module-name=${GOVWAY_DB_TYPE:-hsql}Mod, driver-class-name=${GOVWAY_DS_DRIVER_CLASS})
 stop-embedded-server
 embed-server --server-config=standalone.xml --std-out=echo

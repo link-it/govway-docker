@@ -14,16 +14,17 @@ Installer Sorgente:
 -j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
 
 Personalizzazioni:
--d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [ hsql, postgresql, mysql, mariadb, oracle] , default: hsql)
+-d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [hsql, postgresql, mysql, mariadb, oracle] , default: hsql)
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
+-g <TIPO>      : Prepara l'immagine per avere come base un particolare application server  (valori: [tomcat9, wildfly25] , default: tomcat9)
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
 -r <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di runtime
 -m <DIRECTORY> : Inserisce il contenuto della directory indicata, tra i contenuti custom di manager
--w <DIRECTORY> : Esegue tutti gli scripts widlfly contenuti nella directory indicata
+-w <DIRECTORY> : Esegue tutti gli scripts di CLI per la configurazione dell'AS contenuti nella directory indicata
 -o <DIRECTORY> : Utilizza il driver JDBC Oracle contenuto dentro la directory per configurare l'immagine (il file viene cancellato al termine)
 "
 }
@@ -45,17 +46,18 @@ TEMPLATE=
 ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
-CUSTOM_WIDLFLY_CLI=
+CUSTOM_GOVWAY_AS_CLI=
 
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
 
-while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle);;mysql);;mariadb);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
+    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;wildfly25);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
         [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
@@ -74,9 +76,9 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:" opt; do
         [ ! -d "${CUSTOM_MANAGER}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_MANAGER}]."; exit 3; }
         [ -z "$(ls -A ${CUSTOM_MANAGER})" ] && { echo "la directory [${CUSTOM_MANAGER}] e' vuota.";  }
         ;;
-    w) CUSTOM_WIDLFLY_CLI="${OPTARG}"
-        [ ! -d "${CUSTOM_WIDLFLY_CLI}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_WIDLFLY_CLI}]."; exit 3; }
-        [ -z "$(ls -A ${CUSTOM_WIDLFLY_CLI})" ] && { echo "la directory [${CUSTOM_WIDLFLY_CLI}] e' vuota.";  }
+    w) CUSTOM_GOVWAY_AS_CLI="${OPTARG}"
+        [ ! -d "${CUSTOM_GOVWAY_AS_CLI}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_GOVWAY_AS_CLI}]."; exit 3; }
+        [ -z "$(ls -A ${CUSTOM_GOVWAY_AS_CLI})" ] && { echo "la directory [${CUSTOM_GOVWAY_AS_CLI}] e' vuota.";  }
         ;;
     o) CUSTOM_ORACLE_JDBC="${OPTARG}"
         [ ! -d "${CUSTOM_ORACLE_JDBC}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_ORACLE_JDBC}]."; exit 3; }
@@ -97,9 +99,9 @@ done
 
 rm -rf buildcontext
 mkdir -p buildcontext/
-cp -fr commons buildcontext/
-
-DOCKERBUILD_OPT=()
+cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
+#export DOCKER_BUILDKIT=0
+DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=$APPSERV")
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
@@ -166,10 +168,10 @@ then
   esac
 fi
 
-if [ -n "${CUSTOM_WIDLFLY_CLI}" ]
+if [ -n "${CUSTOM_GOVWAY_AS_CLI}" ]
 then
-  cp -r ${CUSTOM_WIDLFLY_CLI}/ buildcontext/custom_widlfly_cli
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "wildfly_custom_scripts=custom_widlfly_cli")
+  cp -r ${CUSTOM_GOVWAY_AS_CLI}/ buildcontext/custom_govway_as_cli
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_as_custom_scripts=custom_govway_as_cli")
 fi
 
 if [ -n "${CUSTOM_ORACLE_JDBC}" ]
@@ -195,7 +197,7 @@ else
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
   --build-arg source_image=linkitaly/govway-installer_${DB:-hsql} \
   -t "${TAG}" \
-  -f govway/Dockerfile.govway buildcontext
+  -f "govway/${APPSERV:-tomcat9}/Dockerfile.govway" buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
 

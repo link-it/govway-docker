@@ -95,12 +95,15 @@ do
     ;;
     esac
 
-    if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
-    then
-        INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
-    else
-        INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
-    fi
+    #if [ -n "${GOVWAY_DS_JDBC_LIBS}" ]
+    #then
+    #    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    #else
+    #    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DRIVER_JDBC}:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    #fi
+    
+    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVWAY_DS_JDBC_LIBS}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+    
     cat - <<EOSQLTOOL >> ${SQLTOOL_RC_FILE}
 
 urlid govwayDB${DESTINAZIONE}
@@ -190,9 +193,9 @@ fi
                 sleep ${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME}
             fi
         done
-        if [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_READY_DB_CHECK_MAX_RETRY}  ]
+        if [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${GOVWAY_READY_DB_CHECK_MAX_RETRY}  ]
         then
-            echo "FATAL: Readyness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo $(( ${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME} * ${GOVWAY_READY_DB_CHECK_MAX_RETRY} ))secondi"
+            echo "FATAL: Readyness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo $(( ${GOVWAY_READY_DB_CHECK_SKIP_SLEEP_TIME} * ${GOVWAY_READY_DB_CHECK_MAX_RETRY} )) secondi"
 		    exit 1
         else
             ##ripulisco gli spazi
