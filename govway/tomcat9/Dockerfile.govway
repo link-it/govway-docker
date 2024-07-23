@@ -22,7 +22,7 @@ GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.1 \
-POSTGRES_JDBC_VERSION=42.6.0 \
+POSTGRES_JDBC_VERSION=42.7.3 \
 TZ="Europe/Rome" 
 
 
