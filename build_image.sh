@@ -101,7 +101,7 @@ rm -rf buildcontext
 mkdir -p buildcontext/
 cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
 #export DOCKER_BUILDKIT=0
-DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=$APPSERV")
+DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}")
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
@@ -166,6 +166,10 @@ then
   postgresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
   *) TAG="${REPO}:${TAGNAME}_${DB}" ;;
   esac
+
+  # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato
+  [ "${APPSERV:-tomcat9}" != "tomcat9" ] && TAG="${TAG}_${APPSERV}"
+
 fi
 
 if [ -n "${CUSTOM_GOVWAY_AS_CLI}" ]
