@@ -21,8 +21,8 @@ USER root
 ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
-JAVA_HOME=/usr/lib/jvm/jre-11-openjdk \
-POSTGRES_JDBC_VERSION=42.6.0
+POSTGRES_JDBC_VERSION=42.7.3 \
+TZ="Europe/Rome" 
 
 RUN set -eux; \
 apt-get -y update; \
@@ -49,9 +49,9 @@ mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};  \
 chown -R root:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; 
 
-COPY commons/run_batch.sh /
-RUN chown -R root:0 /run_batch.sh && chmod -Rf g+rwX  /run_batch.sh 
+COPY commons/run_batch.sh /usr/local/bin
+RUN chown -R root:0 /usr/local/bin/run_batch.sh && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh 
 ARG govway_database_vendor
 ENV GOVWAY_DB_TYPE=${govway_database_vendor} 
-ENTRYPOINT [ "/run_batch.sh" ]
+ENTRYPOINT [ "/usr/local/bin/run_batch.sh" ]
 CMD [ "Orarie" ]
