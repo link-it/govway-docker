@@ -348,7 +348,7 @@ ${CRONTAB} >/proc/1/fd/1 2>&1
 EOCRONTAB
 
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
-    exec crond -n 
+    exec cron -f 
 else
     echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false
