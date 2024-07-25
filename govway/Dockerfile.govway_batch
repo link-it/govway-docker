@@ -46,7 +46,7 @@ ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh; \
 sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 rm -rf /etc/cron.*/*; \
-mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};  \
+mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway ;  \
 chown -R root:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; 
 
