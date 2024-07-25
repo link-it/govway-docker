@@ -33,7 +33,7 @@ rm -rf /var/lib/apt/lists/* \
 echo "${TZ}" > /etc/timezone; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
 
-ARG oracle_custom_jdbc=commons/standalone_wrapper.sh
+ARG oracle_custom_jdbc=commons/entrypoint.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
