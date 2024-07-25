@@ -280,6 +280,30 @@ if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]; then export DATASOURCE_STAT_CONN_PARAM
 # [ -n "${GOVWAY_STAT_DS_BLOCKING_TIMEOUT}" ] || export GOVWAY_STAT_DS_BLOCKING_TIMEOUT="${GOVWAY_DS_BLOCKING_TIMEOUT}"
 
 
+## Pooling
+export GOVWAY_MAX_POOL=${GOVWAY_MAX_POOL:-50}
+export GOVWAY_MIN_POOL=${GOVWAY_MIN_POOL:-2}
+export GOVWAY_INITIALSIZE_POOL=${GOVWAY_INITIALSIZE_POOL:-${GOVWAY_MIN_POOL}}
+export GOVWAY_MINIDLE_POOL=${GOVWAY_MINIDLE_POOL:-${GOVWAY_MIN_POOL}}
+export GOVWAY_MAXIDLE_POOL=${GOVWAY_MAXIDLE_POOL:-${GOVWAY_MAX_POOL}}
+
+export GOVWAY_CONF_MAX_POOL=${GOVWAY_CONF_MAX_POOL:-10}
+export GOVWAY_CONF_MIN_POOL=${GOVWAY_CONF_MIN_POOL:-2}
+export GOVWAY_CONF_INITIALSIZE_POOL=${GOVWAY_CONF_INITIALSIZE_POOL:-${GOVWAY_CONF_MIN_POOL}}
+export GOVWAY_CONF_MINIDLE_POOL=${GOVWAY_CONF_MINIDLE_POOL:-${GOVWAY_CONF_MIN_POOL}}
+export GOVWAY_CONF_MAXIDLE_POOL=${GOVWAY_CONF_MAXIDLE_POOL:-${GOVWAY_CONF_MAX_POOL}}
+
+export GOVWAY_TRAC_MAX_POOL=${GOVWAY_TRAC_MAX_POOL:-50}
+export GOVWAY_TRAC_MIN_POOL=${GOVWAY_TRAC_MIN_POOL:-2}
+export GOVWAY_TRAC_INITIALSIZE_POOL=${GOVWAY_TRAC_INITIALSIZE_POOL:-${GOVWAY_TRAC_MIN_POOL}}
+export GOVWAY_TRAC_MINIDLE_POOL=${GOVWAY_TRAC_MINIDLE_POOL:-${GOVWAY_TRAC_MIN_POOL}}
+export GOVWAY_TRAC_MAXIDLE_POOL=${GOVWAY_TRAC_MAXIDLE_POOL:-${GOVWAY_TRAC_MAX_POOL}}
+
+export GOVWAY_STAT_MAX_POOL=${GOVWAY_STAT_MAX_POOL:-5}
+export GOVWAY_STAT_MIN_POOL=${GOVWAY_STAT_MIN_POOL:-1}
+export GOVWAY_STAT_INITIALSIZE_POOL=${GOVWAY_STAT_INITIALSIZE_POOL:-${GOVWAY_STAT_MIN_POOL}}
+export GOVWAY_STAT_MINIDLE_POOL=${GOVWAY_STAT_MINIDLE_POOL:-${GOVWAY_STAT_MIN_POOL}}
+export GOVWAY_STAT_MAXIDLE_POOL=${GOVWAY_STAT_MAXIDLE_POOL:-${GOVWAY_STAT_MAX_POOL}}
 
 
 
@@ -327,15 +351,23 @@ fi
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
     # Mantenimento delle variabili precedenti per compatibilita
-    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"
-    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"
+    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
+    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
 
+
+    [ -n "${WILDFLY_HTTP_IN_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS="${WILDFLY_HTTP_IN_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_HTTP_OUT_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS="${WILDFLY_HTTP_OUT_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_HTTP_GEST_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS="${WILDFLY_HTTP_GEST_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_AJP_IN_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS="${WILDFLY_AJP_IN_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_AJP_OUT_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS="${WILDFLY_AJP_OUT_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_AJP_GEST_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS="${WILDFLY_AJP_GEST_WORKER-MAX-THREADS}"; }
+    [ -n "${WILDFLY_MAX-POST-SIZE}" -a -z "${GOVWAY_AS_MAX-POST-SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX-POST-SIZE."; export GOVWAY_AS_MAX-POST-SIZE="${WILDFLY_MAX-POST-SIZE}"; }
 
     [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
 
     if [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'TRUE' ]
     then
-        cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI > /tmp/__fix_connettori.cli
 /Server/Executor:add name=ajp-out-worker, namePrefix=ajp-out-worker-, maxThreads=\${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:-100}\n\
 /Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}\n\
 /Server/Executor:add name=ajp-gest-worker, namePrefix=ajp-gest-worker-, maxThreads=\${GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS:20}\n\
@@ -346,7 +378,7 @@ EOCLI
         # Elimino il connettore AJP solo se esplicitmante richiesto
         # per mantenere la compatibilità con le immagini preesistenti che
         #   lo avevano attivo all'avvio comunque
-        cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI > /tmp/__fix_connettori.cli
 /Server/Service/Connector[@port="8009"]:delete
 /Server/Executor[@name="ajp-worker"]:delete
 EOCLI
@@ -361,8 +393,7 @@ EOCLI
     # I connettori HTTP sono abilitati per default a meno che non siano esplicitamente disabilitati
     if [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ]
     then      
-        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
-        cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI >> /tmp/__fix_connettori.cli
 /Server/Service/Connector[@port="8080"]:delete
 /Server/Service/Connector[@port="8081"]:delete
 /Server/Service/Connector[@port="8082"]:delete
@@ -372,13 +403,12 @@ EOCLI
 EOCLI
     elif [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'TRUE' ]
     then
-        # Si tratta della configurazione standard ed è equivalente a non specificare WILDFLY_HTTP_LISTENER
+        # Si tratta della configurazione standard ed è equivalente a non specificare GOVWAY_AS_HTTP_LISTENER
         # non faccio nulla
         true
     elif [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'HTTP-8080' ]
     then
-        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
-        cat - << EOCLI >> /tmp/__standalone_fix_connettori.cli
+        cat - << EOCLI >> /tmp/__fix_connettori.cli
 echo "Elimino Worker e Listener http"
 /Server/Service/Connector[@port="8081"]:delete
 /Server/Service/Connector[@port="8082"]:delete
@@ -388,7 +418,7 @@ EOCLI
 
     fi
 
-    [ -f /tmp/__standalone_fix_connettori.cli ] && /usr/local/bin/tomcat-cli.sh "/tmp/__standalone_fix_connettori.cli"
+    [ -f /tmp/__fix_connettori.cli ] && /usr/local/bin/tomcat-cli.sh "/tmp/__fix_connettori.cli"
     touch "${CONNETTORI_INIT_FILE}"
 fi
 
@@ -448,7 +478,10 @@ then
     fi
 fi
 
-${CATALINA_HOME}/bin/catalina.sh run &
+export UMASK=0022
+export CATALINA_OUT="${GOVWAY_LOGDIR}/catalina.out"
+
+${CATALINA_HOME}/bin/catalina.sh run > ${CATALINA_OUT} &
 
 
 PID=$!
