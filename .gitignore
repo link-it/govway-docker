@@ -1,2 +1,4 @@
 buildcontext
 compose
+*.tgz
+*.cli
