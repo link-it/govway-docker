@@ -141,6 +141,7 @@ ${JDBC_RUN_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=pool-prefill, value=true)
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=prepared-statements-cache-size, value=\${env.GOVWAY_DS_PSCACHESIZE:20})
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=pool-use-strict-min, value=false)
+/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=initial-pool-size, value=\${env.GOVWAY_INITIALSIZE_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=min-pool-size, value=\${env.GOVWAY_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=max-pool-size, value=\${env.GOVWAY_MAX_POOL:50})
 echo "Preparo datasource org.govway.datasource.console"
@@ -155,6 +156,7 @@ ${JDBC_CONF_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=pool-prefill, value=true)
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=prepared-statements-cache-size, value=\${env.GOVWAY_CONF_DS_PSCACHESIZE:20})
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=pool-use-strict-min, value=false)
+/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=initial-pool-size, value=\${env.GOVWAY_CONF_INITIALSIZE_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=min-pool-size, value=\${env.GOVWAY_CONF_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=max-pool-size, value=\${env.GOVWAY_CONF_MAX_POOL:10})
 echo "Preparo datasource org.govway.datasource.tracciamento"
@@ -169,6 +171,7 @@ ${JDBC_TRAC_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=pool-prefill, value=true)
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=prepared-statements-cache-size, value=\${env.GOVWAY_TRAC_DS_PSCACHESIZE:20})
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=pool-use-strict-min, value=false)
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=initial-pool-size, value=\${env.GOVWAY_TRAC_INITIALSIZE_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=min-pool-size, value=\${env.GOVWAY_TRAC_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=max-pool-size, value=\${env.GOVWAY_TRAC_MAX_POOL:50})
 echo "Preparo datasource org.govway.datasource.statistiche"
@@ -183,6 +186,7 @@ ${JDBC_STAT_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=pool-prefill, value=true)
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=prepared-statements-cache-size, value=\${env.GOVWAY_STAT_DS_PSCACHESIZE:20})
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=pool-use-strict-min, value=false)
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=initial-pool-size, value=\${env.GOVWAY_STAT_INITIALSIZE_POOL:1})
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=min-pool-size, value=\${env.GOVWAY_STAT_MIN_POOL:1})
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=max-pool-size, value=\${env.GOVWAY_STAT_MAX_POOL:5})
 EOCLI
