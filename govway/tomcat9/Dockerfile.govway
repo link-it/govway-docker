@@ -30,6 +30,7 @@ TZ="Europe/Rome"
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 apt-get -y update; \
+apt-get -y upgrade; \
 apt-get -y install unzip xmlstarlet netcat; \
 apt-get -y clean all; \
 rm -rf /var/lib/apt/lists/* \
@@ -110,7 +111,7 @@ echo '# Rimuovi Resource UserDatabase \n\
 # Configura RemoteIpValve\n\
 /Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, remoteIpProxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
 # Configura AccessLogValve\n\
-/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}\n\
+/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}, suffix=.log \n\
 ' > /tmp/tomcat_configuration.cli; \
 chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
 /usr/local/bin/config_datasource.sh /tmp/tomcat_configuration.cli; \

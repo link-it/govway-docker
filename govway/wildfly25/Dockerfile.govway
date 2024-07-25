@@ -33,6 +33,7 @@ TZ="Europe/Rome"
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 apt-get -y update; \
+apt-get -y upgrade; \
 apt-get -y install unzip xmlstarlet netcat; \
 apt-get -y clean all; \
 rm -rf /var/lib/apt/lists/* \

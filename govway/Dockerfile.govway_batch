@@ -26,6 +26,7 @@ TZ="Europe/Rome"
 
 RUN set -eux; \
 apt-get -y update; \
+apt-get -y upgrade; \
 apt-get -y install unzip cron; \
 apt-get -y clean all; \
 rm -rf /var/lib/apt/lists/* \
