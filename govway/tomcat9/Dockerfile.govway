@@ -102,11 +102,11 @@ echo '# Rimuovi Resource UserDatabase \n\
 # Rimuovi connettore HTTP su porta 8080\n\
 /Server/Service/Connector[@port="8080"]:delete\n\
 # Aggiungi connettore HTTP su porta 8080\n\
-/Server/Service/Connector:add port=8080, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-in-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+/Server/Service/Connector:add port=8080, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-in-worker, maxHttpHeaderSize=${GOVWAY_AS_MAX_HTTP_SIZE:-1048576}, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
 # Aggiungi connettore HTTP su porta 8081\n\
-/Server/Service/Connector:add port=8081, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-out-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+/Server/Service/Connector:add port=8081, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-out-worker, maxHttpHeaderSize=${GOVWAY_AS_MAX_HTTP_SIZE:-1048576}, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
 # Aggiungi connettore HTTP su porta 8082\n\
-/Server/Service/Connector:add port=8082, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-gest-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
+/Server/Service/Connector:add port=8082, protocol=HTTP/1.1, connectionTimeout=20000, redirectPort=8443, executor=http-gest-worker, maxHttpHeaderSize=${GOVWAY_AS_MAX_HTTP_SIZE:-1048576}, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}\n\
 # Aggiungi connettore AJP su porta 8009\n\
 /Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=${GOVWAY_AS_AJP_SECRET:-false}\n\
 # Configura RemoteIpValve\n\
