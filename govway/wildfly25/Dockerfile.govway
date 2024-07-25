@@ -94,16 +94,16 @@ RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
 RUN echo 'embed-server --server-config=standalone.xml --std-out=echo \n\
 echo "Aggiungo Workers http" \n\
-/subsystem=io/worker=http-in-worker:add(task-max-threads=${env.WILDFLY_HTTP_IN_WORKER-MAX-THREADS:100}) \n\
+/subsystem=io/worker=http-in-worker:add(task-max-threads=${env.GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS:100}) \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker, value=http-in-worker) \n\
-/subsystem=io/worker=http-out-worker:add(task-max-threads=${env.WILDFLY_HTTP_OUT_WORKER-MAX-THREADS:100}) \n\
+/subsystem=io/worker=http-out-worker:add(task-max-threads=${env.GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS:100}) \n\
 /socket-binding-group=standard-sockets/socket-binding=http-out:add(port=${jboss.http.out.port:8081}) \n\
 /subsystem=undertow/server=default-server/http-listener=fruizioni:add(socket-binding=http-out,  worker=http-out-worker) \n\
-/subsystem=io/worker=http-gest-worker:add(task-max-threads=${env.WILDFLY_HTTP_GEST_WORKER-MAX-THREADS:20}) \n\
+/subsystem=io/worker=http-gest-worker:add(task-max-threads=${env.GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS:20}) \n\
 /socket-binding-group=standard-sockets/socket-binding=http-gest:add(port=${jboss.http.gest.port:8082}) \n\
 /subsystem=undertow/server=default-server/http-listener=gestione:add(socket-binding=http-gest, worker=http-gest-worker) \n\
 echo "Aggiungo Worker e Listener ajp" \n\
-/subsystem=io/worker=ajp-worker:add(task-max-threads=${env.WILDFLY_AJP_WORKER-MAX-THREADS:50}) \n\
+/subsystem=io/worker=ajp-worker:add(task-max-threads=${env.GOVWAY_AS_AJP_WORKER_MAX_THREADS:50}) \n\
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
 echo "Abilito utilizzo degli header X-Forwarding" \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true) \n\
@@ -112,10 +112,10 @@ echo "Rimuovo connettore https" \n\
 echo "Abilitazione Non standard wrapper" \n\
 /subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
 echo "Correggo max post size" \n\
-/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
-/subsystem=undertow/server=default-server/http-listener=fruizioni:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
-/subsystem=undertow/server=default-server/http-listener=gestione:write-attribute(name=max-post-size , value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
-/subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.WILDFLY_MAX-POST-SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-post-size , value=${env.GOVWAY_AS_MAX_POST_SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=fruizioni:write-attribute(name=max-post-size , value=${env.GOVWAY_AS_MAX_POST_SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/http-listener=gestione:write-attribute(name=max-post-size , value=${env.GOVWAY_AS_MAX_POST_SIZE:10485760}) \n\
+/subsystem=undertow/server=default-server/ajp-listener=ajplistener:write-attribute(name=max-post-size, value=${env.GOVWAY_AS_MAX_POST_SIZE:10485760}) \n\
 echo "Abilitazione Acces Log"\n\
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(pattern="%A %t %h %l %u %r %s %b %T %I", directory="${env.GOVWAY_LOGDIR}", prefix=access, suffix=".log") \n\
 echo "Sposto Server Log"\n\

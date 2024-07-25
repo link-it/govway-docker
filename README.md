@@ -101,8 +101,8 @@ La sequenza di avvio avvio del container, sia in modalità standalone che con im
 
 Tutti i files trovati sotto quella directory vengono valutati in ordine alfabetico, suddivisi e gestiti come segue:
 - files con estensione **'.sh'** non eseguibili:  vengono trattati come scripts di shell e viene fatto il source del contenuto (import nella shell attuale)
-- files con estensione **'.sh'** eseguibili:  vengono eseguiti con l'utente di sistema **wildfly**
-- files con estensione **'.cli'**: vengono trattati come script di command line wildfly e vengono passati all 'interprete **${JBOSS_HOME}/bin/jboss-cli.sh** 
+- files con estensione **'.sh'** eseguibili:  vengono eseguiti con l'utente di sistema **wildfly** o **tomcat**
+- files con estensione **'.cli'**: vengono trattati come script di command line wildfly e vengono passati all 'interprete **${JBOSS_HOME}/bin/jboss-cli.sh** o **/usr/local/bin/tomcat-cli.sh**
 - tutti gli altri files : vengono ignorati
 
 La valutazione dei comandi di inizializzazione viene fatta dopo le verifiche e l'eventuale inizializzazione del database, ma prima dell'avvio dell'application server wildfly; inoltre la valutazione avviene solamente al primo avvio del container. 
@@ -241,8 +241,8 @@ TRACCIAMENTO
 ### Configurazione Listener 
 Per configurare con quali protocolli i listener di wildfly accetteranno le richieste, è possibile utilizzare le seguenti variabili:
 
-* WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )
-* WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
+* GOVWAY_AS_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )
+* GOVWAY_AS_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
 
 A seconda del protocollo che si vuole configurare, valorizzando la relativa variabile a **true** si abiliteranno tutti e tre listener previsti di erogazione, fruizione e gestione. Viceversa valorizzando a **false** i tre listener verranno disabilitati.
 Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un solo un listener per il protocollo scelto, sulla rispettiva porta di default.
@@ -250,15 +250,31 @@ Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un s
 
 I listener possono essere ulteriormente configurati tramite le seguenti variabili:
 
-* WILDFLY_HTTP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)
-* WILDFLY_HTTP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)
-* WILDFLY_HTTP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)
+* GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)~ 
+* GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)~ 
+* GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)~ 
 
-* WILDFLY_AJP_IN_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)
-* WILDFLY_AJP_OUT_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)
-* WILDFLY_AJP_GEST_WORKER-MAX-THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)
+* GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)~ 
+* GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ 
+* GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ 
 
-* WILDFLY_MAX-POST-SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)
+* GOVWAY_AS_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ 
+
+### NOTA VARIABILI DEPRECATE
+Di seguito una lista di variabili usate in precedenza per la configurazione dei Listener. Queste variabili sono state deprecate e verrano rimosse nelle versioni successive:
+
+* ~WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )~ **[DEPRECATA in favore di GOVWAY_AS_AJP_LISTENER]**
+* ~WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_LISTENER]**
+
+* ~WILDFLY_HTTP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_HTTP_IN_WORKER_MAX_THREADS]**
+* ~WILDFLY_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_HTTP_OUT_WORKER_MAX_THREADS]**
+* ~WILDFLY_HTTP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di WILDFLY_HTTP_GEST_WORKER_MAX_THREADS]**
+
+* ~WILDFLY_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_AJP_IN_WORKER_MAX_THREADS]**
+* ~WILDFLY_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_AJP_OUT_WORKER_MAX_THREADS]**
+* ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di WILDFLY_AJP_GEST_WORKER_MAX_THREADS]**
+~~ **[DEPRECATA in favore di ]**
+* ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di WILDFLY_MAX_POST_SIZE]**
 
 ### Configurazioni avanzate  
 * WILDFLY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly (default: 20s)

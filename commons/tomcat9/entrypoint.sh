@@ -350,18 +350,21 @@ then
 fi
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
+    # Riconversione variabili con il carattere '-' nel nome
+    for e in $(env | grep 'MAX-' ); do varname=${e%=*}; varval=${e#*=}; eval  "export ${varname//-/_}=${varval}"; done
+
     # Mantenimento delle variabili precedenti per compatibilita
     [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
     [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
+    
 
-
-    [ -n "${WILDFLY_HTTP_IN_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_IN_WORKER-MAX-THREADS="${WILDFLY_HTTP_IN_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_HTTP_OUT_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER-MAX-THREADS="${WILDFLY_HTTP_OUT_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_HTTP_GEST_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER-MAX-THREADS="${WILDFLY_HTTP_GEST_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_AJP_IN_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_IN_WORKER-MAX-THREADS="${WILDFLY_AJP_IN_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_AJP_OUT_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_OUT_WORKER-MAX-THREADS="${WILDFLY_AJP_OUT_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_AJP_GEST_WORKER-MAX-THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS."; export GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS="${WILDFLY_AJP_GEST_WORKER-MAX-THREADS}"; }
-    [ -n "${WILDFLY_MAX-POST-SIZE}" -a -z "${GOVWAY_AS_MAX-POST-SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX-POST-SIZE."; export GOVWAY_AS_MAX-POST-SIZE="${WILDFLY_MAX-POST-SIZE}"; }
+    [ -n "${WILDFLY_HTTP_IN_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAXTHREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAXTHREADS="${WILDFLY_HTTP_IN_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_HTTP_OUT_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAXTHREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAXTHREADS="${WILDFLY_HTTP_OUT_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_HTTP_GEST_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAXTHREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAXTHREADS="${WILDFLY_HTTP_GEST_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_AJP_IN_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAXTHREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAXTHREADS="${WILDFLY_AJP_IN_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_AJP_OUT_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAXTHREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAXTHREADS="${WILDFLY_AJP_OUT_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_AJP_GEST_WORKER_MAXTHREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAXTHREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAXTHREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAXTHREADS="${WILDFLY_AJP_GEST_WORKER_MAXTHREADS}"; }
+    [ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
 
     [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
 
@@ -370,7 +373,7 @@ then
         cat - << EOCLI > /tmp/__fix_connettori.cli
 /Server/Executor:add name=ajp-out-worker, namePrefix=ajp-out-worker-, maxThreads=\${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:-100}\n\
 /Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}\n\
-/Server/Executor:add name=ajp-gest-worker, namePrefix=ajp-gest-worker-, maxThreads=\${GOVWAY_AS_AJP_GEST_WORKER-MAX-THREADS:20}\n\
+/Server/Executor:add name=ajp-gest-worker, namePrefix=ajp-gest-worker-, maxThreads=\${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS:20}\n\
 /Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}\n\
 EOCLI
     elif  [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ]
@@ -479,9 +482,7 @@ then
 fi
 
 export UMASK=0022
-export CATALINA_OUT="${GOVWAY_LOGDIR}/catalina.out"
-
-${CATALINA_HOME}/bin/catalina.sh run > ${CATALINA_OUT} &
+${CATALINA_HOME}/bin/catalina.sh run &
 
 
 PID=$!
