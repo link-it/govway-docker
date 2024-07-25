@@ -84,6 +84,7 @@ COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
 RUN  sed -i -e 's/<!--.*-->//g' -e '/<!--/,/-->/d'  ${CATALINA_HOME}/conf/server.xml ${CATALINA_HOME}/conf/context.xml; \
+sed -i -e  "s#\${catalina.base}/logs#${GOVWAY_LOGDIR}#" ${CATALINA_HOME}/conf/logging.properties; \
 echo '# Rimuovi Resource UserDatabase \n\
 /Server/GlobalNamingResources/Resource[@name="UserDatabase"]:delete\n\
 # Rimuovi Realm UserDatabase\n\
