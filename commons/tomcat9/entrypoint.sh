@@ -327,7 +327,7 @@ fi
 /usr/local/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
-# Eventuali inizializzazioni custom widfly
+# Eventuali inizializzazioni custom 
 if [ ! -f "${MODULE_INIT_FILE}" ]
 then
 
