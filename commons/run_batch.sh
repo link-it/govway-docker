@@ -45,7 +45,6 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 
     if [ -n "${GOVWAY_DS_JDBC_LIBS}" ] 
     then
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
         if [ ! -d "${GOVWAY_DS_JDBC_LIBS}" ]
         then
             echo "FATAL: Sanity check JDBC ... fallito."
@@ -55,10 +54,17 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
     fi
     case "${GOVWAY_DB_TYPE}" in
     postgresql)
-        # 
-        # il driver postgres si trova in "/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar"
-        #
-        [ -n "${GOVWAY_DS_JDBC_LIBS}" ] || export GOVWAY_DRIVER_JDBC="/opt"
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then           
+            echo "WARN: Sanity check JDBC ... in corso."
+            echo "WARN: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            echo "WARN: Verrà utilizzato il driver PostgreSQL interno. Questo comportamento è DEPRECATO è verra rimosso nelle prossime versioni. "
+            echo "WARN: Aggiornate il vostro deploy in modo da eliminare questo warning."
+
+            export GOVWAY_DS_JDBC_LIBS="/tmp/postgresql-jdbc"
+            mkdir /tmp/postgresql-jdbc
+            /bin/cp -f "/opt/postgresql-${POSTGRES_JDBC_VERSION}.jar" ${GOVWAY_DS_JDBC_LIBS}
+        fi
         export GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1;'
     ;;
@@ -70,7 +76,6 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
             echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
             exit 1
         fi
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
 
         if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
         then
@@ -109,7 +114,6 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
             echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
             exit 1
         fi
-        export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
 
         if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
         then
@@ -153,7 +157,6 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
             if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
             then
                 export GOVWAY_DS_JDBC_LIBS="$(dirname ${GOVWAY_ORACLE_JDBC_PATH})"
-                export GOVWAY_DRIVER_JDBC="${GOVWAY_DS_JDBC_LIBS}"
             else
                 echo "WARN: Recupero librerie per il driver jdbc da [GOVWAY_DS_JDBC_LIBS=${GOVWAY_DS_JDBC_LIBS}]."
             fi
@@ -279,8 +282,7 @@ esac
 export GOVWAY_BATCH_STATISTICHE="${GOVWAY_BATCH_HOME}/generatoreStatistiche"
 export BATCH_CLASSPATH="${GOVWAY_BATCH_STATISTICHE}/lib"
 export BATCH_CONFIG='/tmp/runtime_properties'
-# mi aspetto che GOVWAY_DRIVER_JDBC punti già ad una directory
-export BATCH_JDBC="${GOVWAY_DRIVER_JDBC}"
+export BATCH_JDBC="${GOVWAY_DS_JDBC_LIBS}"
 
 
 
