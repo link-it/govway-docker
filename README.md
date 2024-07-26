@@ -204,7 +204,7 @@ TRACCIAMENTO
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
-* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
+* ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
 
 ### Pooling connessioni database
 
@@ -274,17 +274,17 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * ~WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )~ **[DEPRECATA in favore di GOVWAY_AS_AJP_LISTENER]**
 * ~WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_LISTENER]**
 
-* ~WILDFLY_HTTP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_HTTP_IN_WORKER_MAX_THREADS]**
-* ~WILDFLY_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_HTTP_OUT_WORKER_MAX_THREADS]**
-* ~WILDFLY_HTTP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di WILDFLY_HTTP_GEST_WORKER_MAX_THREADS]**
+* ~WILDFLY_HTTP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS]**
+* ~WILDFLY_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS]**
+* ~WILDFLY_HTTP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS]**
 
-* ~WILDFLY_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_AJP_IN_WORKER_MAX_THREADS]**
-* ~WILDFLY_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di WILDFLY_AJP_OUT_WORKER_MAX_THREADS]**
-* ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di WILDFLY_AJP_GEST_WORKER_MAX_THREADS]**
-* ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di WILDFLY_MAX_POST_SIZE]**
+* ~WILDFLY_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS]**
+* ~WILDFLY_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS]**
+* ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS]**
+* ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di GOVWAY_AS_MAX_POST_SIZE]**
 
 ### Configurazioni avanzate  
-* WILDFLY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly (default: 20s)
+* WILDFLY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly. Non ha effetti per le immagini che usano Tomcat. (default: 20s)
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 
 ## Personalizzazioni Batch
@@ -328,9 +328,9 @@ TRACCIAMENTO
 #### Connessione a database Oracle ####
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
 
-
+* 
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
-* GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare (deprecata in favore di GOVWAY_DS_JDBC_LIBS)
+* ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
 
 
 ### Configurazioni avanzate
