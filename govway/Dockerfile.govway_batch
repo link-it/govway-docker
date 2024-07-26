@@ -46,9 +46,16 @@ ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh; \
 sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 rm -rf /etc/cron.*/*; \
-mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway ;  \
+mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway /usr/share/licenses/govway/third-party-licenses ;  \
 chown -R root:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; 
+
+
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/LICENSE* \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/COPYING* \
+/usr/share/licenses/govway/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 
 COPY commons/run_batch.sh /usr/local/bin
 RUN chown -R root:0 /usr/local/bin/run_batch.sh && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh 
