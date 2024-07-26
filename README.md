@@ -170,7 +170,7 @@ E' possibile personalizzare il ciclo di controllo di avvio di govway impostando 
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
 di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio per tutti i database tranne HSQL)
 
-  ***AVVISO COMPORTAMENTO DEPRECATO deprecato: le immagini PostgreSQL al momento contentgono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
+  ***AVVISO COMPORTAMENTO DEPRECATO: le immagini PostgreSQL al momento contengono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
   
 * GOVWAY_DB_SERVER: nome dns o ip address del server database (obbligatorio in modalita orchestrate)
 * GOVWAY_DB_NAME: Nome del database (obbligatorio in modalita orchestrate)
@@ -303,7 +303,7 @@ Per default si suppone che queste siano presenti sullo stesso database indicato 
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
 di cui almeno uno deve implementare l'interfaccai JDBC java.sql.Driver (obbligatorio solo per tutti i database tranne HSQL)
 
-  ***AVVISO COMPORTAMENTO DEPRECATO deprecato: le immagini PostgreSQL al momento contentgono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
+  ***AVVISO COMPORTAMENTO DEPRECATO: le immagini PostgreSQL al momento contengono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
 
 * GOVWAY_STAT_DB_SERVER: nome dns o ip address del server database (obbligatorio)
 * GOVWAY_STAT_DB_NAME: Nome del database delle statistiche (obbligatorio)
