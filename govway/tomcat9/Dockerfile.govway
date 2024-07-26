@@ -33,7 +33,7 @@ apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install unzip xmlstarlet netcat; \
 apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/* \
+rm -rf /var/lib/apt/lists/*; \
 echo "${TZ}" > /etc/timezone; \
 groupadd -r tomcat; \
 useradd -r -g tomcat -d ${CATALINA_HOME} -m -s /usr/sbin/nologin tomcat; \

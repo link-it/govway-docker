@@ -36,7 +36,7 @@ apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install unzip xmlstarlet netcat; \
 apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/* \
+rm -rf /var/lib/apt/lists/*; \
 echo "${TZ}" > /etc/timezone; \
 groupadd -r wildfly; \
 useradd -r -g wildfly -d ${JBOSS_HOME} -m -s /usr/sbin/nologin wildfly; \

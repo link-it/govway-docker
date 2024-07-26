@@ -29,7 +29,7 @@ apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install unzip cron; \
 apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/* \
+rm -rf /var/lib/apt/lists/*; \
 echo "${TZ}" > /etc/timezone; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
 
