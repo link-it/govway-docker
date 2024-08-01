@@ -475,8 +475,8 @@ then
         GOVWAY_AS_PROP_FILE="${JVM_PROPERTIES_FILE}"
         [ ! -f "${JVM_PROPERTIES_FILE}" -a -f "${JVM_PROPERTIES_FILE_DEPRECATO}" ] && GOVWAY_AS_PROP_FILE="${JVM_PROPERTIES_FILE_DEPRECATO}"
         echo >> "${CATALINA_HOME}/conf/catalina.properties"
-        echo "#PROPRIETA CUSTOM GOVWAY#" >> ${CATALINA_HOME}/conf/catalina.properties" 
-        cat ${GOVWAY_AS_PROP_FILE} >> ${CATALINA_HOME}/conf/catalina.properties"
+        echo "#PROPRIETA CUSTOM GOVWAY#" >> "${CATALINA_HOME}/conf/catalina.properties" 
+        cat "${GOVWAY_AS_PROP_FILE}" >> "${CATALINA_HOME}/conf/catalina.properties"
     fi
 fi
 
@@ -500,7 +500,7 @@ then
 	do
         if [ ${GOVWAY_ARCHIVES_TYPE} == 'manager' ]
         then
-            [ -f "${CATALINA_HOME}/work/Catalina/localhost/govwayConsole" ]
+            [ -e "${CATALINA_HOME}/work/Catalina/localhost/govwayConsole" ]
         else
 		    grep -qE "${GOVWAY_STARTUP_CHECK_REGEX}" ${GOVWAY_LOGDIR}/govway_startup.log  2> /dev/null
         fi
