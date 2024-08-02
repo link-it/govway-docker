@@ -1,0 +1,16 @@
+# immagine sorgente da utilizzare per il patch
+ARG target_image
+
+
+FROM ${target_image} AS target_image_full
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
+USER root
+RUN apt-get -y update; \
+apt-get -y install patch dos2unix; \
+apt-get -y clean all; \
+rm -rf /var/lib/apt/lists/*;
+ADD commons/apply-patch.sh /usr/local/bin/
+ADD PATCH /opt/PATCH
+RUN /usr/local/bin/apply-patch.sh 
+USER tomcat

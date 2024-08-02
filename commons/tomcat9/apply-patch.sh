@@ -1,6 +1,6 @@
 #!/bin/bash -eux
 
-for ARCHIVETOPATCH in $(ls ${JBOSS_HOME}/standalone/deployments/*.?ar)
+for ARCHIVETOPATCH in $(ls ${CATALINA_HOME}/webapps/*.?ar)
 do
     ARCHIVENAME="$(basename ${ARCHIVETOPATCH})"
     if [ -d "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch" -o -L "/opt/PATCH/${ARCHIVENAME}-${GOVWAY_FULLVERSION}.patch" ] 

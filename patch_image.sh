@@ -9,6 +9,8 @@ echo "Options
 -p : Inserisce le patch contenute nella directory, negli archivi dell'immagine finale
 -t : Imposta il nome del tag ed il repository da  utilizzare per l'immagine finale 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
+-g : Indica l'application server utilizzato nell'immagine sorgente (valori: [tomcat9, wildfly25] , default: tomcat9)
+
 -h : Mostra questa pagina di aiuto
 "
 exit 0
@@ -22,7 +24,7 @@ then
 fi
 
 
-while getopts "ht:s:p:" opt; do
+while getopts "ht:s:p:g:" opt; do
   case $opt in
     s) SOURCE="$OPTARG"; NO_COLON=${SOURCE//:/}
       [ ${#SOURCE} -eq ${#NO_COLON} -o "${SOURCE:0:1}" == ':' -o "${SOURCE:(-1):1}" == ':' ] && { echo "Il tag fornito \"$SOURCE\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
@@ -32,6 +34,8 @@ while getopts "ht:s:p:" opt; do
         [ ! -d "${PATCHDIR}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${PATCHDIR}]."; exit 3; }
         [ -z "$(ls -A ${PATCHDIR})" ] && echo "ATTENZIONE: la directory [${PATCHDIR}] e' vuota."
         ;;
+    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;wildfly25);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac
+       ;;
     h) printHelp
        ;;
     \?)
@@ -45,8 +49,8 @@ done
 
 rm -rf buildcontext
 mkdir -p buildcontext/
-cp -fr commons buildcontext/
-
+cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
+cp -f commons/* buildcontext/commons 2> /dev/null
 
   
 cp -rL ${PATCHDIR} buildcontext/PATCH
@@ -54,6 +58,6 @@ cp -rL ${PATCHDIR} buildcontext/PATCH
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
 --build-arg target_image=${SOURCE} \
 -t "${TAG:-$SOURCE}" \
--f govway/Dockerfile.patch buildcontext
+-f "govway/${APPSERV:-tomcat9}/Dockerfile.patch" buildcontext
 exit $?
 

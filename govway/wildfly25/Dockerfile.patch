@@ -9,7 +9,7 @@ USER root
 RUN yum -y install zip unzip patch dos2unix \
 && yum clean all \
 && rm -rf /var/cache/yum
-ADD commons/apply-patch.sh /usr/bin/
+ADD commons/apply-patch.sh /usr/local/bin/
 ADD PATCH /opt/PATCH
-RUN apply-patch.sh 
+RUN /usr/local/bin/apply-patch.sh 
 USER wildfly
