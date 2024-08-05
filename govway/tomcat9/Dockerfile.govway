@@ -90,13 +90,13 @@ echo '# Rimuovi Resource UserDatabase \n\
 # Rimuovi Realm UserDatabase\n\
 /Server/Service/Engine/Realm/Realm[@resourceName="UserDatabase"]:delete\n\
 # Aggiungi Executor http-in-worker\n\
-/Server/Executor:add name=http-in-worker, namePrefix=http-in-worker-, maxThreads=${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS:-100}\n\
+/Server/Service/Executor:top name=http-in-worker, namePrefix=http-in-worker-, maxThreads=${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS:-100}\n\
 # Aggiungi Executor http-out-worker\n\
-/Server/Executor:add name=http-out-worker, namePrefix=http-out-worker-, maxThreads=${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS:-100}\n\
+/Server/Service/Executor:top name=http-out-worker, namePrefix=http-out-worker-, maxThreads=${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS:-100}\n\
 # Aggiungi Executor http-gest-worker\n\
-/Server/Executor:add name=http-gest-worker, namePrefix=http-gest-worker-, maxThreads=${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS:-20}\n\
+/Server/Service/Executor:top name=http-gest-worker, namePrefix=http-gest-worker-, maxThreads=${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS:-20}, minSpareThreads=5\n\
 # Aggiungi Executor ajp-worker\n\
-/Server/Executor:add name=ajp-worker, namePrefix=ajp-worker-, maxThreads=${GOVWAY_AS_AJP_WORKER_MAX_THREADS:-50}\n\
+/Server/Service/Executor:top name=ajp-worker, namePrefix=ajp-worker-, maxThreads=${GOVWAY_AS_AJP_WORKER_MAX_THREADS:-50}\n\
 # Rimuovi connettore HTTPS su porta 8443\n\
 /Server/Service/Connector[@port="8443"]:delete\n\
 # Rimuovi connettore HTTP su porta 8080\n\
@@ -110,7 +110,7 @@ echo '# Rimuovi Resource UserDatabase \n\
 # Aggiungi connettore AJP su porta 8009\n\
 /Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-worker, maxPostSize=${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=${GOVWAY_AS_AJP_SECRET:-false}\n\
 # Configura RemoteIpValve\n\
-/Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, remoteIpProxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
+/Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, proxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
 # Configura AccessLogValve\n\
 /Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}, suffix=.log \n\
 ' > /tmp/tomcat_configuration.cli; \

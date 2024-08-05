@@ -108,6 +108,13 @@ function processDirective(document_server_xml, document_context_xml, directive) 
         case 'add':
             addElement(document, xpath, params);
             break;
+        // 'append' e' un alias del comando 'add'
+        case 'append':
+            addElement(document, xpath, params);
+            break;
+        case "top":
+            addElementAtTop(document, xpath, params);
+            break;
         case 'delete':
             deleteElement(document, xpath);
             break;
@@ -122,7 +129,7 @@ function processDirective(document_server_xml, document_context_xml, directive) 
     }
 }
 
-// Aggiungi un nuovo elemento
+// Aggiungi un nuovo elemento come ultimo figlio
 function addElement(document, xpath, attributes) {
     var parentXpath = xpath.substring(0, xpath.lastIndexOf('/'));
     var elementName = xpath.substring(xpath.lastIndexOf('/') + 1);
@@ -138,6 +145,27 @@ function addElement(document, xpath, attributes) {
         newElement.setAttribute(key, attributes[key]);
     }
     parent.appendChild(newElement);
+}
+
+// Aggiungi un nuovo elemento come primo figlio
+function addElementAtTop(document, xpath, attributes) {
+    var parentXpath = xpath.substring(0, xpath.lastIndexOf('/'));
+    var elementName = xpath.substring(xpath.lastIndexOf('/') + 1);
+
+    var parent = getElementByXPath(document, parentXpath);
+    if (!parent) {
+        print("XPath not found: " + parentXpath);
+        return;
+    }
+
+    var newElement = document.createElement(elementName);
+    for (var key in attributes) {
+        newElement.setAttribute(key, attributes[key]);
+    }
+
+    // Inserisce il nuovo elemento come primo figlio
+    var firstChild = parent.getFirstChild();
+    parent.insertBefore(newElement, firstChild);
 }
 
 // Elimina un elemento
