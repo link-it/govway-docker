@@ -16,6 +16,7 @@ Eseguendo invece lo scropt con il parametro '-h' è possibile conoscere i parame
 Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine puo essere eseguita con i normali comandi di run docker:
 ```shell
 ./build_image.sh 
+
 docker run \
   -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
   -e GOVWAY_POP_DB_SKIP=false \
@@ -23,7 +24,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.3.14
+linkitaly/govway:3.3.15
 
 ```
 
@@ -91,7 +92,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.14_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.15_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -123,7 +124,7 @@ Es:
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.3.14_postgres_batch_postgres giornaliera
+linkitaly/govway:3.3.15_postgres_batch_postgres giornaliera
 ```
 
 ### Modalita Cron ###
