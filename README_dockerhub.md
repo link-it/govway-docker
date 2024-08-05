@@ -5,7 +5,16 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.14`, `3.3.14_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
+* [`3.3.15`, `3.3.15_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.15_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/Dockerfile.govway)
+* [`3.3.14`, `3.3.14_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
@@ -23,15 +32,6 @@
 * [`3.3.13.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
 * [`3.3.13.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
 * [`3.3.13.p1_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.12`, `3.3.12_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
-* [`3.3.12_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.12/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -46,6 +46,12 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
+## Release Notes
+
+- *3.3.15*
+
+   - Modificato sistema operativo di base da Centos 7 (causa EOL) a Ubuntu 22 LTS (Jammy)
+   - Modificato application server di base da wildfly 26.1.3 a tomcat 9.0.91
 
 
 ## Nomenclatura delle immagini fornite
@@ -147,7 +153,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.14_postgres
+    image: linkitaly/govway:3.3.15_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -173,7 +179,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.14_oracle
+    image: linkitaly/govway:3.3.15_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -220,7 +226,7 @@ si possono rendere queste location persistenti, montando dei volumi su queste di
 
 ### Servizi attivi
 
-Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+I servizi attivi all'interno dell'immagine sono in ascolto sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
 - **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
@@ -257,7 +263,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.14_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.15_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -318,7 +324,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.14_batch_postgres
+    image: linkitaly/govway:3.3.15_batch_postgres
     command: 
       - orarie
     environment:
@@ -332,7 +338,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.14_batch_postgres
+    image: linkitaly/govway:3.3.15_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -353,7 +359,7 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.14_batch_oracle
+    image: linkitaly/govway:3.3.15_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -373,7 +379,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.14_batch_oracle
+    image: linkitaly/govway:3.3.15_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
