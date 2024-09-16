@@ -11,7 +11,7 @@ ARG govway_appserver=tomcat9
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; };\ 
 apt-get -y update; \
-apt-get -y install unzip zip
+apt-get -y install unzip zip gcc
 
 ENV LANG=it_IT.UTF-8 \
 GOVWAY_HOME=${govway_home} \
@@ -144,3 +144,8 @@ for archive in /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/manager/
 do \
  ln -s ${archive} /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/all/$(basename ${archive}); \
 done
+
+COPY commons/change_dir_perms.c /opt
+RUN cd /opt; \
+gcc -o change_dir_perms change_dir_perms.c
+

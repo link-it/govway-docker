@@ -497,6 +497,9 @@ then
     echo "WARN: Verificare che il path indicato sia corretto e leggibile dall'utente $(id -u -n)"
 fi
 
+# Mi assicuro che i diritti della directory di log siano sufficienti
+/usr/local/bin/change_dir_perms ${GOVWAY_LOGDIR}
+
 # Azzero un'eventuale log di startup precedente (utile in caso di restart)
 > ${GOVWAY_LOGDIR}/govway_startup.log
 

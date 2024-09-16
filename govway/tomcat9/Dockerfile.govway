@@ -71,6 +71,8 @@ ENV GOVWAY_DB_TYPE=${govway_database_vendor}
 COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${CATALINA_HOME}/webapps/
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
 COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/* /opt/${govway_database_vendor}
+COPY --from=source_image_full --chown=0:0 /opt/change_dir_perms /usr/local/bin
+
 
 ARG govway_as_custom_scripts=commons/entrypoint.sh
 COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli
@@ -122,7 +124,8 @@ echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.dig
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh \
+&& chmod u+s /usr/local/bin/change_dir_perms
 
 
 
