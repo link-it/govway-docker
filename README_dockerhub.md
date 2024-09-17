@@ -281,6 +281,13 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 
 - aggiornare la base dati come indicato in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update);
 
+  - nel caso di un aggiornamento da una versione precedente alla 3.3.15 a una versione 3.3.15 o superiore, è necessario applicare i seguenti script SQL aggiuntivi sulla base dati, a causa della modifica dell'application server di base da WildFly a Tomcat:"
+  
+    ```
+    update registri set location='java:/comp/env/org.govway.datasource.console';
+    update audit_appender_prop set value='java:/comp/env/org.govway.datasource.console' where name='datasource';
+    ```
+    
 - riferire la nuova versione all'interno del docker-compose;
 
 - riavvare il docker-compose. 
