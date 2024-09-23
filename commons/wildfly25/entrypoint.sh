@@ -17,6 +17,7 @@ declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
 declare -r JVM_PROPERTIES_FILE='/etc/govway_as_jvm.properties'
 declare -r JVM_PROPERTIES_FILE_DEPRECATO='/etc/wildfly/wildfly.properties'
 declare -r ENTRYPOINT_D='/docker-entrypoint-govway.d/'
+declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
@@ -448,42 +449,45 @@ EOCLI
     touch "${CONNETTORI_INIT_FILE}"
 fi
 
-if [ -d "${ENTRYPOINT_D}" -a ! -f ${CUSTOM_INIT_FILE} ]
+if [ -d "${ENTRYPOINT_D}" -o  -d "${ENTRYPOINT_D_DEPRECATO}" ]
 then
-    local f
-	for f in ${ENTRYPOINT_D}/*
-    do
-		case "$f" in
-			*.sh)
-				if [ -x "$f" ]; then
-					echo "INFO: Customizzazioni ... eseguo $f"
-					"$f"
-				else
-					echo "INFO: Customizzazioni ... importo $f"
-					. "$f"
-				fi
-				;;
-			*.cli)
-				echo "INFO: Customizzazioni ... eseguo $f"; 
-				if ! grep -q embed-server "$f"
-				then
-				    # Mi assicuro che sia presente la direttiva embed-server in cima allo script
-				    # perche l'application server a questo punto non è ancora attivo
-				    echo -e 'embed-server --server-config=standalone.xml --std-out=echo\n' > "/tmp/$(basename $f).fix"
-				    cat "$f" >> "/tmp/$(basename $f).fix"
-				    echo -e '\nstop-embedded-server\n' >> "/tmp/$(basename $f).fix"
-				    ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/$(basename $f).fix"
-				else
-				    ${JBOSS_HOME}/bin/jboss-cli.sh --file="$f"
-				fi
-				;;
-			*)  
-                echo "INFO: Customizzazioni ... IGNORO $f"
-                ;;
-		esac
-		echo
-	done
-    touch ${CUSTOM_INIT_FILE}
+    if [ ! -f ${CUSTOM_INIT_FILE} ] 
+    then
+        f=
+        for f in ${ENTRYPOINT_D}/* ${ENTRYPOINT_D_DEPRECATO}/*
+        do
+            case "$f" in
+                *.sh)
+                    if [ -x "$f" ]; then
+                        echo "INFO: Customizzazioni ... eseguo $f"
+                        "$f"
+                    else
+                        echo "INFO: Customizzazioni ... importo $f"
+                        . "$f"
+                    fi
+                    ;;
+                *.cli)
+                    echo "INFO: Customizzazioni ... eseguo $f"; 
+                    if ! grep -q embed-server "$f"
+                    then
+                        # Mi assicuro che sia presente la direttiva embed-server in cima allo script
+                        # perche l'application server a questo punto non è ancora attivo
+                        echo -e 'embed-server --server-config=standalone.xml --std-out=echo\n' > "/tmp/$(basename $f).fix"
+                        cat "$f" >> "/tmp/$(basename $f).fix"
+                        echo -e '\nstop-embedded-server\n' >> "/tmp/$(basename $f).fix"
+                        ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/$(basename $f).fix"
+                    else
+                        ${JBOSS_HOME}/bin/jboss-cli.sh --file="$f"
+                    fi
+                    ;;
+                *)  
+                    echo "INFO: Customizzazioni ... IGNORO $f"
+                    ;;
+            esac
+            echo
+        done
+        touch ${CUSTOM_INIT_FILE}
+    fi
 fi
 
 # Aggiungo un javaagent all'avvio

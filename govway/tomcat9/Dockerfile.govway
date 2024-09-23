@@ -119,7 +119,9 @@ echo '# Rimuovi Resource UserDatabase \n\
 chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
 /usr/local/bin/config_datasource.sh /tmp/tomcat_configuration.cli; \
 /usr/local/bin/tomcat-cli.sh /tmp/tomcat_configuration.cli; \
-echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> "${CATALINA_HOME}/conf/catalina.properties"; 
+echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> "${CATALINA_HOME}/conf/catalina.properties"; \
+rm -rf /tmp/*;
+
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \

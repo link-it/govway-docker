@@ -132,7 +132,7 @@ stop-embedded-server \n\
 chmod 750 /usr/local/bin/config_datasource.sh; \
 /usr/local/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli; \
 ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli; \
-rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli
+rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
