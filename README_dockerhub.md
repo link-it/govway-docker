@@ -5,15 +5,15 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.15`, `3.3.15_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1`, `3.3.15.p1_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p1_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p1/govway/tomcat9/Dockerfile.govway)
 * [`3.3.14`, `3.3.14_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
@@ -153,7 +153,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.15_postgres
+    image: linkitaly/govway:3.3.15.p1_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -179,7 +179,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.15_oracle
+    image: linkitaly/govway:3.3.15.p1_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -263,7 +263,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.15_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.15.p1_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -331,7 +331,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.15_batch_postgres
+    image: linkitaly/govway:3.3.15.p1_batch_postgres
     command: 
       - orarie
     environment:
@@ -345,7 +345,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.15_batch_postgres
+    image: linkitaly/govway:3.3.15.p1_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -366,7 +366,7 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.15_batch_oracle
+    image: linkitaly/govway:3.3.15.p1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -386,7 +386,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.15_batch_oracle
+    image: linkitaly/govway:3.3.15.p1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
