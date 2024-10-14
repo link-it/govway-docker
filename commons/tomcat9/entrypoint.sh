@@ -32,7 +32,7 @@ then
     else
         echo "FATAL: GOVWAY_DEFAULT_ENTITY_NAME può iniziare solo con un carattere o cifra [0-9A-Za-z] e dev'essere formato solo da caratteri, cifre e '-'"
     fi
-    exit 0
+    exit 1
 fi
 
 
