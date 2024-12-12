@@ -209,17 +209,18 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 
 ### Pooling connessioni database
 
-* GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite (default: 50)
-* GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
-* GOVWAY_INITIALSIZE_POOL: Numero di connessioni stabilite ad inizializzazione del datasource (default: 2)
-* GOVWAY_DS_BLOCKING_TIMEOUT: Tempo di attesa, im millisecondi, per una connessione libera dal pool (default: 30000)
-* GOVWAY_DS_IDLE_TIMEOUT: Tempo trascorso, in minuti, prima di eliminare una connessione dal pool per inattivita (default: 5)
-* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
-* GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
+E' possibile customizzare la dimensione dei pool di connessioni al database dei 4 datasource utilizzati da GovWay; per farlo si possono impostare i valori delle variabili d'ambiente elencate di seguito:
 
-Se è stata utilizzata la suddivisione dei dati su piu' database, è possibile in aggiunta al set di variabili indicato in precedenza, fornire uno o più di quelli indicati di seguito:  
+Datasource TRACCIAMENTO
+* GOVWAY_TRAC_MAX_POOL (default: 50)
+* GOVWAY_TRAC_MIN_POOL (default: 2)
+* GOVWAY_TRAC_INITIALSIZE_POOL (default: 2)
+* GOVWAY_TRAC_DS_BLOCKING_TIMEOUT (default: 30000)
+* GOVWAY_TRAC_DS_CONN_PARAM (default: vuoto)
+* GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
+* GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
 
-CONFIGURAZIONE
+Datasource CONFIGURAZIONE
 * GOVWAY_CONF_MAX_POOL (default: 10)
 * GOVWAY_CONF_MIN_POOL (default: 2)
 * GOVWAY_CONF_INITIALSIZE_POOL (default: 2)
@@ -228,7 +229,16 @@ CONFIGURAZIONE
 * GOVWAY_CONF_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_CONF_DS_PSCACHESIZE (default: 20)
 
-STATISTICHE
+Datasource RUNTIME
+* GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite (default: 10)
+* GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
+* GOVWAY_INITIALSIZE_POOL: Numero di connessioni stabilite ad inizializzazione del datasource (default: 2)
+* GOVWAY_DS_BLOCKING_TIMEOUT: Tempo di attesa, im millisecondi, per una connessione libera dal pool (default: 30000)
+* GOVWAY_DS_IDLE_TIMEOUT: Tempo trascorso, in minuti, prima di eliminare una connessione dal pool per inattivita (default: 5)
+* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
+* GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
+
+Datasource STATISTICHE
 * GOVWAY_STAT_MAX_POOL (default: 5)
 * GOVWAY_STAT_MIN_POOL (default: 1)
 * GOVWAY_STAT_INITIALSIZE_POOL (default: 1)
@@ -237,14 +247,6 @@ STATISTICHE
 * GOVWAY_STAT_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_STAT_DS_PSCACHESIZE (default: 20)
 
-TRACCIAMENTO
-* GOVWAY_TRAC_MAX_POOL (default: 50)
-* GOVWAY_TRAC_MIN_POOL (default: 2)
-* GOVWAY_TRAC_INITIALSIZE_POOL (default: 2)
-* GOVWAY_TRAC_DS_BLOCKING_TIMEOUT (default: 30000)
-* GOVWAY_TRAC_DS_CONN_PARAM (default: vuoto)
-* GOVWAY_TRAC_DS_IDLE_TIMEOUT (default: 5)
-* GOVWAY_TRAC_DS_PSCACHESIZE (default: 20)
 
 ### Configurazione Listener 
 Per configurare con quali protocolli i listener di wildfly accetteranno le richieste, è possibile utilizzare le seguenti variabili:
