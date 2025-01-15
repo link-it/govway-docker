@@ -1,12 +1,12 @@
 # stage sorgente da utilizzare per il build dell'immagine finale
 ARG govway_fullversion
-ARG source_image=linkitaly/govway-installer
+ARG source_image
 ARG govway_batch_home=/var/govway/batch
 ARG govway_log=/var/log/govway
 ARG govway_database_vendor=postgresql
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
-FROM ${source_image}:${govway_fullversion} AS source_image_full
+FROM ${source_image} AS source_image_full
 
 
 

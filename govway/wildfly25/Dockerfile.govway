@@ -1,11 +1,11 @@
 # stage sorgente da utilizzare per il build dell'immagine finale
 ARG govway_fullversion
-ARG source_image=linkitaly/govway-installer
+ARG source_image
 ARG govway_home=/etc/govway
 ARG govway_log=/var/log/govway
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
-FROM ${source_image}:${govway_fullversion} AS source_image_full
+FROM ${source_image} AS source_image_full
 
 
 
@@ -136,7 +136,7 @@ rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} 
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/${GOVWAY_DB_TYPE}/ \
 && chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 

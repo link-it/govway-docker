@@ -47,6 +47,8 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_GOVWAY_AS_CLI=
+#DEFAULT_REGISTRY=linkitaly
+DEFAULT_REGISTRY=localhost
 
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
@@ -97,111 +99,129 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:" opt; do
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
 
-rm -rf buildcontext
-mkdir -p buildcontext/
-cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
-cp -f commons/* buildcontext/commons 2> /dev/null
+declare -a MANIFESTS=()
 
-#export DOCKER_BUILDKIT=0
-DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}")
-DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
-[ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
-[ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
-[ -n "${CUSTOM_GOVWAY_LOG}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_log=${CUSTOM_GOVWAY_LOG}")
-if [ -n "${CUSTOM_RUNTIME}" ]
-then
-  cp -r ${CUSTOM_RUNTIME}/ buildcontext/runtime
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "runtime_custom_archives=runtime")
-fi
-if [ -n "${CUSTOM_MANAGER}" ]
-then
-  cp -r ${CUSTOM_MANAGER}/ buildcontext/manager
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=manager")
-fi
+for docker_arch in linux/arm64/v8 linux/amd64
+do
+  arch="${docker_arch//\//_}"
+  rm -rf buildcontext
+  mkdir -p buildcontext/
+  cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
+  cp -f commons/* buildcontext/commons 2> /dev/null
 
-# Build immagine installer
-if [ -n "${JENKINS}" ]
-then
-  INSTALLER_DOCKERFILE="govway/Dockerfile.jenkins"
-elif [ -n "${LOCALFILE}" ]
-then
-  INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"
-  cp -f "${LOCALFILE}" buildcontext/
-else
-  INSTALLER_DOCKERFILE="govway/Dockerfile.github"
-fi
+  #export DOCKER_BUILDKIT=0
+  DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}")
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
+  [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
+  [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
+  [ -n "${CUSTOM_GOVWAY_LOG}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_log=${CUSTOM_GOVWAY_LOG}")
+  if [ -n "${CUSTOM_RUNTIME}" ]
+  then
+    cp -r ${CUSTOM_RUNTIME}/ buildcontext/runtime
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "runtime_custom_archives=runtime")
+  fi
+  if [ -n "${CUSTOM_MANAGER}" ]
+  then
+    cp -r ${CUSTOM_MANAGER}/ buildcontext/manager
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "manager_custom_archives=manager")
+  fi
 
-if [ -n "${DB}" ]
-then
+  # Build immagine installer
+  if [ -n "${JENKINS}" ]
+  then
+    INSTALLER_DOCKERFILE="govway/Dockerfile.jenkins"
+  elif [ -n "${LOCALFILE}" ]
+  then
+    INSTALLER_DOCKERFILE="govway/Dockerfile.daFile"
+    cp -f "${LOCALFILE}" buildcontext/
+  else
+    INSTALLER_DOCKERFILE="govway/Dockerfile.github"
+  fi
+
+  if [ -n "${DB}" ]
+  then
+    if [ "${DB}" == 'mariadb' ]
+    then
+      DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=mysql")
+    else
+      DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
+    fi
+  fi
+
+  "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
+    -t ${DEFAULT_REGISTRY}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch} \
+    --platform ${docker_arch} \
+    -f ${INSTALLER_DOCKERFILE} buildcontext
+  RET=$?
+  [ ${RET} -eq  0 ] || exit ${RET}
+  
   if [ "${DB}" == 'mariadb' ]
   then
-    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=mysql")
-  else
-    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=${DB}")
+    c=$(( ${#DOCKERBUILD_OPTS[@]} - 1 ))
+    unset  DOCKERBUILD_OPTS[$c]
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} "govway_database_vendor=mariadb")
   fi
-fi
+  # Build imagini GovWAY
 
-"${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
-  -t linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}} \
-  -f ${INSTALLER_DOCKERFILE} buildcontext
-RET=$?
-[ ${RET} -eq  0 ] || exit ${RET}
- 
-if [ "${DB}" == 'mariadb' ]
-then
-  c=$(( ${#DOCKERBUILD_OPTS[@]} - 1 ))
-  unset  DOCKERBUILD_OPTS[$c]
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} "govway_database_vendor=mariadb")
-fi
-# Build imagini GovWAY
+  [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
+  if [ -z "$TAG" ] 
+  then
+    REPO=${DEFAULT_REGISTRY}/govway
+    TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
+    [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
+    
+    # mantengo i nomi dei tag compatibili con quelli usati in precedenza
+    case "${DB:-hsql}" in
+    hsql) TAG="${REPO}:${TAGNAME}" ;;
+    postgresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
+    *) TAG="${REPO}:${TAGNAME}_${DB}" ;;
+    esac
 
-[ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
-if [ -z "$TAG" ] 
-then
-  REPO=linkitaly/govway
-  TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
-  [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
-  
-  # mantengo i nomi dei tag compatibili con quelli usati in precedenza
-  case "${DB:-hsql}" in
-  hsql) TAG="${REPO}:${TAGNAME}" ;;
-  postgresql) TAG="${REPO}:${TAGNAME}_postgres" ;;
-  *) TAG="${REPO}:${TAGNAME}_${DB}" ;;
-  esac
+    # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato
+    [ "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
 
-  # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato
-  [ "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
+  fi
 
-fi
+  if [ -n "${CUSTOM_GOVWAY_AS_CLI}" ]
+  then
+    cp -r ${CUSTOM_GOVWAY_AS_CLI}/ buildcontext/custom_govway_as_cli
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_as_custom_scripts=custom_govway_as_cli")
+  fi
 
-if [ -n "${CUSTOM_GOVWAY_AS_CLI}" ]
-then
-  cp -r ${CUSTOM_GOVWAY_AS_CLI}/ buildcontext/custom_govway_as_cli
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_as_custom_scripts=custom_govway_as_cli")
-fi
+  if [ -n "${CUSTOM_ORACLE_JDBC}" ]
+  then
+    cp -r ${CUSTOM_ORACLE_JDBC}/ buildcontext/custom_oracle_jdbc
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "oracle_custom_jdbc=custom_oracle_jdbc")
+  fi
 
-if [ -n "${CUSTOM_ORACLE_JDBC}" ]
-then
-  cp -r ${CUSTOM_ORACLE_JDBC}/ buildcontext/custom_oracle_jdbc
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "oracle_custom_jdbc=custom_oracle_jdbc")
-fi
-
-DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}")
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=${DEFAULT_REGISTRY}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch}")
 
 
-if [ "${ARCHIVI}" == 'batch' ]
-then
-  DOCKERFILE="govway/Dockerfile.govway_batch"
-else
-  DOCKERFILE="govway/${APPSERV:-tomcat9}/Dockerfile.govway"
-fi
+  if [ "${ARCHIVI}" == 'batch' ]
+  then
+    DOCKERFILE="govway/Dockerfile.govway_batch"
+  else
+    DOCKERFILE="govway/${APPSERV:-tomcat9}/Dockerfile.govway"
+  fi
 
-"${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
--t "${TAG}" \
--f $DOCKERFILE buildcontext
-RET=$?
-[ ${RET} -eq  0 ] || exit ${RET}
+  "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
+  -t "${TAG}_${arch}" \
+  --platform ${docker_arch} \
+  -f $DOCKERFILE buildcontext
+  RET=$?
+  [ ${RET} -eq  0 ] || exit ${RET}
+  MANIFESTS=(${MANIFESTS[@]} "${TAG}_${arch}")
+done
 
+echo
+echo "Per pubblicare sul registro l'immagine multipiattaforma, eseguire questi comandi:"
+echo 
+for manifest in ${MANIFEST[@]}
+do
+  echo  "docker push ${manifest}" 
+done
+echo docker manifest create --amend ${TAG} ${MANIFESTS[@]}
+echo docker manifest push ${TAG}
 
 
 if [ "${DB:-hsql}" != 'hsql' -a "${ARCHIVI}" != 'batch' ]
@@ -237,7 +257,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres
+#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -272,7 +292,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
+#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -326,7 +346,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
+#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -391,7 +411,7 @@ EOSQL
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle
+#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:

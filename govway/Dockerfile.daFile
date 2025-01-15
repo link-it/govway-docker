@@ -1,5 +1,5 @@
 # GovWay installer
-FROM eclipse-temurin:11-jdk-jammy AS INSTALLER
+FROM eclipse-temurin:11-jdk-jammy AS installer
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
