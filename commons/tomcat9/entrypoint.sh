@@ -467,6 +467,12 @@ then
     echo "WARN: Verificare che il path indicato sia corretto e leggibile dall'utente $(id -u -n)"
 fi
 
+# Impostazione dell'algoritmo per la genrazione degli UUID (default UUIDv1)
+GOVWAY_RESOLVED_UUID_ALG="${GOVWAY_UUID_ALG}"
+[ "${GOVWAY_UUID_ALG,,}" == 'v1' -o -z "${GOVWAY_UUID_ALG}" ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv1
+[ "${GOVWAY_UUID_ALG,,}" == 'v4' ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv4sec
+export GOVWAY_RESOLVED_UUID_ALG
+
 # Mi assicuro che i diritti della directory di log siano sufficienti
 /usr/local/bin/change_dir_perms ${GOVWAY_LOGDIR}
 
