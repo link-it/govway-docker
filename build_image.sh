@@ -47,6 +47,8 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_GOVWAY_AS_CLI=
+REGISTRY_PREFIX=linkitaly
+#REGISTRY_PREFIX=localhost
 
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
@@ -142,7 +144,7 @@ then
 fi
 
 "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
-  -t linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}} \
+  -t ${REGISTRY_PREFIX}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}} \
   -f ${INSTALLER_DOCKERFILE} buildcontext
 RET=$?
 [ ${RET} -eq  0 ] || exit ${RET}
@@ -158,7 +160,7 @@ fi
 [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
 if [ -z "$TAG" ] 
 then
-  REPO=linkitaly/govway
+    REPO=${REGISTRY_PREFIX}/govway
   TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
   [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
   
@@ -186,7 +188,7 @@ then
   DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "oracle_custom_jdbc=custom_oracle_jdbc")
 fi
 
-DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=linkitaly/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}")
+DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=${REGISTRY_PREFIX}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}")
 
 
 if [ "${ARCHIVI}" == 'batch' ]
@@ -237,7 +239,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -272,7 +274,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -326,7 +328,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -391,7 +393,7 @@ EOSQL
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: linkitaly/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
