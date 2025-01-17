@@ -47,8 +47,8 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_GOVWAY_AS_CLI=
-#DEFAULT_REGISTRY=linkitaly
-DEFAULT_REGISTRY=localhost
+DEFAULT_REGISTRY=linkitaly
+#DEFAULT_REGISTRY=localhost
 
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
@@ -98,6 +98,13 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:" opt; do
   esac
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
+
+
+echo "Installazione emulatori QEMU"
+docker pull tonistiigi/binfmt
+docker run --privileged --rm tonistiigi/binfmt --uninstall qemu-*
+docker run --privileged --rm tonistiigi/binfmt --install arm64,amd64
+echo "Installazione emulatori QEMU"
 
 declare -a MANIFESTS=()
 
