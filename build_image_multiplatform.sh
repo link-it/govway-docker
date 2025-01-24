@@ -47,8 +47,8 @@ ARCHIVI=
 CUSTOM_MANAGER=
 CUSTOM_MANAGER=
 CUSTOM_GOVWAY_AS_CLI=
-DEFAULT_REGISTRY=linkitaly
-#DEFAULT_REGISTRY=localhost
+REGISTRY_PREFIX=linkitaly
+#REGISTRY_PREFIX=localhost
 
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
@@ -108,9 +108,9 @@ echo "Installazione emulatori QEMU"
 
 declare -a MANIFESTS=()
 
-for docker_arch in linux/arm64/v8 linux/amd64
+for platform in linux/arm64/v8 linux/amd64
 do
-  arch="${docker_arch//\//_}"
+  arch_suffix="${platform//\//_}"
   rm -rf buildcontext
   mkdir -p buildcontext/
   cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
@@ -156,8 +156,8 @@ do
   fi
 
   "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
-    -t ${DEFAULT_REGISTRY}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch} \
-    --platform ${docker_arch} \
+    -t ${REGISTRY_PREFIX}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch_suffix} \
+    --platform ${platform} \
     -f ${INSTALLER_DOCKERFILE} buildcontext
   RET=$?
   [ ${RET} -eq  0 ] || exit ${RET}
@@ -173,7 +173,7 @@ do
   [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
   if [ -z "$TAG" ] 
   then
-    REPO=${DEFAULT_REGISTRY}/govway
+    REPO=${REGISTRY_PREFIX}/govway
     TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
     [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
     
@@ -201,7 +201,7 @@ do
     DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "oracle_custom_jdbc=custom_oracle_jdbc")
   fi
 
-  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=${DEFAULT_REGISTRY}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch}")
+  DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "source_image=${REGISTRY_PREFIX}/govway-installer_${DB:-hsql}:${VER:-${LATEST_GOVWAY_RELEASE}}_${arch_suffix}")
 
 
   if [ "${ARCHIVI}" == 'batch' ]
@@ -212,12 +212,12 @@ do
   fi
 
   "${DOCKERBIN}" build "${DOCKERBUILD_OPTS[@]}" \
-  -t "${TAG}_${arch}" \
-  --platform ${docker_arch} \
+  -t "${TAG}_${arch_suffix}" \
+  --platform ${platform} \
   -f $DOCKERFILE buildcontext
   RET=$?
   [ ${RET} -eq  0 ] || exit ${RET}
-  MANIFESTS=(${MANIFESTS[@]} "${TAG}_${arch}")
+  MANIFESTS=(${MANIFESTS[@]} "${TAG}_${arch_suffix}")
 done
 
 echo
@@ -230,7 +230,7 @@ done
 echo docker manifest create --amend ${TAG} ${MANIFESTS[@]}
 echo docker manifest push ${TAG}
 
-
+docker_server_platform="$(docker version -f '{{.Server.Os}}_{{.Server.Arch}}')"
 if [ "${DB:-hsql}" != 'hsql' -a "${ARCHIVI}" != 'batch' ]
 then
   mkdir -p compose/govway_{conf,log}
@@ -242,7 +242,7 @@ version: '2'
 services:
   govway:
     container_name: govway_${SHORT}
-    image: ${TAG}
+    image: ${TAG}_${docker_server_platform}
     depends_on:
         - database
     ports:
@@ -264,7 +264,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_postgres_${docker_server_platform}
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -299,7 +299,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mariadb_${docker_server_platform}
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -353,7 +353,7 @@ EOYAML
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_mysql_${docker_server_platform}
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
@@ -418,7 +418,7 @@ EOSQL
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
 #    container_name: govway_batch_${SHORT}
-#    image: ${DEFAULT_REGISTRY}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch_oracle_${docker_server_platform}
 #    #command: Giornaliere
 #    #command: Orarie # << default
 #    depends_on:
