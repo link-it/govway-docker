@@ -5,7 +5,16 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.15.p2`, `3.3.15.p2_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16`, `3.3.16_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.16_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16/govway/tomcat9/Dockerfile.govway)
+* [`3.3.15.p2`, `3.3.15.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
 * [`3.3.15.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
 * [`3.3.15.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
 * [`3.3.15.p2_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
@@ -23,15 +32,6 @@
 * [`3.3.14_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
 * [`3.3.14_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.14/govway/Dockerfile.govway)
-* [`3.3.13.p1`, `3.3.13.p1_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
-* [`3.3.13.p1_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.13.p1/govway/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -48,10 +48,16 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.3.16*
+
+   - Generate immagini 'multi-arch' compatibili con le architetture ARM64 e AMD64.
+   - Introdotta la variabile 'GOVWAY_UUID_ALG' per configurare la versione degli UUID generati da GovWay.
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.98.
+
 - *3.3.15*
 
-   - Modificato sistema operativo di base da Centos 7 (causa EOL) a Ubuntu 22 LTS (Jammy)
-   - Modificato application server di base da wildfly 26.1.3 a tomcat 9.0.91
+   - Modificato sistema operativo di base da Centos 7 (causa EOL) a Ubuntu 22 LTS (Jammy).
+   - Modificato application server di base da Wildfly 26.1.3 a Tomcat 9.0.91.
 
 
 ## Nomenclatura delle immagini fornite
@@ -153,7 +159,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.15.p2_postgres
+    image: linkitaly/govway:3.3.16_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -179,7 +185,7 @@ version: '2'
  services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.15.p2_oracle
+    image: linkitaly/govway:3.3.16_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -263,7 +269,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.15.p2_postgres initsql)
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.16_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
 
@@ -271,7 +277,20 @@ docker cp ${CONTAINER_ID}:/opt/postgresql .
 
 ## Aggiornamento di Versione
 
-Un upgrade richiede l'aggiornamento della base dati.
+Un upgrade richiede l'aggiornamento della base dati. 
+
+Serve inoltre una verifica dei diritti utente se si proviene da una versione precedente alla 3.3.15, come descritto nella successiva sezione.
+
+
+### Upgrade di una versione precedente alla v3.3.15
+
+Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica di application server di base da wildfly 26.1.3 a tomcat 9.0.x. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
+
+  ```
+    chown -R 999:999 ~/govway_conf
+    chown -R 999:999 ~/govway_log
+    chown -R 999:999 ~/govway_db
+  ```
 
 ### Ambiente orchestrato
 
@@ -281,7 +300,7 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 
 - aggiornare la base dati come indicato in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update);
 
-  - nel caso di un aggiornamento da una versione precedente alla 3.3.15 a una versione 3.3.15 o superiore, è necessario applicare i seguenti script SQL aggiuntivi sulla base dati, a causa della modifica dell'application server di base da WildFly a Tomcat:"
+  - nel caso di un aggiornamento da una versione precedente alla 3.3.15, è necessario applicare i seguenti script SQL aggiuntivi sulla base dati, a causa della modifica dell'application server di base da WildFly a Tomcat:"
   
     ```
     update registri set location='java:/comp/env/org.govway.datasource.console';
@@ -293,7 +312,6 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 - riavvare il docker-compose. 
 
 > **_NOTA:_** una volta applicate le patch di upgrade descritte in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update) la base dati non risulta più compatibile con la precedente versione del software. Si consiglia di effettuare un backup prima di procedere con l'upgrade in modo da poter effettuare un eventuale downgrade di versione.
-
 
 ### Standalone
 
@@ -331,7 +349,7 @@ version: '2'
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.15.p2_batch_postgres
+    image: linkitaly/govway:3.3.16_batch_postgres
     command: 
       - orarie
     environment:
@@ -345,7 +363,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.15.p2_batch_postgres
+    image: linkitaly/govway:3.3.16_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -366,7 +384,7 @@ version: '2'
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.15.p2_batch_oracle
+    image: linkitaly/govway:3.3.16_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -386,7 +404,7 @@ version: '2'
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.15.p2_batch_oracle
+    image: linkitaly/govway:3.3.16_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
