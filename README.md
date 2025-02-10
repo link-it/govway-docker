@@ -209,7 +209,17 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 
 ### Pooling connessioni database
 
-E' possibile customizzare la dimensione dei pool di connessioni al database dei 4 datasource utilizzati da GovWay; per farlo si possono impostare i valori delle variabili d'ambiente elencate di seguito:
+E' possibile personalizzare alcuni aspetti relativi ai datasource utilizzati da GovWay per accedere al database; per farlo si possono impostare i valori delle variabili d'ambiente elencate di seguito:
+
+* GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite (default: 10)
+* GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
+* GOVWAY_INITIALSIZE_POOL: Numero di connessioni stabilite ad inizializzazione del datasource (default: 2)
+* GOVWAY_DS_BLOCKING_TIMEOUT: Tempo di attesa, im millisecondi, per una connessione libera dal pool (default: 30000)
+* GOVWAY_DS_IDLE_TIMEOUT: Tempo trascorso, in minuti, prima di eliminare una connessione dal pool per inattivita (default: 5)
+* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
+* GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
+
+Se la configurazione di GovWay prevede di suddividere i dati su più database (configurazione, tracciamento e statistiche) è possibile personalizzare i datasource in funzione dello specifico database, utilizzando le seguenti variabili.
 
 Datasource TRACCIAMENTO
 * GOVWAY_TRAC_MAX_POOL (default: 50)
@@ -228,15 +238,6 @@ Datasource CONFIGURAZIONE
 * GOVWAY_CONF_DS_CONN_PARAM (default: vuoto)
 * GOVWAY_CONF_DS_IDLE_TIMEOUT (default: 5)
 * GOVWAY_CONF_DS_PSCACHESIZE (default: 20)
-
-Datasource RUNTIME
-* GOVWAY_MAX_POOL: Numero massimo di connessioni stabilite (default: 10)
-* GOVWAY_MIN_POOL: Numero minimo di connessioni stabilite (default: 2)
-* GOVWAY_INITIALSIZE_POOL: Numero di connessioni stabilite ad inizializzazione del datasource (default: 2)
-* GOVWAY_DS_BLOCKING_TIMEOUT: Tempo di attesa, im millisecondi, per una connessione libera dal pool (default: 30000)
-* GOVWAY_DS_IDLE_TIMEOUT: Tempo trascorso, in minuti, prima di eliminare una connessione dal pool per inattivita (default: 5)
-* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi (default: vuoto)
-* GOVWAY_DS_PSCACHESIZE: dimensione della cache usata per le prepared statements (default: 20)
 
 Datasource STATISTICHE
 * GOVWAY_STAT_MAX_POOL (default: 5)
