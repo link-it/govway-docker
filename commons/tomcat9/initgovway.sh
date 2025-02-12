@@ -120,7 +120,7 @@ password ${DBPASS}
 EOSQLTOOL
 
 else
-    echo "/subsystem=datasources/data-source=${mappa_datasource[${DESTINAZIONE}]}:undefine-attribute(name=password)" >> ${NOPASSWORDS_CLI_SCRIPT}
+    echo "Server/GlobalNamingResources/Resource[@name=\"${mappa_datasource[${DESTINAZIONE}]}\"]:delete-attribute password" >> ${NOPASSWORDS_CLI_SCRIPT}
 fi
 
 
@@ -326,11 +326,7 @@ done
 if [ -f "${NOPASSWORDS_CLI_SCRIPT}" ]
 then
     echo "INFO: Rimozione passwords vuote dai datasources"
-    sed -i  -e '1i\embed-server --server-config=standalone.xml --std-out=echo' \
-    -e '$astop-embedded-server' \
-    "${NOPASSWORDS_CLI_SCRIPT}"
-
-    ${JBOSS_HOME}/bin/jboss-cli.sh --file="${NOPASSWORDS_CLI_SCRIPT}"
+    /usr/local/bin/tomcat-cli.sh "${NOPASSWORDS_CLI_SCRIPT}"
 fi
 
 exit 0
