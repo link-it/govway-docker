@@ -73,32 +73,37 @@ function processDirective(document_server_xml, document_context_xml, directive) 
     }
 
     var xpath = parts[0].trim();
+    print('XPath: '+xpath)
     var idx = directive.indexOf(':')
     var remaining = directive.slice(idx+1).trim()
-    print(" remaining="+remaining)
+    //print(" remaining="+remaining)
     var operationAndParams = remaining.split(/\s+/,2);
     //print('operationAndParams='+operationAndParams)
 
 
     var operation = operationAndParams[0].trim();
+    print('- Operazione: '+operation)
     var onlyParams = remaining.slice(operation.length)
-    print('onlyParams='+onlyParams)
+    //print('onlyParams='+onlyParams)
     var params = {};
     if (onlyParams.length > 0) {      
         var paramPairs = onlyParams.split(',');
-        print ('#params='+paramPairs.length)
+        //print ('#params='+paramPairs.length)
         for (var i = 0; i < paramPairs.length; i++) {
             var pair = paramPairs[i].split('=');
-            if (pair.length == 2) {
-                print ('params[' + pair[0].trim() +'] = '+ pair[1].trim())
+            if (pair.length == 1) {
+                print ('- Parametro[' + i +'] = '+ pair[0].trim()  );
+                params[i] = pair[0].trim();
+            } else if (pair.length == 2) {
+                print ('- Parametro[' + pair[0].trim() +'] = '+ pair[1].trim())
                 params[pair[0].trim()] = pair[1].trim();
             } else if (pair.length > 2) {
                 var idx = paramPairs[i].indexOf('=')
                 var parremain = paramPairs[i].slice(idx+1)
-                print ('params[' + pair[0].trim() +'] = '+ parremain.trim())
+                print ('- Parametro[' + pair[0].trim() +'] = '+ parremain.trim())
                 params[pair[0].trim()] = parremain.trim();
             } else  {
-                print('anaomalia parsing parametri')
+                print('Anomalia parsing parametri')
             }
         }
     }
@@ -124,6 +129,9 @@ function processDirective(document_server_xml, document_context_xml, directive) 
         case 'read-attribute':
             readAttribute(document, xpath, params);
             break;
+        case 'delete-attribute':
+            deleteAttribute(document, xpath, params);
+            break;
         default:
             print('Unsupported operation: ' + operation);
     }
@@ -136,7 +144,7 @@ function addElement(document, xpath, attributes) {
 
     var parent = getElementByXPath(document, parentXpath);
     if (!parent) {
-        print('XPath not found: ' + parentXpath);
+        print('XPath non trovato: ' + parentXpath);
         return;
     }
 
@@ -154,7 +162,7 @@ function addElementAtTop(document, xpath, attributes) {
 
     var parent = getElementByXPath(document, parentXpath);
     if (!parent) {
-        print("XPath not found: " + parentXpath);
+        print("XPath non trovato: " + parentXpath);
         return;
     }
 
@@ -174,7 +182,7 @@ function deleteElement(document, xpath) {
     if (element) {
         element.getParentNode().removeChild(element);
     } else {
-        print('XPath not found: ' + xpath);
+        print('XPath non trovato: ' + xpath);
     }
 }
 
@@ -182,7 +190,7 @@ function deleteElement(document, xpath) {
 function writeAttribute(document, xpath, attributes) {
     var element = getElementByXPath(document, xpath);
     if (!element) {
-        print('XPath not found: ' + xpath);
+        print('XPath non trovato: ' + xpath);
         return;
     }
 
@@ -195,7 +203,7 @@ function writeAttribute(document, xpath, attributes) {
 function readAttribute(document, xpath, attributes) {
     var element = getElementByXPath(document, xpath);
     if (!element) {
-        print('XPath not found: ' + xpath);
+        print('XPath non trovato: ' + xpath);
         return;
     }
 
@@ -204,6 +212,23 @@ function readAttribute(document, xpath, attributes) {
     }
 }
 
+// Aggiungi questa nuova funzione:
+function deleteAttribute(document, xpath, attributes) {
+    var element = getElementByXPath(document, xpath);
+    if (!element) {
+        print('XPath non trovato: ' + xpath);
+        return;
+    }
+    for (var idx in attributes) {
+        var key = attributes[idx];
+        if (element.hasAttribute(key)) {
+            element.removeAttribute(key);
+            // print('Attributo ' + key + ' eliminato con successo.');
+        } else {
+            // print('Attributo ' + key + ' non trovato nell\'elemento.');
+        }
+    }
+}
 // Helper per ottenere un elemento tramite XPath
 function getElementByXPath(document, xpath) {
     var xPathFactory = XPathFactory.newInstance();
