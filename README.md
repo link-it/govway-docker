@@ -323,16 +323,16 @@ Se la configurazione lo richiede è possibile
 indicare puntamenti differenti per le tabelle delle restanti categorie, usando i seguenti set di variabili
 
 CONFIGURAZIONE
-* GOVWAY_CONF_DB_SERVER (default: GOVWAY_DB_SERVER)
-* GOVWAY_CONF_DB_NAME (default: GOVWAY_DB_NAME)
-* GOVWAY_CONF_DB_USER (default: GOVWAY_DB_USER)
-* GOVWAY_CONF_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+* GOVWAY_CONF_DB_SERVER (default: GOVWAY_STAT_DB_SERVER)
+* GOVWAY_CONF_DB_NAME (default: GOVWAY_STAT_DB_NAME)
+* GOVWAY_CONF_DB_USER (default: GOVWAY_STAT_DB_USER)
+* GOVWAY_CONF_DB_PASSWORD (default: GOVWAY_STAT_DB_PASSWORD)
 
 TRACCIAMENTO
-* GOVWAY_TRAC_DB_SERVER (default: GOVWAY_DB_SERVER)
-* GOVWAY_TRAC_DB_NAME (default: GOVWAY_DB_NAME)
-* GOVWAY_TRAC_DB_USER (default: GOVWAY_DB_USER)
-* GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_DB_PASSWORD)
+* GOVWAY_TRAC_DB_SERVER (default: GOVWAY_STAT_DB_SERVER)
+* GOVWAY_TRAC_DB_NAME (default: GOVWAY_STAT_DB_NAME)
+* GOVWAY_TRAC_DB_USER (default: GOVWAY_STAT_DB_USER)
+* GOVWAY_TRAC_DB_PASSWORD (default: GOVWAY_STAT_DB_PASSWORD)
 
 #### Connessione a database Oracle ####
 Quando ci si connette ad un database esterno Oracle devono essere indicate anche le seguenti variabili d'ambiente
