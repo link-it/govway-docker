@@ -11,7 +11,7 @@ ARG govway_appserver=tomcat9
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; };\ 
 apk update; \
-apk add --no-cache openjdk11-jdk unzip zip bash gcc; \
+apk add --no-cache curl openjdk11-jdk unzip zip bash gcc; \
 rm -rf /var/cache/apk/*; 
 
 # environment
