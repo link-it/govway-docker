@@ -8,8 +8,7 @@ ARG govway_log=/var/log/govway
 FROM ${source_image} AS source_image_full
 
 
-
-FROM tomcat:9-jre11-temurin-jammy AS source_image_built
+FROM alpine:latest AS source_image_built
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
 ARG govway_fullversion
@@ -22,21 +21,22 @@ GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.1 \
-POSTGRES_JDBC_VERSION=42.7.3 \
+POSTGRES_JDBC_VERSION=42.7.5 \
+TOMCAT_VERSION=9.0.102 \
+CATALINA_HOME=/usr/local/tomcat \
 TZ="Europe/Rome" 
 
 
 
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
-apt-get -y update; \
-apt-get -y upgrade; \
-apt-get -y install unzip xmlstarlet netcat; \
-apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/*; \
+apk update; \
+apk upgrade; \
+apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash linux-pam shadow-login; \
+rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
-groupadd -r tomcat; \
-useradd -r -g tomcat -d ${CATALINA_HOME} -m -s /usr/sbin/nologin tomcat; \
+addgroup -S tomcat; \
+adduser -S -G tomcat -h ${CATALINA_HOME} -s /bin/false tomcat; \
 echo -e "\n\
 tomcat\tsoft\tnofile\t8192\n\
 tomcat\thard\tnofile\t8192\n\
@@ -47,6 +47,11 @@ curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
+curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz \
+    | tar -xzC /usr/local \
+    && mv /usr/local/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME} \
+    && rm -rf ${CATALINA_HOME}/webapps/* \
+    && chmod +x ${CATALINA_HOME}/bin/*.sh
 
 # -XX:+PrintFlagsFinal \
 ENV CATALINA_OPTS="-server \
@@ -76,7 +81,7 @@ COPY --from=source_image_full --chown=0:0 /opt/change_dir_perms /usr/local/bin
 
 ARG govway_as_custom_scripts=commons/entrypoint.sh
 COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli
-RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${CATALINA_HOME}/conf || echo "Personalizzazioni per AS  non presenti"
+RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${CATALINA_HOME}/conf || echo "Personalizzazioni per AS non presenti"
 
 
 COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh commons/tomcat_config_cli.js commons/tomcat-cli.sh /usr/local/bin/

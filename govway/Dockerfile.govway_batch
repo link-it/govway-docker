@@ -10,7 +10,7 @@ FROM ${source_image} AS source_image_full
 
 
 
-FROM eclipse-temurin:11-jre-jammy AS source_image_built
+FROM alpine:latest AS source_image_built
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la generazione delle statistiche di traffico"
 ARG govway_fullversion
@@ -21,15 +21,14 @@ USER root
 ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
-POSTGRES_JDBC_VERSION=42.7.3 \
+POSTGRES_JDBC_VERSION=42.7.5 \
 TZ="Europe/Rome" 
 
 RUN set -eux; \
-apt-get -y update; \
-apt-get -y upgrade; \
-apt-get -y install unzip cron; \
-apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/*; \
+apk update; \
+apk upgrade; \
+apk add --no-cache openjdk11-jre unzip dcron bash; \
+rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
 

@@ -8,8 +8,7 @@ ARG govway_log=/var/log/govway
 FROM ${source_image} AS source_image_full
 
 
-
-FROM eclipse-temurin:11-jre-jammy AS source_image_built
+FROM alpine:latest AS source_image_built
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
 ARG govway_fullversion
@@ -22,7 +21,7 @@ GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.1 \
-POSTGRES_JDBC_VERSION=42.7.3 \
+POSTGRES_JDBC_VERSION=42.7.5 \
 WILDFLY_VERSION=26.1.3.Final \
 WILDFLY_SHA1=b9f52ba41df890e09bb141d72947d2510caf758c \
 JBOSS_HOME=/opt/wildfly-26.1.3.Final \
@@ -30,16 +29,16 @@ LAUNCH_JBOSS_IN_BACKGROUND=true \
 TZ="Europe/Rome" 
 
 
+
 RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
-apt-get -y update; \
-apt-get -y upgrade; \
-apt-get -y install unzip xmlstarlet netcat; \
-apt-get -y clean all; \
-rm -rf /var/lib/apt/lists/*; \
+apk update; \
+apk upgrade; \
+apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash linux-pam shadow-login; \
+rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
-groupadd -r wildfly; \
-useradd -r -g wildfly -d ${JBOSS_HOME} -m -s /usr/sbin/nologin wildfly; \
+addgroup -S wildfly; \
+adduser -S -G wildfly -d ${JBOSS_HOME} -s /bin/false tomcat; \
 echo -e "\n\
 wildfly\tsoft\tnofile\t8192\n\
 wildfly\thard\tnofile\t8192\n\
@@ -81,6 +80,7 @@ COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_F
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
 COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/* /opt/${govway_database_vendor}
 COPY --from=source_image_full --chown=0:0 /opt/change_dir_perms /usr/local/bin
+
 
 ARG govway_as_custom_scripts=commons/entrypoint.sh
 COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli

@@ -1,5 +1,5 @@
 # GovWay installer
-FROM eclipse-temurin:11-jdk-jammy AS installer
+FROM alpine:latest AS installer
 LABEL org.opencontainers.image.authors="manca@link.it"
 LABEL org.opencontainers.image.description="Immagine utilizzata per la preparazione del software govway"
 ARG govway_fullversion
@@ -10,9 +10,9 @@ ARG govway_appserver=tomcat9
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; };\ 
-apt-get -y update; \
-apt-get -y install unzip zip gcc
-
+apk update; \
+apk add --no-cache openjdk11-jdk unzip zip bash gcc; \
+rm -rf /var/cache/apk/*; \
 ENV LANG=it_IT.UTF-8 \
 GOVWAY_HOME=${govway_home} \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
@@ -22,7 +22,6 @@ GOVWAY_FULLVERSION=${govway_fullversion}
 
 COPY commons/ant.install.properties.template /var/tmp/
 ADD govway-installer-${GOVWAY_FULLVERSION}.tgz /opt
-
 
 ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
