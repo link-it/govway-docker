@@ -16,6 +16,7 @@ rm -rf /var/cache/apk/*;
 
 # environment
 ENV LANG=it_IT.UTF-8 \
+JAVA_HOME=/usr/lib/jvm/java-11-openjdk \
 GOVWAY_HOME=${govway_home} \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \

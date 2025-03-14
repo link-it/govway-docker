@@ -17,6 +17,7 @@ ARG govway_log
 
 USER root
 ENV GOVWAY_HOME=${govway_home} \
+JAVA_HOME=/usr/lib/jvm/java-11-openjdk \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
