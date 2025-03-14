@@ -12,7 +12,9 @@ ARG govway_appserver=tomcat9
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; };\ 
 apk update; \
 apk add --no-cache openjdk11-jdk unzip zip bash gcc; \
-rm -rf /var/cache/apk/*; \
+rm -rf /var/cache/apk/*; 
+
+# environment
 ENV LANG=it_IT.UTF-8 \
 GOVWAY_HOME=${govway_home} \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
