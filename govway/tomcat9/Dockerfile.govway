@@ -50,9 +50,9 @@ rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
 curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz \
     | tar -xzC /usr/local \
-    && mv /usr/local/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME} \
-    && rm -rf ${CATALINA_HOME}/webapps/* \
-    && chmod +x ${CATALINA_HOME}/bin/*.sh
+mv /usr/local/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME}; \
+rm -rf ${CATALINA_HOME}/webapps/*; \
+chmod +x ${CATALINA_HOME}/bin/*.sh
 
 # -XX:+PrintFlagsFinal \
 ENV CATALINA_OPTS="-server \
