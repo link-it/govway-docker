@@ -47,7 +47,7 @@ tomcat\thard\tnproc\t4096\n\
 curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
-curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
 curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz \
     | tar -xzC /usr/local \
     && mv /usr/local/apache-tomcat-${TOMCAT_VERSION} ${CATALINA_HOME} \
