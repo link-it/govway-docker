@@ -35,7 +35,7 @@ RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash linux-pam shadow-login; \
+apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash linux-pam shadow-login fontconfig ttf-dejavu; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 addgroup -S wildfly; \
