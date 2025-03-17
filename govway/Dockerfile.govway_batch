@@ -28,7 +28,7 @@ TZ="Europe/Rome"
 RUN set -eux; \
 apk update; \
 apk upgrade; \
-apk add --no-cache openjdk11-jre unzip dcron bash; \
+apk add --no-cache curl openjdk11-jre unzip dcron bash; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
