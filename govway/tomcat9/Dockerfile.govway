@@ -93,7 +93,7 @@ RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
 RUN  sed -i -e 's/<!--.*-->//g' -e '/<!--/,/-->/d'  ${CATALINA_HOME}/conf/server.xml ${CATALINA_HOME}/conf/context.xml; \
 sed -i -e  "s#\${catalina.base}/logs#${GOVWAY_LOGDIR}#" ${CATALINA_HOME}/conf/logging.properties; \
-echo '# Rimuovi Resource UserDatabase \n\
+echo -e '# Rimuovi Resource UserDatabase \n\
 /Server/GlobalNamingResources/Resource[@name="UserDatabase"]:delete\n\
 # Rimuovi Realm UserDatabase\n\
 /Server/Service/Engine/Realm/Realm[@resourceName="UserDatabase"]:delete\n\
@@ -121,7 +121,7 @@ echo '# Rimuovi Resource UserDatabase \n\
 /Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, proxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
 # Configura AccessLogValve\n\
 /Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}, suffix=.log \n\
-' > /tmp/tomcat_configuration.cli; \
+' > /tmp/tomcat_configuration.cli; \ 
 chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
 /usr/local/bin/config_datasource.sh /tmp/tomcat_configuration.cli; \
 /usr/local/bin/tomcat-cli.sh /tmp/tomcat_configuration.cli; \
