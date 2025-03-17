@@ -21,7 +21,7 @@ JAVA_HOME=/usr/lib/jvm/java-11-openjdk \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
-HSQLDB_FULLVERSION=2.7.1 \
+HSQLDB_FULLVERSION=2.7.4 \
 POSTGRES_JDBC_VERSION=42.7.5 \
 TOMCAT_VERSION=9.0.102 \
 CATALINA_HOME=/usr/local/tomcat \
@@ -48,10 +48,13 @@ curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
-curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar -xzC /usr/local \
+curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz  -o apache-tomcat-${TOMCAT_VERSION}.tar.gz \
+&& curl -fsSL https://downloads.apache.org/tomcat/tomcat-9/v9.0.102/bin/apache-tomcat-9.0.102.tar.gz.sha512 -o SHA512; \
+&& sha512sum -sc SHA512; \
+tar -xzC /usr/local -f apache-tomcat-${TOMCAT_VERSION}.tar.gz;\
 && mv /usr/local/apache-tomcat-${TOMCAT_VERSION}/* ${CATALINA_HOME} \
 && rmdir /usr/local/apache-tomcat-${TOMCAT_VERSION} \
-&& rm -rf ${CATALINA_HOME}/webapps/* \
+&& rm -rf ${CATALINA_HOME}/webapps/* apache-tomcat-${TOMCAT_VERSION}.tar.gz SHA512 \
 && chmod +x ${CATALINA_HOME}/bin/*.sh
 
 # -XX:+PrintFlagsFinal \
