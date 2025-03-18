@@ -6,9 +6,9 @@ set -x
 
 
 case "$1" in
-[oO]rari[ea]) TIPO='StatisticheOrarie'
+Orarie|orarie|Oraria|oraria) TIPO='StatisticheOrarie'
 INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-5} ;;
-[gG]iornalier[ea]) TIPO='StatisticheGiornaliere'
+Giornaliere|giornaliere|Giornaliera|giornaliera) TIPO='StatisticheGiornaliere'
 INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 # [sS]ettimanal[ie]) TIPO='StatisticheSettimanali';;
 # SCHEDULAZIONE_CRON='';;
@@ -20,7 +20,7 @@ INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 esac 
 [ ${INTERVALLO_SCHEDULAZIONE} -eq ${INTERVALLO_SCHEDULAZIONE} -a ${INTERVALLO_SCHEDULAZIONE} -gt 0 ] 2> /dev/null \
 || { echo "Non e' possibile schedulare il batch ad intervalli di '${INTERVALLO_SCHEDULAZIONE}' minuti."; exit 2; }
-CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * root ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false"
+CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false"
 
 
 case "${GOVWAY_DB_TYPE}" in
@@ -343,19 +343,20 @@ ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
     env | sed -r -e 's/([^=]*)=(.*)/export \1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
-    cat - << EOCRONTAB > /etc/crontab
+    cat - << EOCRONTAB > /etc/crontabs/root
 SHELL=/bin/bash
 BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
 ${CRONTAB} >/proc/1/fd/1 2>&1
 EOCRONTAB
 
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
-    exec cron -f 
+    # FIX: l'utilizzo della bash previene l'errore
+    #      setpgid: Operation not permitted
+    bash -c "crond -f"
 else
     echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false
     echo "INFO: Generazione ${TIPO} completata."
 fi
-
 
 
