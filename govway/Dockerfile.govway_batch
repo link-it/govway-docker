@@ -58,7 +58,7 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 
 COPY commons/run_batch.sh /usr/local/bin
-RUN chown -R root:0 /usr/local/bin/run_batch.sh && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh 
+RUN chown -R root:0 /usr/local/bin/run_batch.sh /etc/crontabs/root && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh /etc/crontabs/root
 ARG govway_database_vendor
 ENV GOVWAY_DB_TYPE=${govway_database_vendor} 
 ENTRYPOINT [ "/usr/local/bin/run_batch.sh" ]

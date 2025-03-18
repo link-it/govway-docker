@@ -104,7 +104,7 @@ mkdir -p buildcontext/
 cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
 cp -f commons/* buildcontext/commons 2> /dev/null
 
-#export DOCKER_BUILDKIT=0
+export DOCKER_BUILDKIT=0
 DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}")
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
