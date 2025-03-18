@@ -48,7 +48,7 @@ A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i
 - **/var/log/govway** path dove vengono scritti i files di log (riconfigurabile al momento del build).
 
 Se l'immagine è stata prodotta in modalità standalone: 
-- **/opt/hsqldb-2.7.1/hsqldb/database** database interno HSQL 
+- **/opt/hsqldb-2.7.4/hsqldb/database** database interno HSQL 
 
 si possono rendere queste location persistenti, montando dei volumi su queste directory.
 

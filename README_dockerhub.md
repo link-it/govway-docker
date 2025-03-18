@@ -48,6 +48,13 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.3.16.b1*
+
+   - Modificato sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3.
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.102.
+   - Aggiornato hsql alla versione 2.7.4.
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.5.
+
 - *3.3.16*
 
    - Generate immagini 'multi-arch' compatibili con le architetture ARM64 e AMD64.
@@ -124,7 +131,7 @@ Per maggiori informazioni sulle console fare riferimento alla documentazione del
 I files, interni all'immagine, utilizzati da GovWay sono: 
 - le properties di configurazione, posizionati nella directory **/etc/govway**;
 - i file di log, posizionati nella directory **/var/log/govway**;
-- il database HSQL situato in **/opt/hsqldb-2.7.1/hsqldb/database**.
+- il database HSQL situato in **/opt/hsqldb-2.7.4/hsqldb/database**.
 
 Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
@@ -142,7 +149,7 @@ $ docker run \
  -p 8009:8009 \
  -v ~/govway_conf:/etc/govway \
  -v ~/govway_log:/var/log/govway \
- -v ~/govway_db:/opt/hsqldb-2.7.1/hsqldb/database \
+ -v ~/govway_db:/opt/hsqldb-2.7.4/hsqldb/database \
 linkitaly/govway
 ```
 > **_NOTA:_** abilitando la variabile 'GOVWAY_POP_DB_SKIP' non verra effettuata l'inizializzazione della base dati.
@@ -226,7 +233,7 @@ $ docker-compose up
 I files, interni all'immagine, utilizzati da GovWay sono: 
 - le properties di configurazione, posizionati nella directory **/etc/govway**;
 - i file di log, posizionati nella directory **/var/log/govway**;
-- in una immagine standalone il database HSQL è situato in **/opt/hsqldb-2.7.1/hsqldb/database**.
+- in una immagine standalone il database HSQL è situato in **/opt/hsqldb-2.7.4/hsqldb/database**.
 
 si possono rendere queste location persistenti, montando dei volumi su queste directory come mostrato negli esempi delle sezioni precedenti.
 
