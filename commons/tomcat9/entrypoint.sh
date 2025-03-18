@@ -328,7 +328,7 @@ fi
 /usr/local/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
-# Eventuali inizializzazioni custom 
+# Eventuali inizializzazioni custom
 if [ ! -f "${MODULE_INIT_FILE}" ]
 then
 
@@ -494,6 +494,10 @@ then
 fi
 
 export UMASK=0022
+ulimit -Sn 8192  # Soft limit per nofile
+ulimit -Hn 8192  # Hard limit per nofile
+ulimit -Su 4096  # Soft limit per nproc
+ulimit -Hu 4096  # Hard limit per nproc
 ${CATALINA_HOME}/bin/catalina.sh run &
 
 
@@ -520,7 +524,7 @@ then
 		GOVWAY_READY=$?
 		NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
 		if [  ${GOVWAY_READY} -ne 0 ]
-        then
+		then
 			echo "INFO: Avvio di GovWay ... attendo"
 			sleep ${GOVWAY_STARTUP_CHECK_SLEEP_TIME}s
 		fi

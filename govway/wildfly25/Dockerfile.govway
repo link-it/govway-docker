@@ -35,17 +35,11 @@ RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash linux-pam shadow-login fontconfig ttf-dejavu; \
+apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash fontconfig ttf-dejavu; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 addgroup -S wildfly; \
-adduser -S -G wildfly -d ${JBOSS_HOME} -s /bin/false tomcat; \
-echo -e "\n\
-wildfly\tsoft\tnofile\t8192\n\
-wildfly\thard\tnofile\t8192\n\
-wildfly\tsoft\tnproc\t4096\n\
-wildfly\thard\tnproc\t4096\n\
-" >> /etc/security/limits.conf; \
+adduser -S -G wildfly -d ${JBOSS_HOME} -s /bin/false wildfly; \
 curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
