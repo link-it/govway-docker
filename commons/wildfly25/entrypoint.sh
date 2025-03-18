@@ -316,7 +316,13 @@ else
 fi
 
 # Impostazione del timeout di sospensione di Wildfly in fase di shutdown
-export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${WILDFLY_SUSPEND_TIMEOUT:-20}"
+if [ -n "${WILDFLY_SUSPEND_TIMEOUT}" ]
+then
+    echo "WARN: La variabile WILDFLY_SUSPEND_TIMEOUT è stata deprecata in favore di GOVWAY_SUSPEND_TIMEOUT e verra rimossa nelle prossime versioni. "
+    echo "WARN: Aggiornate il vostro deploy in modo da eliminare questo warning."
+    GOVWAY_SUSPEND_TIMEOUT="${WILDFLY_SUSPEND_TIMEOUT}"
+fi
+export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${GOVWAY_SUSPEND_TIMEOUT:-20}"
 
 
 # Inizializzazione del database
