@@ -389,7 +389,7 @@ Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracl
 version: '2'
 services:
  
-   batch_stat_orarie:
+  batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
     image: linkitaly/govway:3.3.16.b1_batch_oracle
     volumes:
