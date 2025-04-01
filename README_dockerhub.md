@@ -163,7 +163,7 @@ Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile ut
 
 ```yaml
 version: '2'
- services:
+services:
   govway:
     container_name: govway
     image: linkitaly/govway:3.3.16.b1_postgres
@@ -189,7 +189,7 @@ Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracl
 
 ```yaml
 version: '2'
- services:
+services:
   govway:
     container_name: govway
     image: linkitaly/govway:3.3.16.b1_oracle
@@ -352,7 +352,7 @@ Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile ut
 
 ```yaml
 version: '2'
- services:
+services:
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
@@ -387,7 +387,7 @@ Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracl
 
 ```yaml
 version: '2'
- services:
+services:
  
    batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
