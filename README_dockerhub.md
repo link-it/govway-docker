@@ -48,6 +48,10 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.3.16.p1*
+
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.104.
+
 - *3.3.16.b1*
 
    - Modificato sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3.
