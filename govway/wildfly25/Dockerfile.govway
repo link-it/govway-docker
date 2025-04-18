@@ -39,7 +39,7 @@ apk add --no-cache curl openjdk11-jre tar netcat-openbsd unzip xmlstarlet bash f
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 addgroup -S wildfly; \
-adduser -S -G wildfly -d ${JBOSS_HOME} -s /bin/false wildfly; \
+adduser -S -G wildfly -h ${JBOSS_HOME} -s /bin/false wildfly; \
 curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
 unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
