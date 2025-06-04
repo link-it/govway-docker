@@ -294,11 +294,11 @@ docker cp ${CONTAINER_ID}:/opt/postgresql .
 
 Un upgrade richiede l'aggiornamento della base dati. 
 
-Serve inoltre una verifica dei diritti utente se si proviene da una versione precedente alla 3.3.15, come descritto nella successiva sezione.
+Serve inoltre una verifica dei diritti utente se si proviene da una versione precedente alla 3.3.16.b1, come descritto nella successiva sezione.
 
 ### Upgrade di una versione precedente alla v3.3.16.b1
 
-Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica del sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
+Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica del sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '100' e l'id-gruppo '101' di tomcat; ad esempio:
 
   ```
     chown -R 100:101 ~/govway_conf
@@ -306,7 +306,7 @@ Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il camb
     chown -R 100:101 ~/govway_db
   ```
 
-### Upgrade di una versione precedente alla v3.3.15
+### Upgrade di una versione precedente alla v3.3.15 fino alla v3.3.16
 
 Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica di application server di base da wildfly 26.1.3 a tomcat 9.0.x. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
 
