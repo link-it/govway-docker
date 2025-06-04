@@ -296,6 +296,15 @@ Un upgrade richiede l'aggiornamento della base dati.
 
 Serve inoltre una verifica dei diritti utente se si proviene da una versione precedente alla 3.3.15, come descritto nella successiva sezione.
 
+### Upgrade di una versione precedente alla v3.3.16.b1
+
+Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica del sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
+
+  ```
+    chown -R 100:101 ~/govway_conf
+    chown -R 100:101 ~/govway_log
+    chown -R 100:101 ~/govway_db
+  ```
 
 ### Upgrade di una versione precedente alla v3.3.15
 
