@@ -3,7 +3,7 @@ ARG govway_fullversion
 ARG source_image
 ARG govway_home=/etc/govway
 ARG govway_log=/var/log/govway
-ARG jdk_version=11
+ARG jdk_version=21
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
 FROM ${source_image} AS source_image_full
@@ -24,8 +24,8 @@ GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.4 \
 POSTGRES_JDBC_VERSION=42.7.7 \
-WILDFLY_VERSION=26.1.3.Final \
-JBOSS_HOME=/opt/wildfly-26.1.3.Final \
+WILDFLY_VERSION=36.0.1.Final \
+JBOSS_HOME=/opt/wildfly-36.0.1.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true \
 TZ="Europe/Rome" 
 

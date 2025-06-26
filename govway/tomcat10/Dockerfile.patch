@@ -1,0 +1,15 @@
+# immagine sorgente da utilizzare per il patch
+ARG target_image
+
+
+FROM ${target_image} AS target_image_full
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per il deploy dei nodi"
+USER root
+RUN apk update; \
+apk add --no-cache zip unzip patch dos2unix bash; \
+rm -rf /var/cache/apk/*;  
+ADD commons/apply-patch.sh /usr/local/bin/
+ADD PATCH /opt/PATCH
+RUN /usr/local/bin/apply-patch.sh 
+USER tomcat

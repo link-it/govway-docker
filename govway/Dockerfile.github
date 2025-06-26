@@ -6,17 +6,17 @@ ARG govway_fullversion
 ARG govway_home=/etc/govway
 ARG govway_log=/var/log/govway
 ARG govway_appserver=tomcat9
-
+ARG jdk_version=11
 
 # sanity check
 RUN [ -z "${govway_fullversion}" ] && { echo 'Versione del software non indicata. Eseguire il build col parametro --build-arg govway_fullversion=<VERSIONE>'; exit 1; };\ 
 apk update; \
-apk add --no-cache curl openjdk11-jdk unzip zip bash gcc musl-dev; \
+apk add --no-cache curl openjdk${jdk_version}-jdk unzip zip bash gcc musl-dev; \
 rm -rf /var/cache/apk/*; 
 
 # environment
 ENV LANG=it_IT.UTF-8 \
-JAVA_HOME=/usr/lib/jvm/java-11-openjdk \
+JAVA_HOME=/usr/lib/jvm/java-${jdk_version}-openjdk \
 GOVWAY_HOME=${govway_home} \
 GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
@@ -152,3 +152,6 @@ COPY commons/change_dir_perms.c /opt
 RUN cd /opt; \
 gcc -o change_dir_perms change_dir_perms.c
 
+
+COPY commons/TomcatConfigCli.java* /opt
+RUN [ -e "/opt/TomcatConfigCli.java"  ] && javac /opt/TomcatConfigCli.java 

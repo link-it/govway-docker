@@ -4,6 +4,7 @@ ARG source_image
 ARG govway_batch_home=/var/govway/batch
 ARG govway_log=/var/log/govway
 ARG govway_database_vendor=postgresql
+ARG jdk_version=11
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
 FROM ${source_image} AS source_image_full
@@ -19,7 +20,7 @@ ARG govway_log
 
 USER root
 ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
-JAVA_HOME=/usr/lib/jvm/java-11-openjdk \
+JAVA_HOME=/usr/lib/jvm/java-${jdk_version}-openjdk \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 POSTGRES_JDBC_VERSION=42.7.7 \
@@ -28,7 +29,7 @@ TZ="Europe/Rome"
 RUN set -eux; \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk11-jre unzip dcron bash; \
+apk add --no-cache curl openjdk${jdk_version}-jre unzip dcron bash; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 

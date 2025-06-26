@@ -18,7 +18,7 @@ Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway 
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
--g <TIPO>      : Prepara l'immagine per avere come base un particolare application server  (valori: [tomcat9, wildfly25] , default: tomcat9)
+-g <TIPO>      : Prepara l'immagine per avere come base un particolare application server  (valori: [tomcat9, tomca10, wildfly25, wildfly35] , default: tomcat9)
 
 Avanzate:
 -i <FILE>      : Usa il template ant.installer.properties indicato per la generazione degli archivi dall'installer
@@ -53,13 +53,14 @@ REGISTRY_PREFIX=linkitaly
 LATEST_LINK="$(curl -qw '%{redirect_url}\n' https://github.com/link-it/govway/releases/latest 2> /dev/null)"
 LATEST_GOVWAY_RELEASE="${LATEST_LINK##*/}"
 
-while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:" opt; do
+while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
   case $opt in
     t) TAG="$OPTARG"; NO_COLON=${TAG//:/}
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     d) DB="${OPTARG}"; case "$DB" in hsql);;postgresql);;oracle);;mysql);;mariadb);;*) echo "Database non supportato: $DB"; exit 2;; esac ;;
-    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;wildfly25);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;
+    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;tomcat10);;wildfly25);;wildfly35);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;
+    k) JDKVER="${OPTARG}"; case "$JDKVER" in 11);;21);;*) echo "Versione JDK non supportato: $JDKVER"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
         [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
@@ -98,6 +99,7 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:" opt; do
   esac
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
+[  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=21
 
 rm -rf buildcontext
 mkdir -p buildcontext/
@@ -105,7 +107,7 @@ cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
 cp -f commons/* buildcontext/commons 2> /dev/null
 
 #export DOCKER_BUILDKIT=0
-DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}")
+DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}" '--build-arg' "jdk_version=${JDKVER:-11}")
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_fullversion=${VER:-${LATEST_GOVWAY_RELEASE}}")
 [ -n "${TEMPLATE}" ] &&  cp -f "${TEMPLATE}" buildcontext/commons/
 [ -n "${CUSTOM_GOVWAY_HOME}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_home=${CUSTOM_GOVWAY_HOME}")
