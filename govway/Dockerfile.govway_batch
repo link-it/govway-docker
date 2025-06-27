@@ -17,6 +17,7 @@ LABEL org.opencontainers.image.description="Immagine utilizzata per la generazio
 ARG govway_fullversion
 ARG govway_batch_home
 ARG govway_log
+ARG jdk_version
 
 USER root
 ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
