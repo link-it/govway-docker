@@ -11,7 +11,7 @@ echo "Options
 Installer Sorgente:
 -v <VERSIONE>  : Imposta la versione dell'installer binario da utilizzare per il build (default: ${LATEST_GOVWAY_RELEASE})
 -l <FILE>      : Usa un'installer binario sul filesystem locale (incompatibile con -j)
--j             : Usa l'installer prodotto dalla pipeline jenkins https://jenkins.link.it/govway-testsuite/installer/govway-installer-<version>.tgz
+-j             : Usa l'installer prodotto dalla pipeline jenkins di CI
 
 Personalizzazioni:
 -d <TIPO>      : Prepara l'immagine per essere utilizzata su un particolare database  (valori: [hsql, postgresql, mysql, mariadb, oracle] , default: hsql)
