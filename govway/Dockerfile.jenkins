@@ -29,9 +29,9 @@ ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
 RUN set -eux; \
 if [ ${govway_appserver} == 'tomcat9' -o ${govway_appserver} == 'wildfly25' ]; then \
-JENKINS_PREFIX=https://jenkins.link.it/govway
+JENKINS_PREFIX=https://jenkins.link.it/govway; \
 else \
-JENKINS_PREFIX=https://jenkins.link.it/govway4
+JENKINS_PREFIX=https://jenkins.link.it/govway4; \
 fi; \
 curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -LksS ${JENKINS_PREFIX}-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ;\
 curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -LksS -o /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ${JENKINS_PREFIX}-testsuite/installer/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ;\
