@@ -7,20 +7,24 @@ set -x
 
 case "$1" in
 Orarie|orarie|Oraria|oraria) TIPO='StatisticheOrarie'
+COMANDO=generaStatisticheOrarie.sh
 INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-5} ;;
 Giornaliere|giornaliere|Giornaliera|giornaliera) TIPO='StatisticheGiornaliere'
+COMANDO=generaStatisticheGiornaliere.sh
 INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
-# [sS]ettimanal[ie]) TIPO='StatisticheSettimanali';;
-# SCHEDULAZIONE_CRON='';;
-# [mM]ensil[ie]) TIPO='StatisticheMensili';;
-# SCHEDULAZIONE_CRON='';;
+GeneraReportPDND|generareportpdnd|generaReportPDND|GeneraReportPdnd|generaReportPdnd) TIPO='GenerazioneCSVTracingPDND'
+COMANDO=generaReportPDND.sh
+INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
+PubblicaReportPDND|pubblicareportpdnd|pubblicaReportPDND|PubblicaReportPdnd|pubblicaReportPdnd) TIPO='PubblicazioneCSVTracingPDND'
+COMANDO=pubblicaReportPDND.sh
+INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 *) echo "Tipo di statistiche non supportato: '$1'"
    exit 1
    ;;
 esac 
 [ ${INTERVALLO_SCHEDULAZIONE} -eq ${INTERVALLO_SCHEDULAZIONE} -a ${INTERVALLO_SCHEDULAZIONE} -gt 0 ] 2> /dev/null \
 || { echo "Non e' possibile schedulare il batch ad intervalli di '${INTERVALLO_SCHEDULAZIONE}' minuti."; exit 2; }
-CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false"
+CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false"
 
 
 case "${GOVWAY_DB_TYPE}" in
@@ -355,7 +359,7 @@ EOCRONTAB
     bash -c "crond -f"
 else
     echo "INFO: Generazione ${TIPO} avviata..."
-    ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche genera${TIPO}.sh false
+    ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false
     echo "INFO: Generazione ${TIPO} completata."
 fi
 
