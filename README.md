@@ -115,16 +115,27 @@ Utilizzando lo switch "-a" dello script di build è possibile costruire una immm
 Questo tipo di immagini si differenzia dalle immagini run, manager e full per il fatto che non viene istanziato un server che rimane in ascolto, ma viene eseguito un singolo task destinato a terminare in un tempo finito.
 
 ### Tipo di statistiche da generare ###
-Il batch è in grado di generare le statistiche orarie e giornaliere; il tipo di statistiche da generare si decide attraverso un'argomento passato a runtime. 
+Il batch è in grado di gestire:
+- generazione di statistiche con campionamentoorario;
+- generazione di statistiche con campionamento giornaliero; 
+- generazione di report CSV nel formato atteso dalla PDND;
+- pubblicazione dei report CSV prodotti tramite le API Interop della PDND.
 
-Viene verificata la corrispondenza dell'argomento con uno di questi due pattern **"[oO]rari[ea]"** , **"[gG]iornalier[ea]"**
+Il tipo di batch da eseguire viene deciso attraverso un'argomento passato a runtime che può essere valorizzato tramite uno dei seguenti valori, in relazione ai tipi di gestione precedentemente descritti:
+- orarie
+- giornaliere
+- generaReportPDND
+- pubblicaReportPDND
+
+I comandi forniti possono variare tra minuscole e maiuscole poichè viene verificata la corrispondenza dell'argomento rispettivamente con i pattern **"[oO]rari[ea]"** , **"[gG]iornalier[ea]"**, **"[gG]enera[Rr]eport[Pp][Dd][Nn][Dd]"** e **"[pP]ubblica[Rr]eport[Pp][Dd][Nn][Dd]"**.
+
 Se non viene passato alcun argomento il default è orarie
 Es:
 ```bash
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.3.16.p2_postgres_batch_postgres giornaliera
+linkitaly/govway:3.3.16.p2_postgres_batch_postgres giornaliere
 ```
 
 ### Modalita Cron ###
@@ -306,7 +317,7 @@ Di seguito una lista di variabili usate in precedenza per la configurazione avan
 ### Modalita Cron
 
 * GOVWAY_BATCH_USA_CRON: indica se abilitare la modalità cron (default: no , valori ammissibili [si, yes, 1, true])
-* GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere) 
+* GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere, generazione e pubblicazione di report PDND) 
 
 
 ### Connessione a database esterni 

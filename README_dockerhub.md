@@ -347,9 +347,11 @@ Nel caso di versione standalone in cui il database non sia stato montato su un v
 
 ## Ambienti batch
 
-Le informazioni statistiche consultabili tramite la console di Monitoraggio consistono di informazioni aggregate su base periodica dei dati relativi alle transazioni gestite. 
+La console di Monitoraggio mette a disposizione informazioni statistiche aggregate, elaborate su base periodica, relative alle transazioni gestite. Questi dati consentono un’analisi sintetica e continuativa dell’andamento del sistema.
 
-I dati statistici vengono generati per default dal componente runtime dell'api gateway attraverso la schedulazione periodica di un thread dedicato.
+In aggiunta, è previsto un campionamento specifico dedicato alla generazione di report in formato CSV, conformi agli standard previsti dalla Piattaforma Digitale Nazionale Dati (PDND), con relativa gestione della pubblicazione attraverso le API di Interoperabilità.
+
+Sia i dati statistici che la pubblicazione dei report PDND vengono gestiti per default dal componente runtime dell'api gateway attraverso la schedulazione periodica di thread dedicati.
 
 In ambienti di produzione è consigliato spostare l'attività di generazione delle statistiche su un componente dedicato in modo da non gravare il costo sui nodi run. La disattivazione della generazione delle statistiche sui nodi run deve essere effettuata nel file '/etc/govway/govway_local.properties' come segue:
 
@@ -360,6 +362,8 @@ In ambienti di produzione è consigliato spostare l'attività di generazione del
 # Tipo di campionamenti abilitati
 org.openspcoop2.pdd.statistiche.generazione.baseOraria.enabled=false
 org.openspcoop2.pdd.statistiche.generazione.baseGiornaliera.enabled=false
+org.openspcoop2.pdd.statistiche.pdnd.tracciamento.generazione.enabled=false
+org.openspcoop2.pdd.statistiche.pdnd.tracciamento.pubblicazione.enabled=false
 ...
 # ================================================
 
@@ -390,6 +394,34 @@ services:
     image: linkitaly/govway:3.3.16.p2_batch_postgres
     command: 
       - giornaliere
+    environment:
+      - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
+      - GOVWAY_STAT_DB_NAME=govwaydb
+      - GOVWAY_STAT_DB_USER=govway
+      - GOVWAY_STAT_DB_PASSWORD=govway
+      - GOVWAY_BATCH_USA_CRON=true
+      - GOVWAY_BATCH_INTERVALLO_CRON=30
+      - TZ=Europe/Rome
+      
+  batch_generazione_report_pdnd:
+    container_name: govway_batch_generazione_report_pdnd
+    image: linkitaly/govway:3.3.16.p2_batch_postgres
+    command: 
+      - generaReportPDND
+    environment:
+      - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
+      - GOVWAY_STAT_DB_NAME=govwaydb
+      - GOVWAY_STAT_DB_USER=govway
+      - GOVWAY_STAT_DB_PASSWORD=govway
+      - GOVWAY_BATCH_USA_CRON=true
+      - GOVWAY_BATCH_INTERVALLO_CRON=30
+      - TZ=Europe/Rome
+
+  batch_pubblicazione_report_pdnd:
+    container_name: govway_batch_pubblicazione_report_pdnd
+    image: linkitaly/govway:3.3.16.p2_batch_postgres
+    command: 
+      - pubblicaReportPDND
     environment:
       - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
       - GOVWAY_STAT_DB_NAME=govwaydb
@@ -435,6 +467,46 @@ services:
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     command: 
       - giornaliere
+    environment:
+      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
+      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
+      - GOVWAY_STAT_DB_NAME=govwaydb
+      - GOVWAY_STAT_DB_USER=govway
+      - GOVWAY_STAT_DB_PASSWORD=govway
+      - GOVWAY_BATCH_USA_CRON=true
+      - GOVWAY_BATCH_INTERVALLO_CRON=30
+      - TZ=Europe/Rome
+      
+  batch_generazione_report_pdnd:
+    container_name: govway_batch_generazione_report_pdnd
+    image: linkitaly/govway:3.3.16.p2_batch_oracle
+    volumes:
+       - ~/govway_conf:/etc/govway
+       - ~/govway_log:/var/log/govway
+       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
+    command: 
+      - generaReportPDND
+    environment:
+      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
+      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
+      - GOVWAY_STAT_DB_NAME=govwaydb
+      - GOVWAY_STAT_DB_USER=govway
+      - GOVWAY_STAT_DB_PASSWORD=govway
+      - GOVWAY_BATCH_USA_CRON=true
+      - GOVWAY_BATCH_INTERVALLO_CRON=30
+      - TZ=Europe/Rome
+
+  batch_pubblicazione_report_pdnd:
+    container_name: govway_batch_pubblicazione_report_pdnd
+    image: linkitaly/govway:3.3.16.p2_batch_oracle
+    volumes:
+       - ~/govway_conf:/etc/govway
+       - ~/govway_log:/var/log/govway
+       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
+    command: 
+      - pubblicaReportPDND
     environment:
       - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
       - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
