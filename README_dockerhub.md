@@ -32,15 +32,6 @@
 * [`3.3.16.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
 * [`3.3.16.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
 * [`3.3.16.p2_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2`, `3.3.15.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -60,6 +51,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 - *3.4.0*
 
    - Aggiornato application server di base (Tomcat) alla versione 11.0.9.
+   - Aggiornata JVM alla versione 21, la recente release LTS (Long-Term Support).
 
 - *3.3.17*
 
@@ -551,13 +543,28 @@ $ docker-compose up
 
 ## Versione Snapshot
 
+### 3.4.x
+
+Ogni modifica dei sorgenti attuata sul branch '3.4.x' del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway4/job/GovWay/).
+Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway4-testsuite/installer/) scaricabile dall'ambiente di CI.
+
+Vengono inoltre fornite le seguenti immagini per le versioni snapshot:
+
+* [`master4`, `master4_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway)
+* [`master4_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway)
+* [`master4_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway)
+* [`master4_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway)
+* [`master4_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway)
+
+### 3.3.x
+
 Ogni modifica dei sorgenti attuata sul master del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway/job/GovWay/).
 Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway-testsuite/installer/) scaricabile dall'ambiente di CI.
 
 Vengono inoltre fornite le seguenti immagini per le versioni snapshot:
 
-* [`master`, `master_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* [`master`, `master_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway)
+* [`master_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway)
+* [`master_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway)
+* [`master_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway)
+* [`master_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway)
