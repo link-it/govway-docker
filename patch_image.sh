@@ -9,7 +9,7 @@ echo "Options
 -p : Inserisce le patch contenute nella directory, negli archivi dell'immagine finale
 -t : Imposta il nome del tag ed il repository da  utilizzare per l'immagine finale 
      NOTA: deve essere rispettata la sintassi <repository>:<tagname>
--g : Indica l'application server utilizzato nell'immagine sorgente (valori: [tomcat9, wildfly25] , default: tomcat9)
+-g : Indica l'application server utilizzato nell'immagine sorgente (valori: [tomcat9, tomca10, wildfly25, wildfly35] , default: tomcat9)
 
 -h : Mostra questa pagina di aiuto
 "
@@ -34,7 +34,7 @@ while getopts "ht:s:p:g:" opt; do
         [ ! -d "${PATCHDIR}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${PATCHDIR}]."; exit 3; }
         [ -z "$(ls -A ${PATCHDIR})" ] && echo "ATTENZIONE: la directory [${PATCHDIR}] e' vuota."
         ;;
-    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;wildfly25);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac
+    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;tomcat10);;wildfly25);;wildfly35);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;        
        ;;
     h) printHelp
        ;;
