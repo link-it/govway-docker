@@ -36,8 +36,7 @@ while getopts "ht:s:p:g:" opt; do
         [ ! -d "${PATCHDIR}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${PATCHDIR}]."; exit 3; }
         [ -z "$(ls -A ${PATCHDIR})" ] && echo "ATTENZIONE: la directory [${PATCHDIR}] e' vuota."
         ;;
-    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;tomcat10);;wildfly25);;wildfly35);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;        
-      ;;
+    g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;tomcat10);;wildfly25);;wildfly35);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;
     h) printHelp
       ;;
     \?)
