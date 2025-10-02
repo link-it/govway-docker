@@ -338,7 +338,15 @@ then
     echo "WARN: Verificare che il path indicato sia corretto e leggibile dall'utente $(id -u -n)"
 fi
 
+# Configurazione memoria JVM per batch
+DEFAULT_MAX_RAM_PERCENTAGE=80
+JVM_MEMORY_OPTS="-XX:MaxRAMPercentage=${GOVWAY_JVM_MAX_RAM_PERCENTAGE:-${DEFAULT_MAX_RAM_PERCENTAGE}}"
+[ -n "${GOVWAY_JVM_INITIAL_RAM_PERCENTAGE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:InitialRAMPercentage=${GOVWAY_JVM_INITIAL_RAM_PERCENTAGE}"
+[ -n "${GOVWAY_JVM_MIN_RAM_PERCENTAGE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MinRAMPercentage=${GOVWAY_JVM_MIN_RAM_PERCENTAGE}"
+[ -n "${GOVWAY_JVM_MAX_METASPACE_SIZE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MaxMetaspaceSize=${GOVWAY_JVM_MAX_METASPACE_SIZE}"
+[ -n "${GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MaxDirectMemorySize=${GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE}"
 
+export JAVA_OPTS="${JAVA_OPTS:-} $JVM_MEMORY_OPTS"
 
 # Imposto Timezone
 [ -z "${TZ}" ] && export TZ="Europe/Rome"

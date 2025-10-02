@@ -304,13 +304,38 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * GOVWAY_UUID_ALG: Algoritmo utilizzato internamente per la generazione degli UUID. (default: v1, valori ammissibili [v1, v4, {ID Algoritmo}] )
 
   La lista degli algoritmi utilizzabili si puo recuperare dal file __govway.classRegistry.properties__  dalle proprietà del tipo **org.openspcoop2.id.{ID Algoritmo}**. Inoltre si possono utilizzare le seguenti abbreviazioni:
-  - v1 o V1 ->  UUIDv1 
+  - v1 o V1 ->  UUIDv1
   - v4 o V4 ->  UUIDv4sec
+
+#### Configurazione Memoria JVM
+
+Le seguenti variabili permettono di configurare l'utilizzo della memoria da parte della JVM.
+Le impostazioni utilizzano RAM Percentage per adattarsi automaticamente ai limiti di memoria del container.
+
+**Heap Memory (RAM Percentage):**
+* GOVWAY_JVM_MAX_RAM_PERCENTAGE: Percentuale massima di RAM del container utilizzabile per l'heap JVM (default: 50 per immagini manager/all, 80 per immagini runtime e batch)
+* GOVWAY_JVM_INITIAL_RAM_PERCENTAGE: Percentuale di RAM allocata all'heap all'avvio della JVM (default: non impostato, utilizza il default della JVM)
+* GOVWAY_JVM_MIN_RAM_PERCENTAGE: Percentuale minima di RAM riservata all'heap (default: non impostato, utilizza il default della JVM)
+
+**Metaspace e Direct Memory:**
+* GOVWAY_JVM_MAX_METASPACE_SIZE: Dimensione massima del metaspace per il caricamento delle classi (es: "256m", "512m", default: illimitato)
+* GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE: Dimensione massima dei buffer di memoria diretta usati per operazioni I/O (es: "512m", "1g", default: uguale a MaxHeapSize)
+
+**Nota:** Le impostazioni basate su percentuale si adattano automaticamente quando il container viene ridimensionato o spostato su nodi con limiti di memoria diversi, rendendole ideali per ambienti Kubernetes e altri orchestratori.
+
+**Esempio:**
+```yaml
+environment:
+  - GOVWAY_JVM_MAX_RAM_PERCENTAGE=70
+  - GOVWAY_JVM_INITIAL_RAM_PERCENTAGE=50
+  - GOVWAY_JVM_MAX_METASPACE_SIZE=256m
+```
 
 #### Avviso variabili deprecate
 Di seguito una lista di variabili usate in precedenza per la configurazione avanzata. Queste variabili sono state deprecate e verrano rimosse nelle versioni successive:
 
 * ~WILDFLY_SUSPEND_TIMEOUT~: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly. Non ha effetti per le immagini che usano Tomcat. (default: 20s) **[DEPRECATA in favore di GOVWAY_SUSPEND_TIMEOUT]**
+* ~MAX_JVM_PERC~: Percentuale massima di RAM utilizzabile dalla JVM (default: 80) **[DEPRECATA in favore di GOVWAY_JVM_MAX_RAM_PERCENTAGE]**
 
 ## Personalizzazioni Batch
 
