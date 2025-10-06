@@ -99,6 +99,8 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
   esac
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
+[ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a -z "${APPSERV}" ] && APPSERV='tomcat10'
+[ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a "${APPSERV}" == 'tomcat9' -o "${APPSERV}" == 'wildfly25' ] && { echo "GovWay ${LATEST_GOVWAY_RELEASE} può essere preparato solo per tomcat9 o wildfly35"; exit 4; }
 [  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=21
 
 rm -rf buildcontext
@@ -173,8 +175,10 @@ then
   *) TAG="${REPO}:${TAGNAME}_${DB}" ;;
   esac
 
-  # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato
-  [ "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
+  # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni precedenti 3.4.x)
+  [ "${LATEST_GOVWAY_RELEASE%.*}" != '3.4' -a "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
+  # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni 3.4.x)
+  [ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a "${APPSERV:-tomcat9}" != "tomcat10" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
 
 fi
 

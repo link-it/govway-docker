@@ -1,4 +1,7 @@
 buildcontext
 compose
+test_*
 *.tgz
 *.cli
+registry-data
+nginx
