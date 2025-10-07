@@ -298,7 +298,7 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS]**
 * ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di GOVWAY_AS_MAX_POST_SIZE]**
 
-### Configurazioni avanzate  
+### Configurazioni avanzate
 * GOVWAY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento dell'application server. (default: 20s)
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 * GOVWAY_UUID_ALG: Algoritmo utilizzato internamente per la generazione degli UUID. (default: v1, valori ammissibili [v1, v4, {ID Algoritmo}] )
@@ -306,6 +306,43 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
   La lista degli algoritmi utilizzabili si puo recuperare dal file __govway.classRegistry.properties__  dalle proprietà del tipo **org.openspcoop2.id.{ID Algoritmo}**. Inoltre si possono utilizzare le seguenti abbreviazioni:
   - v1 o V1 ->  UUIDv1
   - v4 o V4 ->  UUIDv4sec
+
+#### Proprietà JVM Personalizzate
+
+È possibile iniettare proprietà JVM personalizzate nel container montando un file di configurazione esterno.
+
+**Path supportati:**
+* `/etc/govway_as_jvm.properties` (raccomandato)
+* `/etc/wildfly/wildfly.properties` (deprecato, mantenuto per retrocompatibilità)
+
+**Funzionamento:**
+All'avvio del container, se esiste uno dei file sopra indicati, il suo contenuto viene automaticamente iniettato nelle proprietà di sistema della JVM:
+- **Tomcat**: il contenuto viene aggiunto a `${CATALINA_HOME}/conf/catalina.properties`
+- **WildFly**: le proprietà vengono configurate tramite system-properties della JVM
+
+**Esempio di utilizzo:**
+
+Creare un file `custom.properties`:
+```properties
+org.govway.custom.property=valore
+my.application.setting=123
+```
+
+Montare il file nel container tramite docker-compose:
+```yaml
+services:
+  govway:
+    image: linkitaly/govway:3.3.17_postgres
+    volumes:
+      - ./custom.properties:/etc/govway_as_jvm.properties:ro
+```
+
+O tramite docker run:
+```bash
+docker run -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.3.17_postgres
+```
+
+Le proprietà definite nel file diventano accessibili come system properties all'interno dell'applicazione GovWay.
 
 #### Configurazione Memoria JVM
 
