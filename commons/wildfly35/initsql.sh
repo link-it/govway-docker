@@ -1,5 +1,25 @@
 #!/bin/bash
 
+# Determino il mapping effettivo considerando GOVWAY_DB_MAPPING
+declare -A db_mapping
+db_mapping[RUN]="govway_db"
+db_mapping[CONF]="govway_conf_db"
+db_mapping[TRAC]="govway_trac_db"
+db_mapping[STAT]="govway_stat_db"
+
+# Se GOVWAY_DB_MAPPING è definito, aggiorno il mapping
+if [ -n "${GOVWAY_DB_MAPPING}" ]; then
+    IFS=',' read -ra SHARED_CATEGORIES <<< "${GOVWAY_DB_MAPPING}"
+    for CATEGORY in "${SHARED_CATEGORIES[@]}"; do
+        CATEGORY=$(echo "$CATEGORY" | xargs)
+        case "${CATEGORY^^}" in
+            T) db_mapping[TRAC]="govway_db" ;;
+            S) db_mapping[STAT]="govway_db" ;;
+            C) db_mapping[CONF]="govway_db" ;;
+        esac
+    done
+fi
+
 # Sostituisco il placeholder GOVWAY_DEFAULT_ENTITY_NAME in tutti gli SQL
 sed -i -e \
 "s/\${GOVWAY_DEFAULT_ENTITY_NAME}/${GOVWAY_DEFAULT_ENTITY_NAME}/g" \
@@ -84,5 +104,23 @@ if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'maria
     done
 fi
 
-echo "INFO: Scripts SQL inizializzati."
+echo ""
+echo "INFO: Scripts SQL inizializzati per database tipo: ${GOVWAY_DB_TYPE:-hsql}"
+echo ""
+echo "======================================================================"
+echo "  GUIDA PER L'INIZIALIZZAZIONE MANUALE DEI DATABASE"
+echo "======================================================================"
+echo ""
+echo "  Eseguire i seguenti script SQL sui rispettivi database:"
+echo ""
+echo "  Script SQL                                          Database"
+echo "  --------------------------------------------------  ----------------"
+echo "  GovWay.sql + GovWay_init.sql                     -> ${db_mapping[RUN]}"
+echo "  GovWayConfigurazione.sql + GovWayConfigurazione_init.sql -> ${db_mapping[CONF]}"
+echo "  GovWayTracciamento.sql + GovWayTracciamento_init.sql   -> ${db_mapping[TRAC]}"
+echo "  GovWayStatistiche.sql + GovWayStatistiche_init.sql    -> ${db_mapping[STAT]}"
+echo ""
+echo "  Percorso script: /opt/${GOVWAY_DB_TYPE:-hsql}/"
+echo ""
+echo "======================================================================"
 exit 0
