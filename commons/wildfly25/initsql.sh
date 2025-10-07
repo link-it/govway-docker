@@ -66,5 +66,23 @@ if [ -n "${GOVWAY_DB_MAPPING}" ]; then
     done
 fi
 
+# Aggiusto l'SQL per i database MySQL e MariaDB
+if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'mariadb' ]; then
+    echo "INFO: Applicazione trasformazioni SQL per MySQL/MariaDB"
+
+    for SQL_FILE in /opt/${GOVWAY_DB_TYPE:-hsql}/*.sql; do
+        [ ! -f "$SQL_FILE" ] && continue
+
+        # Impostazione sql_mode per MySQL 8
+        SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
+        sed -i -r -e "s/^SET @@SESSION.sql_mode=(.*)/-- SET @@SESSION.sql_mode=\1\n\n-- Per MySQL 8\nSET @@SESSION.sql_mode='${SQL_MODE}';/" "$SQL_FILE"
+
+        # I COMMENT delle colonne e delle tabelle contengono il carattere apice con escape; "\'"
+        # sembra che questo causi dei problemi nell'interpretare correttamente lo script al client
+        # Sostituisco la coppia di caratteri con uno spazio singolo
+        sed -i -e "/COMMENT/s%\\\'% %g" "$SQL_FILE"
+    done
+fi
+
 echo "INFO: Scripts SQL inizializzati."
 exit 0
