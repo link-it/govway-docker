@@ -98,9 +98,9 @@ docker cp ${CONTAINER_ID}:/opt/postgresql .
 
 #### Condivisione Database tra Categorie
 
-Quando più categorie di dati GovWay (Runtime, Tracciamento, Statistiche, Configurazione) condividono lo stesso database fisico, gli script SQL generati possono contenere tabelle duplicate (come `db_info` e `OP2_SEMAPHORE`), causando errori durante l'esecuzione.
+Quando più categorie di dati GovWay (Runtime, Tracciamento, Statistiche, Configurazione) condividono lo stesso database fisico, gli script SQL generati possono contenere tabelle duplicate, causando errori durante l'esecuzione manuale.
 
-Per risolvere questo problema, è possibile utilizzare la variabile **GOVWAY_DB_MAPPING** che indica quali categorie condividono il database con la categoria Runtime (R).
+Per risolvere questo problema, è possibile utilizzare la variabile **GOVWAY_DB_MAPPING** che indica quali categorie condividono il database con la categoria di default (Runtime).
 
 **Sintassi:**
 ```
@@ -136,6 +136,9 @@ GOVWAY_DB_MAPPING="T,S,C"
 **Comportamento:**
 - Se **GOVWAY_DB_MAPPING** non è impostata: ogni categoria ha il proprio database (comportamento predefinito)
 - Se impostata: le categorie indicate condividono il database con Runtime e gli script SQL vengono automaticamente modificati per rimuovere le tabelle duplicate
+
+
+**ATTENZIONE:** quando il conainer viene avviato bisogna assicurarsi di aver configurato le variabili di **Connessione ai database esterni** coerentemente con quanto dichiarato nella fase di generazione degli scripts nella variabile **GOVWAY_DB_MAPPING**
 
 ### Comandi di inizializzazione aggiuntiva
 
