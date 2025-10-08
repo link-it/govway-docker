@@ -153,5 +153,5 @@ RUN cd /opt; \
 gcc -o change_dir_perms change_dir_perms.c
 
 
-COPY commons/TomcatConfigCli.java* /opt
-RUN [ -e "/opt/TomcatConfigCli.java"  ] && javac /opt/TomcatConfigCli.java 
+COPY commons/TomcatConfigCli.jav[a] /opt
+RUN [ -e "/opt/TomcatConfigCli.java"  ] && javac /opt/TomcatConfigCli.java || true 
