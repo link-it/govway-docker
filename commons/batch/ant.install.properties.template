@@ -32,8 +32,9 @@ antinstaller_tools_cliConfigLoader=true
 # Componenti Applicative
 antinstaller_console_env=manager
 antinstaller_gestione_nodi=dynamic
-antinstaller_stats_env=runtime
+antinstaller_stats_env=runtime_batchPrepared
 antinstaller_batch_dir=
+antinstaller_batch_system_out=true
 antinstaller_batchRuntimeRepository=false
 
 # Informazioni DataSource

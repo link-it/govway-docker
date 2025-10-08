@@ -29,13 +29,46 @@ Avanzate:
 "
 }
 
+# Funzione per confrontare versioni (ritorna 0 se $1 >= $2, 1 altrimenti)
+version_ge() {
+  local ver1="${1%%-*}"  # rimuove suffissi come -beta, -rc
+  local ver2="${2%%-*}"
+
+  # Estrai major.minor
+  local major1="${ver1%%.*}"
+  local rest1="${ver1#*.}"
+  local minor1="${rest1%%.*}"
+
+  local major2="${ver2%%.*}"
+  local rest2="${ver2#*.}"
+  local minor2="${rest2%%.*}"
+
+  # Confronta major
+  if [ "$major1" -gt "$major2" ] 2>/dev/null; then
+    return 0
+  elif [ "$major1" -lt "$major2" ] 2>/dev/null; then
+    return 1
+  fi
+
+  # Major uguale, confronta minor
+  if [ "$minor1" -ge "$minor2" ] 2>/dev/null; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+##############
+###  MAIN  ###
+##############
+
+
 DOCKERBIN="$(which docker)"
 if [ -z "${DOCKERBIN}" ]
 then
    echo "Impossibile trovare il comando \"docker\""
    exit 2 
 fi
-
 
 
 TAG=
@@ -100,34 +133,6 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
 
-# Funzione per comparare versioni (ritorna 0 se $1 >= $2, 1 altrimenti)
-version_ge() {
-  local ver1="${1%%-*}"  # rimuove suffissi come -beta, -rc
-  local ver2="${2%%-*}"
-
-  # Estrai major.minor
-  local major1="${ver1%%.*}"
-  local rest1="${ver1#*.}"
-  local minor1="${rest1%%.*}"
-
-  local major2="${ver2%%.*}"
-  local rest2="${ver2#*.}"
-  local minor2="${rest2%%.*}"
-
-  # Confronta major
-  if [ "$major1" -gt "$major2" ] 2>/dev/null; then
-    return 0
-  elif [ "$major1" -lt "$major2" ] 2>/dev/null; then
-    return 1
-  fi
-
-  # Major uguale, confronta minor
-  if [ "$minor1" -ge "$minor2" ] 2>/dev/null; then
-    return 0
-  else
-    return 1
-  fi
-}
 
 # Determina la versione effettiva da utilizzare
 EFFECTIVE_VERSION="${VER:-${LATEST_GOVWAY_RELEASE}}"
@@ -154,6 +159,8 @@ rm -rf buildcontext
 mkdir -p buildcontext/
 cp -fr "commons/${APPSERV:-tomcat9}" buildcontext/commons
 cp -f commons/* buildcontext/commons 2> /dev/null
+[ "${ARCHIVI}" == 'runtime' -o "${ARCHIVI}" == 'manager'  ] && cp -f commons/runmanager/ant.install.properties.template buildcontext/commons
+[ "${ARCHIVI}" == 'batch'  ] && cp -f commons/batch/ant.install.properties.template buildcontext/commons
 
 #export DOCKER_BUILDKIT=0
 DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}" '--build-arg' "jdk_version=${JDKVER:-11}")
@@ -211,7 +218,7 @@ fi
 [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
 if [ -z "$TAG" ] 
 then
-    REPO=${REGISTRY_PREFIX}/govway
+  REPO=${REGISTRY_PREFIX}/govway
   TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
   [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
   
@@ -288,12 +295,15 @@ EOYAML
   if [ "${DB:-hsql}" == 'postgresql' ]
   then
     cat - << EOYAML >> compose/docker-compose.yaml
+        # Il driver deve essere copiato manualmente nella directory corrente
+        - ./postgresql-42.7.5.jar:/tmp/postgresql-42.7.5.jar 
     environment:
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_DB_SERVER=pg_govway_${SHORT}
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_DS_JDBC_LIBS=/tmp
         - GOVWAY_POP_DB_SKIP=false
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
@@ -304,6 +314,7 @@ EOYAML
 #    depends_on:
 #        - database
 #    environment:
+#        - GOVWAY_DS_JDBC_LIBS=/tmp
 #        - GOVWAY_STAT_DB_SERVER=pg_govway_${SHORT}
 #        - GOVWAY_STAT_DB_NAME=govwaydb
 #        - GOVWAY_STAT_DB_USER=govway
@@ -317,10 +328,14 @@ EOYAML
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 EOYAML
+    echo 
+    echo "ATTENZIONE: Copiare il driver jdbc PostgreSQL 'postgresql-42.7.5.jar' dentro la directory './compose/'"
+    echo
+    echo "ATTENZIONE: Copiare il driver jdbc PostgreSQL 'postgresql-42.7.5.jar' dentro la directory './compose/'" > compose/README.first
   elif [ "${DB:-hsql}" == 'mariadb' ]
   then
     cat - << EOYAML >> compose/docker-compose.yaml
-        # Il driver deve essere compiato manualmente nella directory corrente
+        # Il driver deve essere copiato manualmente nella directory corrente
         - ./mariadb-java-client-3.0.6.jar:/tmp/mariadb-java-client-3.0.6.jar 
     environment:
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -374,7 +389,7 @@ EOYAML
   elif [ "${DB:-hsql}" == 'mysql' ]
   then
     cat - << EOYAML >> compose/docker-compose.yaml
-        # Il driver deve essere compiato manualmente nella directory corrente
+        # Il driver deve essere copiato manualmente nella directory corrente
         - ./mysql-connector-java-8.0.29.jar:/tmp/mysql-connector-java-8.0.29.jar 
     environment:
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -435,7 +450,7 @@ GRANT "RESOURCE" TO "GOVWAY" ;
 EOSQL
 
     cat - << EOYAML >> compose/docker-compose.yaml
-        # Il driver deve essere compiato manualmente nella directory corrente
+        # Il driver deve essere copiato manualmente nella directory corrente
         - ./ojdbc10.jar:/tmp/ojdbc10.jar 
     environment:
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -458,7 +473,7 @@ EOSQL
 #    depends_on:
 #        - database
 #    volumes:
-#        # Il driver deve essere compiato manualmente nella directory corrente
+#        # Il driver deve essere copiato manualmente nella directory corrente
 #        - ./ojdbc10.jar:/tmp/ojdbc10.jar
 #    environment:
 #        - GOVWAY_STAT_DB_SERVER=or_govway_${SHORT}
@@ -485,6 +500,12 @@ EOSQL
     ports:
        - 1521:1521
 EOYAML
+    echo 
+    echo "ATTENZIONE: Copiare il driver jdbc Oracle 'ojdbc10.jar' dentro la directory './compose/'"
+    echo
+    echo "ATTENZIONE: Copiare il driver jdbc Oracle 'ojdbc10.jar' dentro la directory './compose/'" > compose/README.first
+
+
   fi
 fi
 exit 0
