@@ -127,7 +127,7 @@ fi
     # Server liveness
     if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
     then
-    	echo "INFO: Liveness base dati ${DESTINAZIONE} ... attendo"
+    	echo "INFO: Liveness base dati ${DESTINAZIONE} ... verifico connessione"
 	    sleep ${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME}s
 	    DB_READY=1
 	    NUM_RETRY=0
@@ -138,16 +138,16 @@ fi
             NUM_RETRY=$(( ${NUM_RETRY} + 1 ))
             if [  ${DB_READY} -ne 0 ]
             then
-                echo "INFO: Liveness base dati ${DESTINAZIONE} ... attendo"
+                echo "INFO: Liveness base dati ${DESTINAZIONE} ... fallita connessione. Riprovo"
                 sleep ${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME}s
             fi
 	    done
        	if [  ${DB_READY} -ne 0 -a ${NUM_RETRY} -eq ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY} ]
 	    then
-		    echo "FATAL: Liveness base dati ${DESTINAZIONE} ... Base dati NON disponibile dopo $((${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=} * ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY})) secondi"
+		    echo "FATAL: Liveness base dati ${DESTINAZIONE} ... connessione NON disponibile dopo $((${GOVWAY_LIVE_DB_CHECK_SLEEP_TIME=} * ${GOVWAY_LIVE_DB_CHECK_MAX_RETRY})) secondi"
 		    exit 1
         else
-            echo "INFO: Liveness base dati ${DESTINAZIONE} ... Base dati disponibile"
+            echo "INFO: Liveness base dati ${DESTINAZIONE} ... connessione disponibile"
 	    fi
     fi
     # Server Readyness
@@ -182,6 +182,7 @@ fi
 
         DB_READY=1
 	    NUM_RETRY=0
+        echo "INFO: Readyness base dati ${DESTINAZIONE} ... verifico inizializzazione"
         while [ ${DB_READY} -ne 0 -a ${NUM_RETRY} -lt ${GOVWAY_READY_DB_CHECK_MAX_RETRY} ]
 	    do
             EXIST=$(java ${INVOCAZIONE_CLIENT} --sql="${EXIST_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
@@ -213,19 +214,23 @@ fi
             POP="${POP// /}"
 
         fi
-        # Popolamento automatico del db 
-        if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
-        then 
-            if [ "${USE_RUN_DB^^}" == "TRUE" ]
+
+        if [ "${USE_RUN_DB^^}" == "TRUE" ]
+        then
+            MAX_COUNT=3
+            [ ${DESTINAZIONE} == 'CONF' ] && MAX_COUNT=1
+        else
+            MAX_COUNT=1
+        fi
+        if [ -n "${POP}" -a ${POP} -lt ${MAX_COUNT} ]
+        then
+            # Popolamento automatico del db 
+            if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
             then
-                MAX_COUNT=3
-                [ ${DESTINAZIONE} == 'CONF' ] && MAX_COUNT=1
-            else
-                MAX_COUNT=1
-            fi
-            if [ -n "${POP}" -a ${POP} -lt ${MAX_COUNT} ]
-            then
-                echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato"
+                echo "WARN: Readyness base dati ${DESTINAZIONE} ... non inizializzato (popolamento automatico abilitato)"
+                echo
+
+
                 SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
                 mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
                 #
@@ -289,7 +294,7 @@ fi
                 #
                 # Inizializzazione database ${DESTINAZIONE}
                 # 
-                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione avviata."
+                echo "INFO: Readyness base dati ${DESTINAZIONE} ... popolamento automatico avviata."
                 java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ${START_TRANSACTION}
@@ -298,26 +303,23 @@ ${START_TRANSACTION}
 COMMIT;
 EOSCRIPT
                 DB_POP=$?
+                if [  $DB_POP -eq 0 ]
+                then
+                  echo
+                  echo "INFO: Readyness base dati ${DESTINAZIONE} ... popolamento automatico completata."   
+                  echo
+                else
+                  echo
+                  echo "INFO: Readyness base dati ${DESTINAZIONE} ... popolamento automatico fallita."
+                  echo
+                  exit $DB_POP
+                fi
+            else            
+                echo "ERROR: Readyness base dati ${DESTINAZIONE} ... non inizializzato (popolamento automatico disabilitato)"
+                exit 3
             fi
-            if [ $POP -ge 1 -o $DB_POP -eq 0 ] 
-            then
-                #TODO: da valutare come soluzione per il caso delle connessioni in blocking-timeut
-                #      quando il db è hsql
-                #if  [ "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
-                #then
-                #    echo
-                #    echo "INFO: Readyness base dati ${DESTINAZIONE} ... setto dtatase in modalita MVCC."
-                #    java ${INVOCAZIONE_CLIENT} --continueOnErr=false --autoCommit govwayDB${DESTINAZIONE} << EOSCRIPT    
-    #SET DATABASE TRANSACTION CONTROL MVCC;
-    #EOSCRIPT
-                #fi
-                echo
-                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione completata."   
-            else
-                echo
-                echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzazione fallita."
-                exit $DB_POP
-            fi 
+        else 
+            echo "INFO: Readyness base dati ${DESTINAZIONE} ... inizializzata."   
         fi
     fi
 done
