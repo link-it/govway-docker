@@ -85,7 +85,7 @@ Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
  http://<indirizzo IP>:8081/govway/
 ```
 
-### Script SQL di inizializzazione della Base Dati 
+### Script SQL di inizializzazione della Base Dati
 
 All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto uno o più database non inizializzati è possibile utilizzare gli scripts SQL interni per effettuare l'inizializzazione, valorizzando la variabile **'GOVWAY_POP_DB_SKIP'** al valore **false**.
 
@@ -95,6 +95,50 @@ Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuper
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.16.p2_postgres initsql)
 docker cp ${CONTAINER_ID}:/opt/postgresql .
 ```
+
+#### Condivisione Database tra Categorie
+
+Quando più categorie di dati GovWay (Runtime, Tracciamento, Statistiche, Configurazione) condividono lo stesso database fisico, gli script SQL generati possono contenere tabelle duplicate, causando errori durante l'esecuzione manuale.
+
+Per risolvere questo problema, è possibile utilizzare la variabile **GOVWAY_DB_MAPPING** che indica quali categorie condividono il database con la categoria di default (Runtime).
+
+**Sintassi:**
+```
+GOVWAY_DB_MAPPING="<lista_categorie>"
+```
+
+Dove `<lista_categorie>` è una lista separata da virgole delle categorie che condividono il database con Runtime:
+- **T** = Tracciamento (GovWayTracciamento.sql)
+- **S** = Statistiche (GovWayStatistiche.sql)
+- **C** = Configurazione (GovWayConfigurazione.sql)
+
+**Esempi:**
+
+Tracciamento e Statistiche condividono il database con Runtime:
+```shell
+CONTAINER_ID=$(docker run -d \
+  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
+  -e GOVWAY_DB_MAPPING="T,S" \
+  linkitaly/govway:3.3.16.p2_postgres initsql)
+docker cp ${CONTAINER_ID}:/opt/postgresql .
+```
+
+Solo Tracciamento condivide il database con Runtime:
+```shell
+GOVWAY_DB_MAPPING="T"
+```
+
+Tutte le categorie condividono lo stesso database:
+```shell
+GOVWAY_DB_MAPPING="T,S,C"
+```
+
+**Comportamento:**
+- Se **GOVWAY_DB_MAPPING** non è impostata: ogni categoria ha il proprio database (comportamento predefinito)
+- Se impostata: le categorie indicate condividono il database con Runtime e gli script SQL vengono automaticamente modificati per rimuovere le tabelle duplicate
+
+
+**ATTENZIONE:** quando il conainer viene avviato bisogna assicurarsi di aver configurato le variabili di **Connessione ai database esterni** coerentemente con quanto dichiarato nella fase di generazione degli scripts nella variabile **GOVWAY_DB_MAPPING**
 
 ### Comandi di inizializzazione aggiuntiva
 
