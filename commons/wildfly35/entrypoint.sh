@@ -343,7 +343,7 @@ export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${GOVWAY_SUSP
 
 # Inizializzazione del database
 rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history}
-/usr/local/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
+/usr/local/bin/initsql.sh nohelp || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom

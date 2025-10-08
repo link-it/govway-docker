@@ -341,7 +341,7 @@ export JAVA_OPTS="$JAVA_OPTS $JVM_MEMORY_OPTS"
 
 
 # Inizializzazione del database
-/usr/local/bin/initsql.sh || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
+/usr/local/bin/initsql.sh nohelp || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
 
 # Eventuali inizializzazioni custom

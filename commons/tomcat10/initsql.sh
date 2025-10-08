@@ -107,6 +107,10 @@ fi
 echo ""
 echo "INFO: Scripts SQL inizializzati per database tipo: ${GOVWAY_DB_TYPE:-hsql}"
 echo ""
+
+# Visualizzo le istruzioni solamente in una chiamata che non avviene da entrypoint
+if [ -z "$1" ]; then
+
 echo "======================================================================"
 echo "  GUIDA PER L'INIZIALIZZAZIONE MANUALE DEI DATABASE"
 echo "======================================================================"
@@ -123,4 +127,6 @@ echo ""
 echo "  Percorso script: /opt/${GOVWAY_DB_TYPE:-hsql}/"
 echo ""
 echo "======================================================================"
+
+fi
 exit 0
