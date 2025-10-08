@@ -99,8 +99,55 @@ while getopts "ht:v:d:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
   esac
 done
 [ "${ARCHIVI}" == 'batch' -a "${DB:-hsql}" == 'hsql' ] && { echo "Il build dell'immagine batch non puo' essere eseguita per il database HSQL"; exit 4; }
-[ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a -z "${APPSERV}" ] && APPSERV='tomcat10'
-[ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a "${APPSERV}" == 'tomcat9' -o "${APPSERV}" == 'wildfly25' ] && { echo "GovWay ${LATEST_GOVWAY_RELEASE} può essere preparato solo per tomcat9 o wildfly35"; exit 4; }
+
+# Funzione per comparare versioni (ritorna 0 se $1 >= $2, 1 altrimenti)
+version_ge() {
+  local ver1="${1%%-*}"  # rimuove suffissi come -beta, -rc
+  local ver2="${2%%-*}"
+
+  # Estrai major.minor
+  local major1="${ver1%%.*}"
+  local rest1="${ver1#*.}"
+  local minor1="${rest1%%.*}"
+
+  local major2="${ver2%%.*}"
+  local rest2="${ver2#*.}"
+  local minor2="${rest2%%.*}"
+
+  # Confronta major
+  if [ "$major1" -gt "$major2" ] 2>/dev/null; then
+    return 0
+  elif [ "$major1" -lt "$major2" ] 2>/dev/null; then
+    return 1
+  fi
+
+  # Major uguale, confronta minor
+  if [ "$minor1" -ge "$minor2" ] 2>/dev/null; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Determina la versione effettiva da utilizzare
+EFFECTIVE_VERSION="${VER:-${LATEST_GOVWAY_RELEASE}}"
+
+# Per versioni >= 3.4, imposta tomcat10 come default se non specificato
+if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ -z "${APPSERV}" ]
+then
+  APPSERV='tomcat10'
+fi
+
+# Per versioni >= 3.4, tomcat9 e wildfly25 non sono supportati
+if version_ge "${EFFECTIVE_VERSION}" "3.4"
+then
+  if [ "${APPSERV}" == 'tomcat9' -o "${APPSERV}" == 'wildfly25' ]
+  then
+    echo "GovWay ${EFFECTIVE_VERSION} può essere preparato solo per tomcat10 o wildfly35"
+    exit 4
+  fi
+fi
+
 [  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=21
 
 
@@ -171,7 +218,7 @@ do
   then
     c=$(( ${#DOCKERBUILD_OPTS[@]} - 1 ))
     unset  DOCKERBUILD_OPTS[$c]
-    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} "govway_database_vendor=mariadb")
+    DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_database_vendor=mariadb")
   fi
   # Build imagini GovWAY
 
@@ -190,9 +237,15 @@ do
     esac
 
     # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni precedenti 3.4.x)
-    [ "${LATEST_GOVWAY_RELEASE%.*}" != '3.4' -a "${APPSERV:-tomcat9}" != "tomcat9" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
-    # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni 3.4.x)
-    [ "${LATEST_GOVWAY_RELEASE%.*}" == '3.4' -a "${APPSERV:-tomcat9}" != "tomcat10" -a "${ARCHIVI}" != 'batch'  ] && TAG="${TAG}_${APPSERV}"
+    if ! version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat9" ] && [ "${ARCHIVI}" != 'batch' ]
+    then
+      TAG="${TAG}_${APPSERV}"
+    fi
+    # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni >= 3.4.x)
+    if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat10" ] && [ "${ARCHIVI}" != 'batch' ]
+    then
+      TAG="${TAG}_${APPSERV}"
+    fi
 
   fi
 
