@@ -43,7 +43,6 @@ rm -f /var/tmp/govway-installer-${GOVWAY_FULLVERSION}.tgz.gitVersion ;\
 cd /opt/govway-installer-${GOVWAY_FULLVERSION}; \
 sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_FULLVERSION#%${GOVWAY_FULLVERSION}%" \
-  -e 's%#GOVWAY_DEFAULT_ENTITY_NAME#%${GOVWAY_DEFAULT_ENTITY_NAME}%' \
   -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
   -e "s%#GOVWAY_APPSERVER#%${govway_appserver}%" \
   -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
