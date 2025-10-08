@@ -298,19 +298,81 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS]**
 * ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di GOVWAY_AS_MAX_POST_SIZE]**
 
-### Configurazioni avanzate  
+### Configurazioni avanzate
 * GOVWAY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento dell'application server. (default: 20s)
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'application server (Ex OpenTelemetry)
 * GOVWAY_UUID_ALG: Algoritmo utilizzato internamente per la generazione degli UUID. (default: v1, valori ammissibili [v1, v4, {ID Algoritmo}] )
 
   La lista degli algoritmi utilizzabili si puo recuperare dal file __govway.classRegistry.properties__  dalle proprietà del tipo **org.openspcoop2.id.{ID Algoritmo}**. Inoltre si possono utilizzare le seguenti abbreviazioni:
-  - v1 o V1 ->  UUIDv1 
+  - v1 o V1 ->  UUIDv1
   - v4 o V4 ->  UUIDv4sec
+
+#### Proprietà JVM Personalizzate
+
+È possibile iniettare proprietà JVM personalizzate nel container montando un file di configurazione esterno.
+
+**Path supportati:**
+* `/etc/govway_as_jvm.properties` (raccomandato)
+* `/etc/wildfly/wildfly.properties` (deprecato, mantenuto per retrocompatibilità)
+
+**Funzionamento:**
+All'avvio del container, se esiste uno dei file sopra indicati, il suo contenuto viene automaticamente iniettato nelle proprietà di sistema della JVM:
+- **Tomcat**: il contenuto viene aggiunto a `${CATALINA_HOME}/conf/catalina.properties`
+- **WildFly**: le proprietà vengono configurate tramite system-properties della JVM
+
+**Esempio di utilizzo:**
+
+Creare un file `custom.properties`:
+```properties
+org.govway.custom.property=valore
+my.application.setting=123
+```
+
+Montare il file nel container tramite docker-compose:
+```yaml
+services:
+  govway:
+    image: linkitaly/govway:3.3.17_postgres
+    volumes:
+      - ./custom.properties:/etc/govway_as_jvm.properties:ro
+```
+
+O tramite docker run:
+```bash
+docker run -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.3.17_postgres
+```
+
+Le proprietà definite nel file diventano accessibili come system properties all'interno dell'applicazione GovWay.
+
+#### Configurazione Memoria JVM
+
+Le seguenti variabili permettono di configurare l'utilizzo della memoria da parte della JVM.
+Le impostazioni utilizzano RAM Percentage per adattarsi automaticamente ai limiti di memoria del container.
+
+**Heap Memory (RAM Percentage):**
+* GOVWAY_JVM_MAX_RAM_PERCENTAGE: Percentuale massima di RAM del container utilizzabile per l'heap JVM (default: 50 per immagini manager/all, 80 per immagini runtime e batch)
+* GOVWAY_JVM_INITIAL_RAM_PERCENTAGE: Percentuale di RAM allocata all'heap all'avvio della JVM (default: non impostato, utilizza il default della JVM)
+* GOVWAY_JVM_MIN_RAM_PERCENTAGE: Percentuale minima di RAM riservata all'heap (default: non impostato, utilizza il default della JVM)
+
+**Metaspace e Direct Memory:**
+* GOVWAY_JVM_MAX_METASPACE_SIZE: Dimensione massima del metaspace per il caricamento delle classi (es: "256m", "512m", default: illimitato)
+* GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE: Dimensione massima dei buffer di memoria diretta usati per operazioni I/O (es: "512m", "1g", default: uguale a MaxHeapSize)
+
+**Nota:** Le impostazioni basate su percentuale si adattano automaticamente quando il container viene ridimensionato o spostato su nodi con limiti di memoria diversi, rendendole ideali per ambienti Kubernetes e altri orchestratori.
+
+**Esempio:**
+```yaml
+environment:
+  - GOVWAY_JVM_MAX_RAM_PERCENTAGE=70
+  - GOVWAY_JVM_INITIAL_RAM_PERCENTAGE=50
+  - GOVWAY_JVM_MAX_METASPACE_SIZE=256m
+```
 
 #### Avviso variabili deprecate
 Di seguito una lista di variabili usate in precedenza per la configurazione avanzata. Queste variabili sono state deprecate e verrano rimosse nelle versioni successive:
 
 * ~WILDFLY_SUSPEND_TIMEOUT~: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento di wildfly. Non ha effetti per le immagini che usano Tomcat. (default: 20s) **[DEPRECATA in favore di GOVWAY_SUSPEND_TIMEOUT]**
+* ~MAX_JVM_PERC~: Percentuale massima di RAM utilizzabile dalla JVM (default: 80) **[DEPRECATA in favore di GOVWAY_JVM_MAX_RAM_PERCENTAGE]**
 
 ## Personalizzazioni Batch
 

@@ -316,12 +316,28 @@ export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*" /etc/hosts|he
 #
 
 # Impostazione Dinamica dei limiti di memoria per container
-if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "all" ]
-then 
-    export JAVA_OPTS="$JAVA_OPTS -XX:MaxRAMPercentage=50"
-else
-    export JAVA_OPTS="$JAVA_OPTS -XX:MaxRAMPercentage=${MAX_JVM_PERC:-80}"
+
+# Backward compatibility: supporto MAX_JVM_PERC deprecato
+if [ -n "${MAX_JVM_PERC}" ]; then
+    echo "WARN: La variabile MAX_JVM_PERC è deprecata. Usare GOVWAY_JVM_MAX_RAM_PERCENTAGE"
+    [ -z "${GOVWAY_JVM_MAX_RAM_PERCENTAGE}" ] && GOVWAY_JVM_MAX_RAM_PERCENTAGE="${MAX_JVM_PERC}"
 fi
+
+# Default basati su tipo archivi
+if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "all" ]; then
+    DEFAULT_MAX_RAM_PERCENTAGE=50
+else
+    DEFAULT_MAX_RAM_PERCENTAGE=80
+fi
+
+# Costruzione parametri memoria JVM
+JVM_MEMORY_OPTS="-XX:MaxRAMPercentage=${GOVWAY_JVM_MAX_RAM_PERCENTAGE:-${DEFAULT_MAX_RAM_PERCENTAGE}}"
+[ -n "${GOVWAY_JVM_INITIAL_RAM_PERCENTAGE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:InitialRAMPercentage=${GOVWAY_JVM_INITIAL_RAM_PERCENTAGE}"
+[ -n "${GOVWAY_JVM_MIN_RAM_PERCENTAGE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MinRAMPercentage=${GOVWAY_JVM_MIN_RAM_PERCENTAGE}"
+[ -n "${GOVWAY_JVM_MAX_METASPACE_SIZE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MaxMetaspaceSize=${GOVWAY_JVM_MAX_METASPACE_SIZE}"
+[ -n "${GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE}" ] && JVM_MEMORY_OPTS="$JVM_MEMORY_OPTS -XX:MaxDirectMemorySize=${GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE}"
+
+export JAVA_OPTS="$JAVA_OPTS $JVM_MEMORY_OPTS"
 
 
 # Inizializzazione del database
