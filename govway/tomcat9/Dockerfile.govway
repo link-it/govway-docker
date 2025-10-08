@@ -124,6 +124,8 @@ echo -e '# Rimuovi Resource UserDatabase \n\
 /Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.RemoteIpValve, remoteIpHeader=x-forwarded-for, proxiesHeader=x-forwarded-by, protocolHeader=x-forwarded-proto\n\
 # Configura AccessLogValve\n\
 /Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]:write-attribute directory=${GOVWAY_LOGDIR}, suffix=.log \n\
+# Nascondo informazioni del server\n\
+/Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.ErrorReportValve, showReport=false, showServerInfo=false \n\
 ' > /tmp/tomcat_configuration.cli; \
 chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
 /usr/local/bin/config_datasource.sh /tmp/tomcat_configuration.cli; \

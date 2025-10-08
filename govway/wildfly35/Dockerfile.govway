@@ -47,8 +47,8 @@ unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLV
 rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; \
 curl -LfksS -o /tmp/wildfly-${WILDFLY_VERSION}.tar.gz https://github.com/wildfly/wildfly/releases/download/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz; \
-&& curl -fsSL https://github.com/wildfly/wildfly/releases/download/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.zip.sha1 -o SHA1 \
-&& sha1sum -sc SHA1; \
+echo "$(curl -fsSL https://github.com/wildfly/wildfly/releases/download/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz.sha1 ) /tmp/wildfly-${WILDFLY_VERSION}.tar.gz" > /tmp/SHA1 \
+sha1sum -sc /tmp/SHA1; \
 tar -C /opt -xf /tmp/wildfly-${WILDFLY_VERSION}.tar.gz; \
 rm -f /tmp/wildfly-${WILDFLY_VERSION}.tar.gz 
 
@@ -91,7 +91,7 @@ ARG oracle_custom_jdbc=commons/entrypoint.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
-RUN echo 'embed-server --server-config=standalone.xml --std-out=echo \n\
+RUN echo -e 'embed-server --server-config=standalone.xml --std-out=echo \n\
 echo "Aggiungo Workers http" \n\
 /subsystem=io/worker=http-in-worker:add(task-max-threads=${env.GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS:100}) \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=worker, value=http-in-worker) \n\
@@ -125,12 +125,17 @@ echo "Abilitazione Acces Log"\n\
 echo "Sposto Server Log"\n\
 /path=goway.log.dir:add(path="${env.GOVWAY_LOGDIR}") \n\
 /subsystem=logging/periodic-rotating-file-handler=FILE:write-attribute(name=file , value={path=server.log, relative-to=goway.log.dir })\n\
+echo "Nascondo informazioni del server"\n\
+/subsystem=undertow/configuration=filter/response-header=server-header:add(header-name=Server,header-value="WebServer")\n\
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header:add\n\
+/subsystem=undertow/configuration=filter/response-header=x-powered-by-header:add(header-name=X-Powered-By,header-value="Servlet")\n\
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header:add\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli; \
 chmod 750 /usr/local/bin/config_datasource.sh; \
 /usr/local/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli; \
-${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli; \
-rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
+${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
+&& rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
