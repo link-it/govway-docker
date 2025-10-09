@@ -125,11 +125,11 @@ echo "Abilitazione Acces Log"\n\
 echo "Sposto Server Log"\n\
 /path=goway.log.dir:add(path="${env.GOVWAY_LOGDIR}") \n\
 /subsystem=logging/periodic-rotating-file-handler=FILE:write-attribute(name=file , value={path=server.log, relative-to=goway.log.dir })\n\
-echo "Nascondo informazioni del server"\n\
-/subsystem=undertow/configuration=filter/response-header=server-header:add(header-name=Server,header-value="WebServer")\n\
-/subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header:add\n\
-/subsystem=undertow/configuration=filter/response-header=x-powered-by-header:add(header-name=X-Powered-By,header-value="Servlet")\n\
-/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header:add\n\
+#echo "Nascondo informazioni del server"\n\
+#/subsystem=undertow/configuration=filter/response-header=server-header:add(header-name=Server,header-value="WebServer")\n\
+#/subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header:add\n\
+#/subsystem=undertow/configuration=filter/response-header=x-powered-by-header:add(header-name=X-Powered-By,header-value="Servlet")\n\
+#/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header:add\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli; \
 chmod 750 /usr/local/bin/config_datasource.sh; \
