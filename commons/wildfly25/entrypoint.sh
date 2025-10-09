@@ -302,7 +302,8 @@ export GOVWAY_STAT_INITIALSIZE_POOL=${GOVWAY_STAT_INITIALSIZE_POOL:-${GOVWAY_STA
 
 # Recupero l'indirizzo ip usato dal container (utilizzato dalle funzionalita di clustering / orchestration)
 export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*" /etc/hosts|head -n 1|awk '{print $1}')
-
+# 
+[ -z ${GOVWAY_SERVICE_NAME} ] && export GOVWAY_SERVICE_NAME=127.0.0.1
 #
 # Startup
 #
