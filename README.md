@@ -394,13 +394,13 @@ Le seguenti variabili permettono di configurare l'utilizzo della memoria da part
 Le impostazioni utilizzano RAM Percentage per adattarsi automaticamente ai limiti di memoria del container.
 
 **Heap Memory (RAM Percentage):**
-* GOVWAY_JVM_MAX_RAM_PERCENTAGE: Percentuale massima di RAM del container utilizzabile per l'heap JVM (default: 50 per immagini manager/all, 80 per immagini runtime e batch)
-* GOVWAY_JVM_INITIAL_RAM_PERCENTAGE: Percentuale di RAM allocata all'heap all'avvio della JVM (default: non impostato, utilizza il default della JVM)
-* GOVWAY_JVM_MIN_RAM_PERCENTAGE: Percentuale minima di RAM riservata all'heap (default: non impostato, utilizza il default della JVM)
+* GOVWAY_JVM_INITIAL_RAM_PERCENTAGE: Percentuale di RAM allocata all'heap all'avvio della JVM tramite property -XXInitialRAMPercentage (default: non impostato, utilizza il default della JVM)
+* GOVWAY_JVM_MIN_RAM_PERCENTAGE: Percentuale minima di RAM riservata all'heap tramite property -XX:MinRAMPercentage (default: non impostato, utilizza il default della JVM)
+* GOVWAY_JVM_MAX_RAM_PERCENTAGE: Percentuale massima di RAM del container utilizzabile per l'heap JVM tramite property -XX:MaxRAMPercentage (default: 50 per immagini manager/all, 80 per immagini runtime e batch)
 
 **Metaspace e Direct Memory:**
-* GOVWAY_JVM_MAX_METASPACE_SIZE: Dimensione massima del metaspace per il caricamento delle classi (es: "256m", "512m", default: illimitato)
-* GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE: Dimensione massima dei buffer di memoria diretta usati per operazioni I/O (es: "512m", "1g", default: uguale a MaxHeapSize)
+* GOVWAY_JVM_MAX_METASPACE_SIZE: Dimensione massima del metaspace per il caricamento delle classi tramite property -XX:MaxMetaspaceSize (es: "256m", "512m", default: illimitato)
+* GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE: Dimensione massima dei buffer di memoria diretta usati per operazioni I/O tramite property -XX:MaxDirectMemorySize (es: "512m", "1g", default: uguale a MaxHeapSize)
 
 **Nota:** Le impostazioni basate su percentuale si adattano automaticamente quando il container viene ridimensionato o spostato su nodi con limiti di memoria diversi, rendendole ideali per ambienti Kubernetes e altri orchestratori.
 
