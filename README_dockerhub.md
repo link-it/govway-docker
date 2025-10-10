@@ -170,7 +170,7 @@ linkitaly/govway
 
 ## Avviare una delle immagini orchestrate
 
-Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql:
+Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql (nella dir ~/postgresql/jdbc-driver deve essere presente il driver jdbc):
 
 > **_NOTA:_** la variabile 'GOVWAY_DEFAULT_ENTITY_NAME' consente di indicare il nome del soggetto operativo attivo sul dominio gestito attraverso GovWay.
 
@@ -188,9 +188,11 @@ services:
     volumes:
         - ~/govway_conf:/etc/govway
         - ~/govway_log:/var/log/govway
+        - ~/postgresql/jdbc-driver:/tmp/jdbc-driver
     environment:
         - TZ=Europe/Rome
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
+        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver        
         - GOVWAY_DB_SERVER=postgres_hostname:5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
@@ -376,7 +378,7 @@ org.openspcoop2.pdd.statistiche.pdnd.tracciamento.pubblicazione.enabled=false
 
 ```
 
-Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql:
+Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile utilizzare un docker-compose.yml simile al seguente per database postgresql (nella dir ~/postgresql/jdbc-driver deve essere presente il driver jdbc):
 
 ```yaml
 version: '2'
@@ -385,9 +387,13 @@ services:
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
     image: linkitaly/govway:3.3.17_batch_postgres
+    volumes:
+       - ~/govway_log:/var/log/govway 
+       - ~/postgresql/jdbc-driver:/tmp/jdbc-driver
     command: 
       - orarie
     environment:
+      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
       - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
       - GOVWAY_STAT_DB_NAME=govwaydb
       - GOVWAY_STAT_DB_USER=govway
@@ -449,7 +455,6 @@ services:
     container_name: govway_batch_statistiche_orarie
     image: linkitaly/govway:3.3.17_batch_oracle
     volumes:
-       - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     command: 
