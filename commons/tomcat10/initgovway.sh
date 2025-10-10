@@ -22,8 +22,8 @@ mappa_suffissi[STAT]=Statistiche
 declare -A mappa_dbinfo
 mappa_dbinfo[RUN]='db_info'
 mappa_dbinfo[CONF]='db_info_console'
-mappa_dbinfo[TRAC]='db_info'
-mappa_dbinfo[STAT]='db_info'
+mappa_dbinfo[TRAC]='transazioni'
+mappa_dbinfo[STAT]='statistiche'
 
 declare -A mappa_dbinfostring
 mappa_dbinfostring[RUN]='%Database di GovWay'
@@ -59,11 +59,14 @@ do
         eval "DBPASS=\${GOVWAY_${DESTINAZIONE}_DB_PASSWORD}"
         eval "QUERYSTRING=\${DATASOURCE_${DESTINAZIONE}_CONN_PARAM}"
     fi
+
     SERVER_PORT="${SERVER#*:}"
     SERVER_HOST="${SERVER%:*}"
+
+    # Verifico se c'è condivisione con il database di runtime
     USE_RUN_DB=FALSE
     [ "${DESTINAZIONE}" != 'RUN' -a "${SERVER}" == "${GOVWAY_DB_SERVER}" -a "${DBNAME}" == "${GOVWAY_DB_NAME}" ] && USE_RUN_DB=TRUE
-
+    [ "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' ] && USE_RUN_DB=TRUE
 
     case "${GOVWAY_DB_TYPE:-hsql}" in
     oracle)
@@ -202,27 +205,8 @@ fi
             ##ripulisco gli spazi
             EXIST="${EXIST// /}"
         fi
-        if [ ${EXIST} -eq 1 ]
-        then
-            #  possibile che il db sia usato per piu' funzioni devo verifcare che non sia gia' stato popolato
-            #DBINFONOTES="${mappa_dbinfostring[${DESTINAZIONE}]}"
-            #POP_QUERY="SELECT count(*) FROM ${DBINFO} where notes LIKE '${DBINFONOTES}';"
-
-            POP_QUERY="SELECT count(*) FROM ${DBINFO};"
-            POP=$(java ${INVOCAZIONE_CLIENT} --sql="${POP_QUERY}" govwayDB${DESTINAZIONE} 2> /dev/null)
-            ##ripulisco gli spazi
-            POP="${POP// /}"
-
-        fi
-
-        if [ "${USE_RUN_DB^^}" == "TRUE" ]
-        then
-            MAX_COUNT=3
-            [ ${DESTINAZIONE} == 'CONF' ] && MAX_COUNT=1
-        else
-            MAX_COUNT=1
-        fi
-        if [ -n "${POP}" -a ${POP} -lt ${MAX_COUNT} ]
+        POP=${EXIST} 
+        if [ -n "${POP}" -a ${POP} -eq 0 ]
         then
             # Popolamento automatico del db 
             if [ "${GOVWAY_POP_DB_SKIP^^}" == "FALSE" ]
@@ -243,25 +227,27 @@ fi
                 #
                 if [ "${DESTINAZIONE}" != 'RUN' ]
                 then
-                    if [[ ( "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' && ${DBINFO} == "db_info" ) || ( ${DBINFO} == "db_info" && "${USE_RUN_DB}" == "TRUE" ) ]]
+                    if [ "${USE_RUN_DB}" == "TRUE" ]
                     then
-                        sed  \
-                        -e '/CREATE TABLE db_info/,/;/d' \
-                        -e '/CREATE SEQUENCE seq_db_info/d' \
-                        -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
-                        -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
-                        -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
-                        -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                        -e '/CREATE TRIGGER trg_db_info/,/\//d' \
-                        /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
-		            elif [[ ( ${DBINFO} == "db_info_console" && "${USE_RUN_DB}" == "TRUE" && "${DESTINAZIONE}" == 'CONF' ) ]]
+                        if [ "${DESTINAZIONE}" == 'CONF' ]
       		        then
-                        sed  \
-                        -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
-                        -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
-                        -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
-                        -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                        /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                            sed  \
+                            -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
+                            -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
+                            -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
+                            -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
+                            /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                       else
+                           sed  \
+                           -e '/CREATE TABLE db_info/,/;/d' \
+                           -e '/CREATE SEQUENCE seq_db_info/d' \
+                           -e '/CREATE TABLE OP2_SEMAPHORE/,/;/d' \
+                           -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
+                           -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
+                           -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
+                           -e '/CREATE TRIGGER trg_db_info/,/\//d' \
+                           /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                       fi
                     fi
                 fi
                 #
