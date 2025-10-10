@@ -94,7 +94,8 @@ Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuper
 ```shell
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.0_postgres initsql); 
 docker wait ${CONTAINER_ID};
-docker cp ${CONTAINER_ID}:/opt/postgresql .
+docker cp ${CONTAINER_ID}:/opt/postgresql .;
+docker rm ${CONTAINER_ID}
 ```
 
 #### Condivisione Database tra Categorie
@@ -122,7 +123,8 @@ CONTAINER_ID=$(docker run -d \
   -e GOVWAY_DB_MAPPING="T,S" \
   linkitaly/govway:3.4.0_postgres initsql); 
 docker wait ${CONTAINER_ID};
-docker cp ${CONTAINER_ID}:/opt/postgresql .
+docker cp ${CONTAINER_ID}:/opt/postgresql .;
+docker rm ${CONTAINER_ID}
 ```
 
 Solo Tracciamento condivide il database con Runtime:

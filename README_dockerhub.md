@@ -291,7 +291,8 @@ Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è po
 ```shell
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.17_postgres initsql); 
 docker wait ${CONTAINER_ID};
-docker cp ${CONTAINER_ID}:/opt/postgresql .
+docker cp ${CONTAINER_ID}:/opt/postgresql .;
+docker rm ${CONTAINER_ID}
 ```
 
 > **_NOTA:_** Quando più categorie di dati di GovWay (ad esempio Tracciamento, Statistiche e Configurazione) condividono lo stesso database, gli script SQL generati possono includere tabelle duplicate, provocando errori durante l’esecuzione manuale. Per evitare questo problema, è possibile utilizzare la variabile **GOVWAY_DB_MAPPING**, che consente di definire la distribuzione delle diverse categorie di dati su database distinti. Le modalità di configurazione sono descritte nella sezione [Condivisione Database tra Categorie](https://github.com/link-it/govway-docker#condivisione-database-tra-categorie) della documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
