@@ -5,33 +5,41 @@
 
 ## Tags supportati e link ai rispettivi Dockerfile
 
-* [`3.3.17`, `3.3.17_standalone`, `latest` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.17_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2`, `3.3.16.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.16.p2_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2`, `3.3.15.p2_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_run_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_manager_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_run_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_manager_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
-* [`3.3.15.p2_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/govway/tomcat9/Dockerfile.govway)
+### 3.4.x
+
+* `3.4.0`, `3.4.0_standalone`, `latest`
+* `3.4.0_postgres`
+* `3.4.0_run_postgres`
+* `3.4.0_manager_postgres`
+* `3.4.0_batch_postgres`
+* `3.4.0_oracle`
+* `3.4.0_run_oracle`
+* `3.4.0_manager_oracle`
+* `3.4.0_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.0/govway/tomcat10/Dockerfile.govway)
+
+### 3.3.x
+
+* `3.3.17`, `3.3.17_standalone` 
+* `3.3.17_postgres`
+* `3.3.17_run_postgres`
+* `3.3.17_manager_postgres`
+* `3.3.17_batch_postgres`
+* `3.3.17_oracle`
+* `3.3.17_run_oracle`
+* `3.3.17_manager_oracle`
+* `3.3.17_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
+* `3.3.16.p2`, `3.3.16.p2_standalone`
+* `3.3.16.p2_postgres`
+* `3.3.16.p2_run_postgres`
+* `3.3.16.p2_manager_postgres`
+* `3.3.16.p2_batch_postgres`
+* `3.3.16.p2_oracle`
+* `3.3.16.p2_run_oracle`
+* `3.3.16.p2_manager_oracle`
+* `3.3.16.p2_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -178,7 +186,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.17_postgres
+    image: linkitaly/govway:3.4.0_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -206,7 +214,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.3.17_oracle
+    image: linkitaly/govway:3.4.0_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -318,6 +326,7 @@ Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il camb
 
 Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica di application server di base da wildfly 26.1.3 a tomcat 9.0.x. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
 
+
   ```
     chown -R 999:999 ~/govway_conf
     chown -R 999:999 ~/govway_log
@@ -344,6 +353,7 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 - riavvare il docker-compose. 
 
 > **_NOTA:_** una volta applicate le patch di upgrade descritte in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update) la base dati non risulta più compatibile con la precedente versione del software. Si consiglia di effettuare un backup prima di procedere con l'upgrade in modo da poter effettuare un eventuale downgrade di versione.
+
 
 ### Standalone
 
@@ -403,45 +413,27 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.17_batch_postgres
+    image: linkitaly/govway:3.4.0_batch_postgres
     command: 
       - giornaliere
     environment:
-      - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.3.17_batch_postgres
+    image: linkitaly/govway:3.4.0_batch_postgres
     command: 
       - generaReportPDND
     environment:
-      - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.3.17_batch_postgres
+    image: linkitaly/govway:3.4.0_batch_postgres
     command: 
       - pubblicaReportPDND
     environment:
-      - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
 ```
 
 Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracle11g/jdbc-driver deve essere presente il driver jdbc):
@@ -452,7 +444,7 @@ services:
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.17_batch_oracle
+    image: linkitaly/govway:3.4.0_batch_oracle
     volumes:
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
@@ -471,7 +463,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.3.17_batch_oracle
+    image: linkitaly/govway:3.4.0_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -479,19 +471,11 @@ services:
     command: 
       - giornaliere
     environment:
-      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
-      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.3.17_batch_oracle
+    image: linkitaly/govway:3.4.0_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -499,19 +483,11 @@ services:
     command: 
       - generaReportPDND
     environment:
-      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
-      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.3.17_batch_oracle
+    image: linkitaly/govway:3.4.0_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -519,15 +495,8 @@ services:
     command: 
       - pubblicaReportPDND
     environment:
-      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
-      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=30
-      - TZ=Europe/Rome
+      - ... come esempio 'batch_stat_orarie' ...
+
 ```
 
 
@@ -544,13 +513,28 @@ $ docker-compose up
 
 ## Versione Snapshot
 
+### 3.4.x
+
+Ogni modifica dei sorgenti attuata sul branch '3.4.x' del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway4/job/GovWay/).
+Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway4-testsuite/installer/) scaricabile dall'ambiente di CI.
+
+Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway):
+
+* `master4`, `master4_standalone` 
+* `master4_postgres`
+* `master4_oracle`
+* `master4_batch_postgres`
+* `master4_batch_oracle`
+
+### 3.3.x
+
 Ogni modifica dei sorgenti attuata sul master del progetto viene validata nell'ambiente di [continuous integration](https://jenkins.link.it/govway/job/GovWay/).
 Il processo produce un [installer della versione snapshot](https://jenkins.link.it/govway-testsuite/installer/) scaricabile dall'ambiente di CI.
 
-Vengono inoltre fornite le seguenti immagini per le versioni snapshot:
+Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway):
 
-* [`master`, `master_standalone` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_batch_postgres` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
-* [`master_batch_oracle` (Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/Dockerfile.govway)
+* `master`, `master_standalone` 
+* `master_postgres` 
+* `master_oracle`
+* `master_batch_postgres`
+* `master_batch_oracle`
