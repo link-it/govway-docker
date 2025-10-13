@@ -1,7 +1,12 @@
 - *3.4.1* / *3.3.18*
 
-   - Eliminata esposizione di informazioni sulla versione di Tomcat;
-   - Introdotta le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties'.
+   - Eliminata esposizione di informazioni sulla versione di Tomcat.
+   - Introdotte le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties'.
+   - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti. 
+   - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM:
+	- le variabili GOVWAY_JVM_INITIAL_RAM_PERCENTAGE, GOVWAY_JVM_MIN_RAM_PERCENTAGE e GOVWAY_JVM_MAX_RAM_PERCENTAGE consentono di agire sui parametri di memoria riservata all'heap:  -XXInitialRAMPercentage, -XX:MinRAMPercentage e -XX:MaxRAMPercentage
+	- la variabile GOVWAY_JVM_MAX_METASPACE_SIZE consente di agire sulla dimensione massima del metaspace per il caricamento delle classi: -XX:MaxMetaspaceSize
+        - la variabile GOVWAY_JVM_MAX_DIRECT_MEMORY_SIZE consente di indicare la dimensione massima dei buffer di memoria diretta usati per operazioni I/O: -XX:MaxDirectMemorySize
 
 - *3.3.17*
 
