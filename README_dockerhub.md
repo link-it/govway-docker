@@ -48,6 +48,11 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.4.1* / *3.3.18*
+
+   - Eliminata esposizione di informazioni sulla versione di Tomcat;
+   - Introdotta le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties'.
+
 - *3.3.17*
 
    - Aggiornato application server di base (Tomcat) alla versione 9.0.107.
@@ -57,27 +62,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
    - Aggiornato application server di base (Tomcat) alla versione 9.0.105.
 
-- *3.3.16.p1*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.104.
-
-- *3.3.16.b1*
-
-   - Modificato sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3.
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.102.
-   - Aggiornato hsql alla versione 2.7.4.
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.5.
-
-- *3.3.16*
-
-   - Generate immagini 'multi-arch' compatibili con le architetture ARM64 e AMD64.
-   - Introdotta la variabile 'GOVWAY_UUID_ALG' per configurare la versione degli UUID generati da GovWay.
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.98.
-
-- *3.3.15*
-
-   - Modificato sistema operativo di base da Centos 7 (causa EOL) a Ubuntu 22 LTS (Jammy).
-   - Modificato application server di base da Wildfly 26.1.3 a Tomcat 9.0.91.
+- Storico completo delle modifiche consultabile nel [ChangeLog del progetto [Govway-Docker](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/ChangeLog).
 
 
 ## Nomenclatura delle immagini fornite
@@ -94,21 +79,33 @@ Esistono ulteriori immagini che consentono di mantenere i dati su un database po
 
 - **manager_postgres** o **manager_oracle**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
 
-Le console disponibili nell'ambiente manager hanno la necessità di accedere ai seguenti servizi esposti dai nodi run:
+Le console disponibili nell’ambiente manager necessitano di accedere ad alcuni servizi esposti dai nodi run, utilizzati per il monitoraggio e la gestione distribuita:
 
-- servizio 'check': consente di monitorare il servizio dei nodi run; è possibile invocare il contesto "/govway/check" di un qualsiasi nodo run (riferendo l'endpoint di esposizione del servizio dei nodi run) o un servizio fornito dal container;
+- servizio 'check': consente di monitorare lo stato del servizio dei nodi run; è possibile invocare il contesto "/govway/check" di un qualsiasi nodo run (riferendo l'endpoint di esposizione del servizio dei nodi run) o un servizio fornito dal container;
 
 - servizio 'proxy': consente di inviare un comando ad ogni nodo run attivo; deve essere indirizzato il servizio "/govway/proxy" di un qualsiasi nodo attivo.
 
-L'indirizzamento utilizzato deve essere definito nel file '/etc/govway/govway.nodirun.properties' come segue:
+L’ambiente manager accede ai due servizi tramite le seguenti URL di default:
+
+- ${GOVWAY_SERVICE_PROTOCOL}://${GOVWAY_SERVICE_HOST}:${GOVWAY_SERVICE_PORT}/govway/check
+- ${GOVWAY_SERVICE_PROTOCOL}://${GOVWAY_SERVICE_HOST}:${GOVWAY_SERVICE_PORT}/govway/proxy
+
+Se non ridefinite, le variabili d’ambiente assumono i seguenti valori predefiniti:
+
+- GOVWAY_SERVICE_PROTOCOL = http
+- GOVWAY_SERVICE_HOST = 127.0.0.1
+- GOVWAY_SERVICE_PORT = 8082
+
+In alternativa è possibile ridefinire completamente l’indirizzamento dei servizi dei nodi run tramite il file di configurazione
+"/etc/govway/govway.nodirun.properties", come nell’esempio seguente:
 
 ```
 # ===================================================================
 # Indirizzamento servizi dei nodi 'run' 
 # Servizio 'proxy'
-GovWay.remoteAccess.url=http://<service-name>/govway/proxy
+GovWay.remoteAccess.url=http://<service-name:8082>/govway/proxy
 # Servizio 'check'
-GovWay.remoteAccess.checkStatus.url=http://<service-name>/govway/check
+GovWay.remoteAccess.checkStatus.url=http://<service-name>:8082/govway/check
 # ===================================================================
 ```
 

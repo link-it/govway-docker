@@ -54,7 +54,7 @@ si possono rendere queste location persistenti, montando dei volumi su queste di
 
 ### Servizi attivi
 
-Le immagini prodotte utilizzano come application server ospite WildFly 26.1.3.Final, in ascolto per default sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
+Le immagini prodotte utilizzano un application server ospite, in ascolto per default sia in protocollo _**AJP**_ sulla porta **8009** sia in _**HTTP**_ su 3 porte in modo da gestire il traffico su ogni porta, con un listener dedicato:
 - **8080**: Listener dedicato al traffico in erogazione (max-thread-pool default: 100)
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
