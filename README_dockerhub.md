@@ -63,6 +63,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
    - Introdotte le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties';
    - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti.;
    - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM.
+   - Introdotto 'Health Check' per ambiente manager
 
 - *3.3.17*
 
