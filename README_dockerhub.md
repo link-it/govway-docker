@@ -120,6 +120,13 @@ GovWay.remoteAccess.checkStatus.url=http://<service-name>:8082/govway/check
 # ===================================================================
 ```
 
+### Health Check
+
+I seguenti contesti possono essere utilizzati come health check:
+
+- run: /govway/check
+- manager: /govwayMonitor/check
+
 ## Avviare l'immagine standalone
 
 Eseguire il _run_ dell'immagine:
