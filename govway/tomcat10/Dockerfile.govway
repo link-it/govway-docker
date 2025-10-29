@@ -26,7 +26,7 @@ GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.4 \
 POSTGRES_JDBC_VERSION=42.7.8 \
-TOMCAT_VERSION=11.0.12 \
+TOMCAT_VERSION=11.0.13 \
 CATALINA_HOME=/usr/local/tomcat \
 TZ="Europe/Rome" 
 

@@ -64,6 +64,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
    - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti.;
    - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM.
    - Introdotto 'Health Check' per ambiente manager
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.111 per la 3.3.18 e alla versione 11.0.13 per la 3.4.1.
 
 - *3.3.17*
 
