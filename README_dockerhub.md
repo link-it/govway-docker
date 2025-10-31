@@ -7,6 +7,16 @@
 
 ### 3.4.x
 
+* `3.4.1`, `3.4.1_standalone`, `latest`
+* `3.4.1_postgres`
+* `3.4.1_run_postgres`
+* `3.4.1_manager_postgres`
+* `3.4.1_batch_postgres`
+* `3.4.1_oracle`
+* `3.4.1_run_oracle`
+* `3.4.1_manager_oracle`
+* `3.4.1_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.1/govway/tomcat10/Dockerfile.govway)
 * `3.4.0`, `3.4.0_standalone`, `latest`
 * `3.4.0_postgres`
 * `3.4.0_run_postgres`
@@ -20,6 +30,16 @@
 
 ### 3.3.x
 
+* `3.3.18`, `3.3.18_standalone` 
+* `3.3.18_postgres`
+* `3.3.18_run_postgres`
+* `3.3.18_manager_postgres`
+* `3.3.18_batch_postgres`
+* `3.3.18_oracle`
+* `3.3.18_run_oracle`
+* `3.3.18_manager_oracle`
+* `3.3.18_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.18/govway/tomcat9/Dockerfile.govway)
 * `3.3.17`, `3.3.17_standalone` 
 * `3.3.17_postgres`
 * `3.3.17_run_postgres`
@@ -30,16 +50,6 @@
 * `3.3.17_manager_oracle`
 * `3.3.17_batch_oracle`
 * [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
-* `3.3.16.p2`, `3.3.16.p2_standalone`
-* `3.3.16.p2_postgres`
-* `3.3.16.p2_run_postgres`
-* `3.3.16.p2_manager_postgres`
-* `3.3.16.p2_batch_postgres`
-* `3.3.16.p2_oracle`
-* `3.3.16.p2_run_oracle`
-* `3.3.16.p2_manager_oracle`
-* `3.3.16.p2_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.16.p2/govway/tomcat9/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -58,7 +68,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 - *3.4.1* / *3.3.18*
 
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.7
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.8
    - Eliminata esposizione di informazioni sulla versione di Tomcat;
    - Introdotte le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties';
    - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti.;
@@ -75,7 +85,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
    - Aggiornato application server di base (Tomcat) alla versione 9.0.105.
 
-- Storico completo delle modifiche consultabile nel [ChangeLog del progetto [Govway-Docker](https://github.com/link-it/govway-docker/blob/gw_3.3.15.p2/ChangeLog).
+- Storico completo delle modifiche consultabile nel [ChangeLog](https://github.com/link-it/govway-docker/blob/master/ChangeLog) del progetto [Govway-Docker](https://github.com/link-it/govway-docker/).
 
 
 ## Nomenclatura delle immagini fornite
@@ -196,7 +206,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.0_postgres
+    image: linkitaly/govway:3.4.1_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -224,7 +234,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.0_oracle
+    image: linkitaly/govway:3.4.1_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -423,7 +433,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.0_batch_postgres
+    image: linkitaly/govway:3.4.1_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -431,7 +441,7 @@ services:
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.0_batch_postgres
+    image: linkitaly/govway:3.4.1_batch_postgres
     command: 
       - generaReportPDND
     environment:
@@ -439,7 +449,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.0_batch_postgres
+    image: linkitaly/govway:3.4.1_batch_postgres
     command: 
       - pubblicaReportPDND
     environment:
@@ -454,7 +464,7 @@ services:
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.4.0_batch_oracle
+    image: linkitaly/govway:3.4.1_batch_oracle
     volumes:
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
@@ -473,7 +483,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.0_batch_oracle
+    image: linkitaly/govway:3.4.1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -485,7 +495,7 @@ services:
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.0_batch_oracle
+    image: linkitaly/govway:3.4.1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -497,7 +507,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.0_batch_oracle
+    image: linkitaly/govway:3.4.1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway

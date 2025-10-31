@@ -24,7 +24,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.4.0
+linkitaly/govway:3.4.1
 
 ```
 
@@ -92,7 +92,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.0_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1_postgres initsql); 
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -121,7 +121,7 @@ Tracciamento e Statistiche condividono il database con Runtime:
 CONTAINER_ID=$(docker run -d \
   -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -e GOVWAY_DB_MAPPING="T,S" \
-  linkitaly/govway:3.4.0_postgres initsql); 
+  linkitaly/govway:3.4.1_postgres initsql); 
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -183,7 +183,7 @@ Es:
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.4.0_batch_postgres giornaliere
+linkitaly/govway:3.4.1_batch_postgres giornaliere
 ```
 
 ### Modalita Cron ###
