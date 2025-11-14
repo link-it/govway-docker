@@ -1,4 +1,4 @@
-<img height="70px" alt="Logo GovWay" src="https://govway.org/assets/images/gway_logo.svg">
+<img src="https://www.link.it/wp-content/uploads/2025/01/logo-govway.svg" alt="GovWay Logo" width="200"/>
 
 # Docker Image
 
