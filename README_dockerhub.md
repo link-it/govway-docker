@@ -7,16 +7,16 @@
 
 ### 3.4.x
 
-* `3.4.1`, `3.4.1_standalone`, `latest`
-* `3.4.1_postgres`
-* `3.4.1_run_postgres`
-* `3.4.1_manager_postgres`
-* `3.4.1_batch_postgres`
-* `3.4.1_oracle`
-* `3.4.1_run_oracle`
-* `3.4.1_manager_oracle`
-* `3.4.1_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.1/govway/tomcat10/Dockerfile.govway)
+* `3.4.1.p1`, `3.4.1.p1_standalone`, `latest`
+* `3.4.1.p1_postgres`
+* `3.4.1.p1_run_postgres`
+* `3.4.1.p1_manager_postgres`
+* `3.4.1.p1_batch_postgres`
+* `3.4.1.p1_oracle`
+* `3.4.1.p1_run_oracle`
+* `3.4.1.p1_manager_oracle`
+* `3.4.1.p1_batch_oracle`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.1.p1/govway/tomcat10/Dockerfile.govway)
 * `3.4.0`, `3.4.0_standalone`, `latest`
 * `3.4.0_postgres`
 * `3.4.0_run_postgres`
@@ -206,7 +206,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1_postgres
+    image: linkitaly/govway:3.4.1.p1_postgres
     ports:
         - 8080:8080
         - 8081:8081
@@ -234,7 +234,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1_oracle
+    image: linkitaly/govway:3.4.1.p1_oracle
     ports:
         - 8080:8080
         - 8081:8081
@@ -318,7 +318,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.3.17_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1.p1_postgres initsql); 
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -433,7 +433,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1_batch_postgres
+    image: linkitaly/govway:3.4.1.p1_batch_postgres
     command: 
       - giornaliere
     environment:
@@ -441,7 +441,7 @@ services:
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1_batch_postgres
+    image: linkitaly/govway:3.4.1.p1_batch_postgres
     command: 
       - generaReportPDND
     environment:
@@ -449,7 +449,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1_batch_postgres
+    image: linkitaly/govway:3.4.1.p1_batch_postgres
     command: 
       - pubblicaReportPDND
     environment:
@@ -464,7 +464,7 @@ services:
  
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.4.1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch_oracle
     volumes:
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
@@ -483,7 +483,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -495,7 +495,7 @@ services:
       
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
@@ -507,7 +507,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch_oracle
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway

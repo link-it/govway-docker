@@ -24,7 +24,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.4.1
+linkitaly/govway:3.4.1.p1
 
 ```
 
@@ -92,7 +92,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1.p1_postgres initsql); 
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -121,7 +121,7 @@ Tracciamento e Statistiche condividono il database con Runtime:
 CONTAINER_ID=$(docker run -d \
   -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -e GOVWAY_DB_MAPPING="T,S" \
-  linkitaly/govway:3.4.1_postgres initsql); 
+  linkitaly/govway:3.4.1.p1_postgres initsql); 
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -183,7 +183,7 @@ Es:
 docker run 
 -e <VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.4.1_batch_postgres giornaliere
+linkitaly/govway:3.4.1.p1_batch_postgres giornaliere
 ```
 
 ### Modalita Cron ###
@@ -380,14 +380,14 @@ Montare il file nel container tramite docker-compose:
 ```yaml
 services:
   govway:
-    image: linkitaly/govway:3.3.17_postgres
+    image: linkitaly/govway:3.4.1.p1_postgres
     volumes:
       - ./custom.properties:/etc/govway_as_jvm.properties:ro
 ```
 
 O tramite docker run:
 ```bash
-docker run -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.3.17_postgres
+docker run -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.4.1.p1_postgres
 ```
 
 Le proprietà definite nel file diventano accessibili come system properties all'interno dell'applicazione GovWay.
