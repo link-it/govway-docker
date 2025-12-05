@@ -3,7 +3,7 @@ CLI_SCRIPT_FILE="$1"
 CLI_SCRIPT_CUSTOM_DIR="${CATALINA_HOME}/conf/custom_cli"
 
 
-case "${GOVWAY_DB_TYPE:-hsql}" in
+case "${GOVWAY_DB_TYPE}" in
 postgresql)
     
     GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
@@ -67,7 +67,7 @@ oracle)
     JDBC_STAT_URL='jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_STAT_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}'
 
 ;;
-hsql|*)
+hsql)
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 

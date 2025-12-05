@@ -70,13 +70,14 @@ ENV JAVA_OPTS="-server \
 ARG source_image
 ARG govway_archives_type=all
 ENV GOVWAY_BUILT_FROM=${source_image}:${govway_fullversion} \
-GOVWAY_ARCHIVES_TYPE=${govway_archives_type} 
-ARG govway_database_vendor=hsql
-ENV GOVWAY_DB_TYPE=${govway_database_vendor}
+GOVWAY_ARCHIVES_TYPE=${govway_archives_type}
 
 COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/archivi/${govway_archives_type}/* ${JBOSS_HOME}/standalone/deployments/
 #COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/cfg/${govway_archives_type}/* ${GOVWAY_HOME}/
-COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/* /opt/${govway_database_vendor}
+COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/hsql /opt/hsql
+COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/postgresql /opt/postgresql
+COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/mysql /opt/mysql
+COPY --from=source_image_full --chown=wildfly:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/oracle /opt/oracle
 COPY --from=source_image_full --chown=0:0 /opt/change_dir_perms /usr/local/bin
 
 
@@ -133,13 +134,12 @@ echo "Sposto Server Log"\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli; \
 chmod 750 /usr/local/bin/config_datasource.sh; \
-/usr/local/bin/config_datasource.sh /tmp/govway_standalone_configuration.cli; \
 ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
 && rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/${GOVWAY_DB_TYPE}/ \
+&& chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ \
 && chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 

@@ -3,7 +3,6 @@ ARG govway_fullversion
 ARG source_image
 ARG govway_batch_home=/var/govway/batch
 ARG govway_log=/var/log/govway
-ARG govway_database_vendor=postgresql
 ARG jdk_version=11
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
@@ -62,7 +61,5 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 
 COPY commons/run_batch.sh /usr/local/bin
 RUN chown -R root:0 /usr/local/bin/run_batch.sh /etc/crontabs/root && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh /etc/crontabs/root
-ARG govway_database_vendor
-ENV GOVWAY_DB_TYPE=${govway_database_vendor} 
 ENTRYPOINT [ "/usr/local/bin/run_batch.sh" ]
 CMD [ "Orarie" ]
