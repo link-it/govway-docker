@@ -135,9 +135,9 @@ rm -rf /tmp/*;
 
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
-&& chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ \
-&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/tomcat-cli.sh \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 
 

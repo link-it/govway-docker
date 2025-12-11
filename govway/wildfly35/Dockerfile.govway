@@ -138,9 +138,9 @@ ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
 && rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
-&& chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${JBOSS_HOME}/modules/*Mod/main/ ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ \
-&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 
 

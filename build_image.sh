@@ -289,6 +289,8 @@ services:
 #    #command: Orarie # << default
 #    depends_on:
 #        - database
+#    volumes:
+#        - ./postgresql-42.7.5.jar:/tmp/postgresql-42.7.5.jar
 #    environment:
 #        - GOVWAY_DB_TYPE=postgresql
 #        - GOVWAY_DS_JDBC_LIBS=/tmp

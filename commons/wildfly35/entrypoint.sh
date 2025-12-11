@@ -21,6 +21,8 @@ declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
+declare -r DATASOURCE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_datasource_init"
+
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
 then
@@ -34,24 +36,6 @@ then
     fi
     exit 1
 fi
-
-# Validazione GOVWAY_DB_TYPE obbligatorio
-case "${GOVWAY_DB_TYPE}" in
-hsql|mysql|mariadb|postgresql|oracle)
-    echo "INFO: GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}"
-    ;;
-*)
-    echo "FATAL: Sanity check variabili ... fallito."
-    if [ -z "${GOVWAY_DB_TYPE}" ]
-    then
-        echo "FATAL: La variabile obbligatoria GOVWAY_DB_TYPE non è stata definita"
-    else
-        echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
-    fi
-    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
-    exit 1
-    ;;
-esac
 
 
 #
@@ -77,6 +61,7 @@ mysql|mariadb|postgresql|oracle)
     then
             [ -n "${GOVWAY_DB_PASSWORD}" ] || echo "WARN: La variabile GOVWAY_DB_PASSWORD non è stata impostata."
             echo "INFO: Sanity check variabili ... ok."
+            echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
     else
         echo "FATAL: Sanity check variabili ... fallito."
         echo "FATAL: Devono essere settate almeno le seguenti variabili obbligatorie:
@@ -237,6 +222,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
 
 ;;
 hsql)
+    echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
     #GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     export GOVWAY_DS_JDBC_LIBS="/tmp/hsql-jdbc"
     mkdir /tmp/hsql-jdbc
@@ -249,6 +235,17 @@ hsql)
     export GOVWAY_DB_USER=govway
     export GOVWAY_DB_NAME=govway
     export GOVWAY_DB_PASSWORD=govway
+;;
+*)
+    echo "FATAL: Sanity check variabili ... fallito."
+    if [ -z "${GOVWAY_DB_TYPE}" ]
+    then
+        echo "FATAL: La variabile obbligatoria GOVWAY_DB_TYPE non è stata definita"
+    else
+        echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
+    fi
+    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
+    exit 1
 ;;
 esac
 
@@ -362,28 +359,22 @@ fi
 export JAVA_OPTS="$JAVA_OPTS -Dorg.wildfly.sigterm.suspend.timeout=${GOVWAY_SUSPEND_TIMEOUT:-20}"
 
 
-# Configurazione Datasource a runtime (se non esistono già)
-declare -r DATASOURCE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_datasource_init"
-if [ ! -f "${DATASOURCE_INIT_FILE}" ]
-then
-    # Verifica se i datasource esistono già in standalone.xml
-    if ! grep -q 'jndi-name="java:/org.govway.datasource"' "${JBOSS_HOME}/standalone/configuration/standalone.xml" 2>/dev/null
-    then
-        echo "INFO: Configurazione datasource ... in corso"
-        /usr/local/bin/config_datasource.sh /tmp/__datasource_configuration.cli
-        ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/__datasource_configuration.cli
-        rm -f /tmp/__datasource_configuration.cli
-        echo "INFO: Configurazione datasource ... completata"
-    else
-        echo "INFO: Datasource già configurati"
-    fi
-    touch "${DATASOURCE_INIT_FILE}"
-fi
+
 
 # Inizializzazione del database
 rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history}
 /usr/local/bin/initsql.sh nohelp || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
+
+# Configurazione Datasource a runtime 
+if [ ! -f "${DATASOURCE_INIT_FILE}" ]
+then
+    echo "INFO: Configurazione datasource ... in corso"
+    /usr/local/bin/config_datasource.sh /tmp/__datasource_configuration.cli
+    ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/__datasource_configuration.cli
+    echo "INFO: Configurazione datasource ... completata"
+    touch "${DATASOURCE_INIT_FILE}"
+fi
 
 # Eventuali inizializzazioni custom
 if [ ! -f "${MODULE_INIT_FILE}" ]

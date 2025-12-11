@@ -21,6 +21,7 @@ declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${CATALINA_HOME}/conf/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${CATALINA_HOME}/conf/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${CATALINA_HOME}/conf/fix_connettori_init"
+declare -r DATASOURCE_INIT_FILE="${CATALINA_HOME}/conf/fix_datasource_init"
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
 then
@@ -34,24 +35,6 @@ then
     fi
     exit 1
 fi
-
-# Validazione GOVWAY_DB_TYPE obbligatorio
-case "${GOVWAY_DB_TYPE}" in
-hsql|mysql|mariadb|postgresql|oracle)
-    echo "INFO: GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}"
-    ;;
-*)
-    echo "FATAL: Sanity check variabili ... fallito."
-    if [ -z "${GOVWAY_DB_TYPE}" ]
-    then
-        echo "FATAL: La variabile obbligatoria GOVWAY_DB_TYPE non è stata definita"
-    else
-        echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
-    fi
-    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
-    exit 1
-    ;;
-esac
 
 
 #
@@ -77,6 +60,7 @@ mysql|mariadb|postgresql|oracle)
     then
             [ -n "${GOVWAY_DB_PASSWORD}" ] || echo "WARN: La variabile GOVWAY_DB_PASSWORD non è stata impostata."
             echo "INFO: Sanity check variabili ... ok."
+            echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
     else
         echo "FATAL: Sanity check variabili ... fallito."
         echo "FATAL: Devono essere settate almeno le seguenti variabili obbligatorie:
@@ -237,6 +221,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
 
 ;;
 hsql)
+    echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
     #GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     export GOVWAY_DS_JDBC_LIBS="/tmp/hsql-jdbc"
     mkdir /tmp/hsql-jdbc
@@ -250,6 +235,17 @@ hsql)
     export GOVWAY_DB_NAME=govway
     export GOVWAY_DB_PASSWORD=govway
 ;;
+*)
+    echo "FATAL: Sanity check variabili ... fallito."
+    if [ -z "${GOVWAY_DB_TYPE}" ]
+    then
+        echo "FATAL: La variabile obbligatoria GOVWAY_DB_TYPE non è stata definita"
+    else
+        echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
+    fi
+    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
+    exit 1
+    ;;
 esac
 
 
@@ -332,7 +328,6 @@ export GW_IPADDRESS=$(grep -E "[[:space:]]${HOSTNAME}[[:space:]]*" /etc/hosts|he
 [ -z ${GOVWAY_SERVICE_PROTOCOL} ] && export GOVWAY_SERVICE_PROTOCOL=http
 [ -z ${GOVWAY_SERVICE_HOST} ] && export GOVWAY_SERVICE_HOST=127.0.0.1
 [ -z ${GOVWAY_SERVICE_PORT} ] && export GOVWAY_SERVICE_PORT=8082
-
 #
 # Startup
 #
@@ -362,27 +357,20 @@ JVM_MEMORY_OPTS="-XX:MaxRAMPercentage=${GOVWAY_JVM_MAX_RAM_PERCENTAGE:-${DEFAULT
 export JAVA_OPTS="$JAVA_OPTS $JVM_MEMORY_OPTS"
 
 
-# Configurazione Datasource a runtime (se non esistono già)
-declare -r DATASOURCE_INIT_FILE="${CATALINA_HOME}/conf/fix_datasource_init"
-if [ ! -f "${DATASOURCE_INIT_FILE}" ]
-then
-    # Verifica se i datasource esistono già in server.xml
-    if ! xmlstarlet sel -t -v "//Resource[@name='org.govway.datasource']/@name" "${CATALINA_HOME}/conf/server.xml" 2>/dev/null | grep -q 'org.govway.datasource'
-    then
-        echo "INFO: Configurazione datasource ... in corso"
-        /usr/local/bin/config_datasource.sh /tmp/__datasource_configuration.cli
-        /usr/local/bin/tomcat-cli.sh /tmp/__datasource_configuration.cli
-        rm -f /tmp/__datasource_configuration.cli
-        echo "INFO: Configurazione datasource ... completata"
-    else
-        echo "INFO: Datasource già configurati"
-    fi
-    touch "${DATASOURCE_INIT_FILE}"
-fi
 
 # Inizializzazione del database
 /usr/local/bin/initsql.sh nohelp || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
+
+# Configurazione Datasource a runtime
+if [ ! -f "${DATASOURCE_INIT_FILE}" ]
+then
+    echo "INFO: Configurazione datasource ... in corso"
+    /usr/local/bin/config_datasource.sh "/tmp/__datasource_configuration.cli"
+    /usr/local/bin/tomcat-cli.sh "/tmp/__datasource_configuration.cli"
+    echo "INFO: Configurazione datasource ... completata"
+    touch "${DATASOURCE_INIT_FILE}"
+fi
 
 # Eventuali inizializzazioni custom
 if [ ! -f "${MODULE_INIT_FILE}" ]
