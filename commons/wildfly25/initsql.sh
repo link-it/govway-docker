@@ -23,7 +23,7 @@ fi
 # Sostituisco il placeholder GOVWAY_DEFAULT_ENTITY_NAME in tutti gli SQL
 sed -i -e \
 "s/\${GOVWAY_DEFAULT_ENTITY_NAME}/${GOVWAY_DEFAULT_ENTITY_NAME}/g" \
-/opt/${GOVWAY_DB_TYPE:-hsql}/*.sql
+/opt/${GOVWAY_DB_TYPE}/*.sql
 RET=$?
 
 if [ $RET -ne 0 ]; then
@@ -54,7 +54,7 @@ if [ -n "${GOVWAY_DB_MAPPING}" ]; then
                     -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                     -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
                     -e '/CREATE TRIGGER trg_db_info/,/\//d' \
-                    /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
+                    /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
                 ;;
             S)
                 SUFFISSO="Statistiche"
@@ -67,7 +67,7 @@ if [ -n "${GOVWAY_DB_MAPPING}" ]; then
                     -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                     -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
                     -e '/CREATE TRIGGER trg_db_info/,/\//d' \
-                    /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
+                    /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
                 ;;
             C)
                 SUFFISSO="Configurazione"
@@ -77,7 +77,7 @@ if [ -n "${GOVWAY_DB_MAPPING}" ]; then
                     -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
                     -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                     -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                    /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
+                    /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
                 ;;
             *)
                 echo "WARN: Categoria sconosciuta '${CATEGORY}' in GOVWAY_DB_MAPPING. Categorie valide: T, S, C"
@@ -87,10 +87,10 @@ if [ -n "${GOVWAY_DB_MAPPING}" ]; then
 fi
 
 # Aggiusto l'SQL per i database MySQL e MariaDB
-if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'mariadb' ]; then
+if [ "${GOVWAY_DB_TYPE}" == 'mysql' -o "${GOVWAY_DB_TYPE}" == 'mariadb' ]; then
     echo "INFO: Applicazione trasformazioni SQL per MySQL/MariaDB"
 
-    for SQL_FILE in /opt/${GOVWAY_DB_TYPE:-hsql}/*.sql; do
+    for SQL_FILE in /opt/${GOVWAY_DB_TYPE}/*.sql; do
         [ ! -f "$SQL_FILE" ] && continue
 
         # Impostazione sql_mode per MySQL 8
@@ -105,7 +105,7 @@ if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'maria
 fi
 
 echo ""
-echo "INFO: Scripts SQL inizializzati per database tipo: ${GOVWAY_DB_TYPE:-hsql}"
+echo "INFO: Scripts SQL inizializzati per database tipo: ${GOVWAY_DB_TYPE}"
 echo ""
 
 # Visualizzo le istruzioni solamente in una chiamata che non avviene da entrypoint
@@ -124,7 +124,7 @@ echo "  GovWayConfigurazione.sql + GovWayConfigurazione_init.sql -> ${db_mapping
 echo "  GovWayTracciamento.sql + GovWayTracciamento_init.sql   -> ${db_mapping[TRAC]}"
 echo "  GovWayStatistiche.sql + GovWayStatistiche_init.sql    -> ${db_mapping[STAT]}"
 echo ""
-echo "  Percorso script: /opt/${GOVWAY_DB_TYPE:-hsql}/"
+echo "  Percorso script: /opt/${GOVWAY_DB_TYPE}/"
 echo ""
 echo "======================================================================"
 

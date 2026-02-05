@@ -21,10 +21,11 @@ declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${CATALINA_HOME}/conf/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${CATALINA_HOME}/conf/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${CATALINA_HOME}/conf/fix_connettori_init"
+declare -r DATASOURCE_INIT_FILE="${CATALINA_HOME}/conf/fix_datasource_init"
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
 then
-        
+
     echo "FATAL: Sanity check variabili ... fallito."
     if [ -z "${GOVWAY_DEFAULT_ENTITY_NAME}" ]
     then
@@ -49,7 +50,7 @@ then
 fi
 
 
-case "${GOVWAY_DB_TYPE:-hsql}" in
+case "${GOVWAY_DB_TYPE}" in
 mysql|mariadb|postgresql|oracle)
 
     #
@@ -59,6 +60,7 @@ mysql|mariadb|postgresql|oracle)
     then
             [ -n "${GOVWAY_DB_PASSWORD}" ] || echo "WARN: La variabile GOVWAY_DB_PASSWORD non è stata impostata."
             echo "INFO: Sanity check variabili ... ok."
+            echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
     else
         echo "FATAL: Sanity check variabili ... fallito."
         echo "FATAL: Devono essere settate almeno le seguenti variabili obbligatorie:
@@ -80,7 +82,7 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         fi
     fi
 
-    case "${GOVWAY_DB_TYPE:-hsql}" in
+    case "${GOVWAY_DB_TYPE}" in
     postgresql)
         if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
         then           
@@ -218,19 +220,38 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
     esac
 
 ;;
-hsql|*)
+hsql)
+    echo "INFO: Tipo database configurato: ${GOVWAY_DB_TYPE}"
+    
+    # Default basati su tipo archivi
+    if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "runtime" ]; then
+	echo "FATAL: Per il database hsql viene supportata solamente l'immagine standalone; non vengono supportate le immagini '*_run', '*_manager' e '*_batch'"
+	exit 1
+    fi
+    
     #GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
     export GOVWAY_DS_JDBC_LIBS="/tmp/hsql-jdbc"
     mkdir /tmp/hsql-jdbc
     /bin/cp -f "/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar" ${GOVWAY_DS_JDBC_LIBS}
 
-    
+
     export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
     export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 
     export GOVWAY_DB_USER=govway
     export GOVWAY_DB_NAME=govway
     export GOVWAY_DB_PASSWORD=govway
+;;
+*)
+    echo "FATAL: Sanity check variabili ... fallito."
+    if [ -z "${GOVWAY_DB_TYPE}" ]
+    then
+        echo "FATAL: La variabile obbligatoria GOVWAY_DB_TYPE non è stata definita"
+    else
+        echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
+    fi
+    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
+    exit 1
 ;;
 esac
 
@@ -343,9 +364,20 @@ JVM_MEMORY_OPTS="-XX:MaxRAMPercentage=${GOVWAY_JVM_MAX_RAM_PERCENTAGE:-${DEFAULT
 export JAVA_OPTS="$JAVA_OPTS $JVM_MEMORY_OPTS"
 
 
+
 # Inizializzazione del database
 /usr/local/bin/initsql.sh nohelp || { echo "FATAL: Scripts sql non inizializzati."; exit 1; }
 /usr/local/bin/initgovway.sh || { echo "FATAL: Database non inizializzato."; exit 1; }
+
+# Configurazione Datasource a runtime
+if [ ! -f "${DATASOURCE_INIT_FILE}" ]
+then
+    echo "INFO: Configurazione datasource ... in corso"
+    /usr/local/bin/config_datasource.sh "/tmp/__datasource_configuration.cli"
+    /usr/local/bin/tomcat-cli.sh "/tmp/__datasource_configuration.cli"
+    echo "INFO: Configurazione datasource ... completata"
+    touch "${DATASOURCE_INIT_FILE}"
+fi
 
 # Eventuali inizializzazioni custom
 if [ ! -f "${MODULE_INIT_FILE}" ]

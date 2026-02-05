@@ -66,9 +66,9 @@ do
     # Verifico se c'è condivisione con il database di runtime
     USE_RUN_DB=FALSE
     [ "${DESTINAZIONE}" != 'RUN' -a "${SERVER}" == "${GOVWAY_DB_SERVER}" -a "${DBNAME}" == "${GOVWAY_DB_NAME}" ] && USE_RUN_DB=TRUE
-    [ "${GOVWAY_DB_TYPE:-hsql}" == 'hsql' ] && USE_RUN_DB=TRUE
+    [ "${GOVWAY_DB_TYPE}" == 'hsql' ] && USE_RUN_DB=TRUE
 
-    case "${GOVWAY_DB_TYPE:-hsql}" in
+    case "${GOVWAY_DB_TYPE}" in
     oracle)
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1521
         JDBC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${SERVER_HOST}:${SERVER_PORT}${ORACLE_JDBC_DB_SEPARATOR}${DBNAME}${QUERYSTRING}"
@@ -89,7 +89,7 @@ do
         JDBC_URL="jdbc:mariadb://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
     ;;
-    hsql|*)
+    hsql)
         DBNAME=govway
         DBUSER=govway
         DBPASS=govway
@@ -128,7 +128,7 @@ fi
 
 
     # Server liveness
-    if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE:-hsql}" != 'hsql' ]
+    if [ "${GOVWAY_LIVE_DB_CHECK_SKIP^^}" == "FALSE" -a "${GOVWAY_DB_TYPE}" != 'hsql' ]
     then
     	echo "INFO: Liveness base dati ${DESTINAZIONE} ... verifico connessione"
 	    sleep ${GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME}s
@@ -163,7 +163,7 @@ fi
 
         DBINFO="${mappa_dbinfo[${DESTINAZIONE}]}"    
         
-        case "${GOVWAY_DB_TYPE:-hsql}" in
+        case "${GOVWAY_DB_TYPE}" in
         oracle)
         EXIST_QUERY="SELECT count(table_name) FROM all_tables WHERE  LOWER(table_name)='${DBINFO,,}' AND LOWER(owner)='${DBUSER,,}';" 
         ;;
@@ -216,12 +216,12 @@ fi
 
 
                 SUFFISSO="${mappa_suffissi[${DESTINAZIONE}]}"
-                mkdir -p /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+                mkdir -p /var/tmp/${GOVWAY_DB_TYPE}/
                 #
                 # Ignoro in caso il file SQL non esista
                 #
-                [ ! -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql ] && continue
-                /bin/cp -f /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE:-hsql}/
+                [ ! -f /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql ] && continue
+                /bin/cp -f /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}*.sql /var/tmp/${GOVWAY_DB_TYPE}/
                 #
                 # Elimino la creazione di tabelle comuni se il database e' utilizzato per piu funzioni (evita errore tabella gia' esistente)
                 #
@@ -236,7 +236,7 @@ fi
                             -e '/CREATE SEQUENCE seq_OP2_SEMAPHORE/d' \
                             -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                             -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
-                            /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                            /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql 
                        else
                            sed  \
                            -e '/CREATE TABLE db_info/,/;/d' \
@@ -246,36 +246,36 @@ fi
                            -e '/CREATE TRIGGER trg_OP2_SEMAPHORE/,/\//d' \
                            -e '/CREATE UNIQUE INDEX idx_semaphore_1/d' \
                            -e '/CREATE TRIGGER trg_db_info/,/\//d' \
-                           /opt/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                           /opt/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql > /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql 
                        fi
                     fi
                 fi
                 #
                 # Aggiusto l'SQL per i database MySQL e MariaDB 
                 #
-                if [ "${GOVWAY_DB_TYPE:-hsql}" == 'mysql' -o "${GOVWAY_DB_TYPE:-hsql}" == 'mariadb' ]
+                if [ "${GOVWAY_DB_TYPE}" == 'mysql' -o "${GOVWAY_DB_TYPE}" == 'mariadb' ]
                 then
                     # Impostazione sql_mode per Mysql 8
                     SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
-                    sed -i -r -e "s/^SET @@SESSION.sql_mode=(.*)/-- SET @@SESSION.sql_mode=\1\n\n-- Per MySQL 8\nSET @@SESSION.sql_mode='${SQL_MODE}';/" /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                    sed -i -r -e "s/^SET @@SESSION.sql_mode=(.*)/-- SET @@SESSION.sql_mode=\1\n\n-- Per MySQL 8\nSET @@SESSION.sql_mode='${SQL_MODE}';/" /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql 
 
                     # I COMMENT delle colonne e delle tabelle contengono il carattere apice con escape; "\'"
                     # sembra che questo causi dei problemi nell'interpretare corettamente lo script al client 
                     # Sostituisco la coppia di caratteri con uno spazio singolo
                     #
-                    sed -i -e "/COMMENT/s%\\\'% %g" /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql 
+                    sed -i -e "/COMMENT/s%\\\'% %g" /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql 
                 fi
                 #
                 # Aggiusto l'SQL per il database oracle 
                 #
-                if [ "${GOVWAY_DB_TYPE:-hsql}" == 'oracle' ]
+                if [ "${GOVWAY_DB_TYPE}" == 'oracle' ]
                 then
                     # La sintassi dei trigger è problematica
                     # utilizzo la raw mode per evitare errori di sintassi
                     # http://www.hsqldb.org/doc/2.0/util-guide/sqltool-chapt.html#sqltool_raw-sect
                     #
                     sed -i -e '/^CREATE TRIGGER .*$/i \
-\\.' -e 's/^\/$/.\n:;/' /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
+\\.' -e 's/^\/$/.\n:;/' /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
                 fi
                 #
                 # Inizializzazione database ${DESTINAZIONE}
@@ -284,8 +284,8 @@ fi
                 java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ${START_TRANSACTION}
-\i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}.sql
-\i /var/tmp/${GOVWAY_DB_TYPE:-hsql}/GovWay${SUFFISSO}_init.sql
+\i /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
+\i /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}_init.sql
 COMMIT;
 EOSCRIPT
                 DB_POP=$?

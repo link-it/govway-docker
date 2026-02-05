@@ -25,7 +25,6 @@ GOVWAY_FULLVERSION=${govway_fullversion}
 
 COPY commons/ant.install.properties.template /var/tmp/
 
-ARG govway_database_vendor=hsql
 ARG govway_stats_mode=runtime
 RUN set -eux; \
 curl -LksS  https://github.com/link-it/GovWay/releases/download/${GOVWAY_FULLVERSION}/govway-installer-${GOVWAY_FULLVERSION}.tgz | tar -xzf- -C /opt ; \
@@ -35,17 +34,12 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e "s%#GOVWAY_HOME#%${GOVWAY_HOME}%" \
   -e "s%#GOVWAY_APPSERVER#%${govway_appserver}%" \
   -e "s%#GOVWAY_LOGDIR#%${GOVWAY_LOGDIR}%" \
-  -e "s%#GOVWAY_DATABASE_TIPO#%${govway_database_vendor}%" \
   -e "s%#GOVWAY_STATS_MODE#%${govway_stats_mode}%"\
   -e 's%org.openspcoop2.pdd.cluster_id=\$\{HOSTNAME\}%org.openspcoop2.pdd.cluster_id=${GW_IPADDRESS}%' \
   -e 's%org.openspcoop2.pdd.idGenerator=UUIDv1%org.openspcoop2.pdd.idGenerator=${GOVWAY_RESOLVED_UUID_ALG}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
-if [ ${govway_database_vendor} == 'mysql' -o ${govway_database_vendor} == 'mariadb' ]; then \
-sed -i -e 's/antinstaller_index_statistiche=full/antinstaller_index_statistiche=standard/' -e 's/antinstaller_index_transazioni=full/antinstaller_index_transazioni=standard/' /var/tmp/ant.install.properties.template; \
-fi; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
-./install.sh text-auto; \
-mv dist/sql/ dist/${govway_database_vendor} && mkdir dist/sql/ && mv dist/${govway_database_vendor} dist/sql/ 
+./install.sh text-auto 
 
 ARG runtime_custom_archives=commons/ant.install.properties.template
 ARG manager_custom_archives=commons/ant.install.properties.template

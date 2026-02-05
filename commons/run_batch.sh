@@ -7,17 +7,31 @@ set -x
 
 case "$1" in
 Orarie|orarie|Oraria|oraria) TIPO='StatisticheOrarie'
-COMANDO=generaStatisticheOrarie.sh
-INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-5} ;;
+    COMANDO=generaStatisticheOrarie.sh
+    INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-5} ;;
 Giornaliere|giornaliere|Giornaliera|giornaliera) TIPO='StatisticheGiornaliere'
-COMANDO=generaStatisticheGiornaliere.sh
-INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
+    COMANDO=generaStatisticheGiornaliere.sh
+    INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 GeneraReportPDND|generareportpdnd|generaReportPDND|GeneraReportPdnd|generaReportPdnd) TIPO='GenerazioneCSVTracingPDND'
-COMANDO=generaReportPDND.sh
-INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
+    COMANDO=generaReportPDND.sh
+    INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 PubblicaReportPDND|pubblicareportpdnd|pubblicaReportPDND|PubblicaReportPdnd|pubblicaReportPdnd) TIPO='PubblicazioneCSVTracingPDND'
-COMANDO=pubblicaReportPDND.sh
-INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
+    COMANDO=pubblicaReportPDND.sh
+    declare -r GOVWAY_STARTUP_ENTITY_REGEX=^[0-9A-Za-z][\-A-Za-z0-9]*$
+    if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
+    then
+
+        echo "FATAL: Sanity check variabili ... fallito."
+        if [ -z "${GOVWAY_DEFAULT_ENTITY_NAME}" ]
+        then
+            echo "FATAL: La variabile GOVWAY_DEFAULT_ENTITY_NAME è obbligatoria per l'operaione ${1}"
+        else
+            echo "FATAL: GOVWAY_DEFAULT_ENTITY_NAME può iniziare solo con un carattere o cifra [0-9A-Za-z] e dev'essere formato solo da caratteri, cifre e '-'"
+        fi
+        exit 1
+    fi
+
+    INTERVALLO_SCHEDULAZIONE=${GOVWAY_BATCH_INTERVALLO_CRON:-30} ;;
 *) echo "Tipo di statistiche non supportato: '$1'"
    exit 1
    ;;
@@ -256,8 +270,7 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 
 
 ;;
-# Temporanemaente disabilitato
-# hsql)
+hsql)
 #     export GOVWAY_DRIVER_JDBC="/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/hsqldb.jar"
 #     export GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
 #     export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
@@ -265,13 +278,10 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
 #     export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
 #     export JDBC_TRAC_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
 #     export JDBC_STAT_URL="jdbc:hsqldb:file:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/govway;shutdown=true"
-
-
-# ;;
-
-
-
-
+    # Default basati su tipo archivi
+    echo "FATAL: Per il database hsql viene supportata solamente l'immagine standalone; non vengono supportate le immagini '*_run', '*_manager' e '*_batch'"
+    exit 1
+;;
 *) 
     echo "FATAL: Sanity check variabili ... fallito."
     echo "FATAL: la variabile GOVWAY_DB_TYPE non è valida: '${GOVWAY_DB_TYPE}'"

@@ -3,7 +3,7 @@ CLI_SCRIPT_FILE="$1"
 CLI_SCRIPT_CUSTOM_DIR="${JBOSS_HOME}/standalone/configuration/custom_cli"
 
 
-case "${GOVWAY_DB_TYPE:-hsql}" in
+case "${GOVWAY_DB_TYPE}" in
 postgresql)
 
     GOVWAY_DS_DRIVER_CLASS='org.postgresql.Driver'
@@ -100,7 +100,7 @@ oracle)
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
 
 ;;
-hsql|*)
+hsql)
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'
 
@@ -124,13 +124,13 @@ esac
 
 cat - << EOCLI >> "${CLI_SCRIPT_FILE}"
 embed-server --server-config=standalone.xml --std-out=echo
-echo "Carico modulo e driver JDBC per ${GOVWAY_DB_TYPE:-hsql}"
-module add --name=${GOVWAY_DB_TYPE:-hsql}Mod --resources=/tmp/placeholder-driver-jdbc.jar --dependencies=javax.api,javax.transaction.api --allow-nonexistent-resources
-/subsystem=datasources/jdbc-driver=${GOVWAY_DB_TYPE:-hsql}Driver:add(driver-name=${GOVWAY_DB_TYPE:-hsql}Driver, driver-module-name=${GOVWAY_DB_TYPE:-hsql}Mod, driver-class-name=${GOVWAY_DS_DRIVER_CLASS})
+echo "Carico modulo e driver JDBC per ${GOVWAY_DB_TYPE}"
+module add --name=${GOVWAY_DB_TYPE}Mod --resources=/tmp/placeholder-driver-jdbc.jar --dependencies=javax.api,javax.transaction.api --allow-nonexistent-resources
+/subsystem=datasources/jdbc-driver=${GOVWAY_DB_TYPE}Driver:add(driver-name=${GOVWAY_DB_TYPE}Driver, driver-module-name=${GOVWAY_DB_TYPE}Mod, driver-class-name=${GOVWAY_DS_DRIVER_CLASS})
 stop-embedded-server
 embed-server --server-config=standalone.xml --std-out=echo
 echo "Preparo datasource org.govway.datasource"
-/subsystem=datasources/data-source=org.govway.datasource: add(jndi-name=java:/org.govway.datasource,enabled=true,use-java-context=true,use-ccm=true, connection-url="${JDBC_RUN_URL}", driver-name=${GOVWAY_DB_TYPE:-hsql}Driver)
+/subsystem=datasources/data-source=org.govway.datasource: add(jndi-name=java:/org.govway.datasource,enabled=true,use-java-context=true,use-ccm=true, connection-url="${JDBC_RUN_URL}", driver-name=${GOVWAY_DB_TYPE}Driver)
 ${JDBC_RUN_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=driver-class, value="${GOVWAY_DS_DRIVER_CLASS}")
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=check-valid-connection-sql, value="${GOVWAY_DS_VALID_CONNECTION_SQL}")
@@ -145,7 +145,7 @@ ${JDBC_RUN_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=min-pool-size, value=\${env.GOVWAY_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=max-pool-size, value=\${env.GOVWAY_MAX_POOL:50})
 echo "Preparo datasource org.govway.datasource.console"
-/subsystem=datasources/data-source=org.govway.datasource.console: add(jndi-name=java:/org.govway.datasource.console,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_CONF_URL}", driver-name=${GOVWAY_DB_TYPE:-hsql}Driver)
+/subsystem=datasources/data-source=org.govway.datasource.console: add(jndi-name=java:/org.govway.datasource.console,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_CONF_URL}", driver-name=${GOVWAY_DB_TYPE}Driver)
 ${JDBC_CONF_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=driver-class, value="${GOVWAY_DS_DRIVER_CLASS}")
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=check-valid-connection-sql, value="${GOVWAY_DS_VALID_CONNECTION_SQL}")
@@ -160,7 +160,7 @@ ${JDBC_CONF_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=min-pool-size, value=\${env.GOVWAY_CONF_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=max-pool-size, value=\${env.GOVWAY_CONF_MAX_POOL:10})
 echo "Preparo datasource org.govway.datasource.tracciamento"
-/subsystem=datasources/data-source=org.govway.datasource.tracciamento: add(jndi-name=java:/org.govway.datasource.tracciamento,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_TRAC_URL}", driver-name=${GOVWAY_DB_TYPE:-hsql}Driver)
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: add(jndi-name=java:/org.govway.datasource.tracciamento,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_TRAC_URL}", driver-name=${GOVWAY_DB_TYPE}Driver)
 ${JDBC_TRAC_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=driver-class, value="${GOVWAY_DS_DRIVER_CLASS}")
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=check-valid-connection-sql, value="${GOVWAY_DS_VALID_CONNECTION_SQL}")
@@ -175,7 +175,7 @@ ${JDBC_TRAC_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=min-pool-size, value=\${env.GOVWAY_TRAC_MIN_POOL:2})
 /subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=max-pool-size, value=\${env.GOVWAY_TRAC_MAX_POOL:50})
 echo "Preparo datasource org.govway.datasource.statistiche"
-/subsystem=datasources/data-source=org.govway.datasource.statistiche: add(jndi-name=java:/org.govway.datasource.statistiche,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_STAT_URL}", driver-name=${GOVWAY_DB_TYPE:-hsql}Driver)
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: add(jndi-name=java:/org.govway.datasource.statistiche,enabled=true,use-java-context=true,use-ccm=true, statistics-enabled=true, connection-url="${JDBC_STAT_URL}", driver-name=${GOVWAY_DB_TYPE}Driver)
 ${JDBC_STAT_AUTH}
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=driver-class, value="${GOVWAY_DS_DRIVER_CLASS}")
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=check-valid-connection-sql, value="${GOVWAY_DS_VALID_CONNECTION_SQL}")

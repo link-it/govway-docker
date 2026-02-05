@@ -5,6 +5,9 @@ ant.install.config.version=0.0
 antinstaller_versione_attuale_con_p_level=#GOVWAY_FULLVERSION#
 antinstaller_versione_attuale=#GOVWAY_FULLVERSION#
 antinstaller_versione_precedente=
+antinstaller_entity_env=true
+antinstaller_dbType_env=true
+antinstaller_allSql=true
 
 # Modalità Installazione
 antinstaller_conf_avanzata_enabled=
@@ -16,7 +19,8 @@ antinstaller_architettura_avanzata_enabled=true
 antinstaller_directory_lavoro_openspcoop=#GOVWAY_HOME#
 antinstaller_directory_log_openspcoop=#GOVWAY_LOGDIR#
 antinstaller_as=#GOVWAY_APPSERVER#
-antinstaller_tipo_database=#GOVWAY_DATABASE_TIPO#
+### il valore non viene utilizzato per la generazione (perhe usato antinstaller_allSql=true)
+antinstaller_tipo_database=postgresql
 
 # Informazioni Dispiegamento
 antinstaller_config_db=config
