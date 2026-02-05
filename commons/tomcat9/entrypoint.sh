@@ -225,7 +225,7 @@ hsql)
     
     # Default basati su tipo archivi
     if [ ${GOVWAY_ARCHIVES_TYPE} == "manager" -o ${GOVWAY_ARCHIVES_TYPE} == "runtime" ]; then
-	echo "FATAL: Per il database hsql viene supportata solamente l'immagine standalone; non vengono supportate le immagini '*_runtime', '*_manager' e '*_batch'"
+	echo "FATAL: Per il database hsql viene supportata solamente l'immagine standalone; non vengono supportate le immagini '*_run', '*_manager' e '*_batch'"
 	exit 1
     fi
     
