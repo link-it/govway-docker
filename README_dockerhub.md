@@ -61,7 +61,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 * Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
 * Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI) e gestione dei token rilasciati dalla PDND. Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
-* Conformità alle specifiche dell'interoperabilità europea: supporto supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
+* Conformità alle specifiche dell'interoperabilità europea: supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
 ## Release Notes
@@ -71,7 +71,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
    - Aggiornato driver jdbc di postgresql alla versione 42.7.8
    - Eliminata esposizione di informazioni sulla versione di Tomcat;
    - Introdotte le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties';
-   - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti.;
+   - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti;
    - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM.
    - Introdotto 'Health Check' per ambiente manager
    - Aggiornato application server di base (Tomcat) alla versione 9.0.111 per la 3.3.18 e alla versione 11.0.13 per la 3.4.1.
@@ -301,19 +301,19 @@ L'account di default per l'interfaccia **govwayMonitor** è:
  * username: operatore
  * password: 123456
 
-Il contesto di accesso ai servizi dell`API gateway per le erogazioni di API:
+Il contesto di accesso ai servizi dell'API gateway per le erogazioni di API:
 ```
  http://<indirizzo IP>:8080/govway/
 ```
 
-Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
+Il contesto di accesso ai servizi dell'API gateway per le fruizioni di API:
 ```
  http://<indirizzo IP>:8081/govway/
 ```
 
 ### Script SQL di inizializzazione della BaseDati
 
-All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzatti gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
+All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzati gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
 
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
 
@@ -361,7 +361,7 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
 
 - aggiornare la base dati come indicato in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update);
 
-  - nel caso di un aggiornamento da una versione precedente alla 3.3.15, è necessario applicare i seguenti script SQL aggiuntivi sulla base dati, a causa della modifica dell'application server di base da WildFly a Tomcat:"
+  - nel caso di un aggiornamento da una versione precedente alla 3.3.15, è necessario applicare i seguenti script SQL aggiuntivi sulla base dati, a causa della modifica dell'application server di base da WildFly a Tomcat:
   
     ```
     update registri set location='java:/comp/env/org.govway.datasource.console';
@@ -370,7 +370,7 @@ Se è stato utilizzato un docker-compose su ambiente orchestrato (postgresql o o
     
 - riferire la nuova versione all'interno del docker-compose;
 
-- riavvare il docker-compose. 
+- riavviare il docker-compose. 
 
 > **_NOTA:_** una volta applicate le patch di upgrade descritte in [README.update](https://github.com/link-it/govway/blob/master/resources/sql_upgrade/README.update) la base dati non risulta più compatibile con la precedente versione del software. Si consiglia di effettuare un backup prima di procedere con l'upgrade in modo da poter effettuare un eventuale downgrade di versione.
 

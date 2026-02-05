@@ -2,7 +2,7 @@
 
 ## Panoramica
 
-`tomcat-cli.sh` è uno strumento di gestione della configurazione per Apache Tomcat che permette di modificare i file XML di configurazione di Tomcat (`server.xml` e `context.xml`) utilizzando una sintassi semplice basata su direttive. Fornisce un'alternativa all'interfaccia CLI native di WildFly per i deployment di GovWay basati su Tomcat.
+`tomcat-cli.sh` è uno strumento di gestione della configurazione per Apache Tomcat che permette di modificare i file XML di configurazione di Tomcat (`server.xml` e `context.xml`) utilizzando una sintassi semplice basata su direttive. Fornisce un'alternativa all'interfaccia CLI nativa di WildFly per i deployment di GovWay basati su Tomcat.
 
 Lo strumento è disponibile in `/usr/local/bin/tomcat-cli.sh` all'interno dei container GovWay costruiti con Tomcat 9 o Tomcat 10.
 

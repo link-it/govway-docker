@@ -9,7 +9,7 @@ Per semplificare il più possibile la preparazione dell'ambiente, sulla root del
 
 Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, ossia una immagine in modalità standalone realizzata a partire dalla release binaria disponibile su GitHub.
 
-Eseguendo invece lo scropt con il parametro '-h' è possibile conoscere i parametri di personalizzazione esistenti.
+Eseguendo invece lo script con il parametro '-h' è possibile conoscere i parametri di personalizzazione esistenti.
 
 ## Avvio immagine Docker
 
@@ -75,7 +75,7 @@ L'account di default per l'interfaccia **govwayMonitor** è:
  * username: operatore
  * password: 123456
 
-Il contesto di accesso ai servizi dell`API gateway per le erogazioni di API:
+Il contesto di accesso ai servizi dell'API gateway per le erogazioni di API:
 ```
  http://<indirizzo IP>:8080/govway/
 ```
@@ -142,7 +142,7 @@ GOVWAY_DB_MAPPING="T,S,C"
 - Se impostata: le categorie indicate condividono il database con Runtime e gli script SQL vengono automaticamente modificati per rimuovere le tabelle duplicate
 
 
-**ATTENZIONE:** quando il conainer viene avviato bisogna assicurarsi di aver configurato le variabili di **Connessione ai database esterni** coerentemente con quanto dichiarato nella fase di generazione degli scripts nella variabile **GOVWAY_DB_MAPPING**
+**ATTENZIONE:** quando il container viene avviato bisogna assicurarsi di aver configurato le variabili di **Connessione ai database esterni** coerentemente con quanto dichiarato nella fase di generazione degli scripts nella variabile **GOVWAY_DB_MAPPING**
 
 ### Comandi di inizializzazione aggiuntiva
 
@@ -164,7 +164,7 @@ Questo tipo di immagini si differenzia dalle immagini run, manager e full per il
 
 ### Tipo di statistiche da generare ###
 Il batch è in grado di gestire:
-- generazione di statistiche con campionamentoorario;
+- generazione di statistiche con campionamento orario;
 - generazione di statistiche con campionamento giornaliero; 
 - generazione di report CSV nel formato atteso dalla PDND;
 - pubblicazione dei report CSV prodotti tramite le API Interop della PDND.
@@ -210,13 +210,13 @@ A runtime il container esegue i controlli di: raggiungibilita del database, di p
 
 E' possibile personalizzare il ciclo di controllo di raggiungibilità dei server database impostando le seguenti variabili d'ambiente:
 * GOVWAY_LIVE_DB_CHECK_FIRST_SLEEP_TIME: tempo di attesa, in secondi, prima di effettuare la prima verifica (default: 0)
-* GOVWAY_LIVE_DB_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un tentativo di connessione faallito ed il successivo (default: 2)
+* GOVWAY_LIVE_DB_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un tentativo di connessione fallito ed il successivo (default: 2)
 * GOVWAY_LIVE_DB_CHECK_MAX_RETRY: Numero massimo di tentativi di connessione (default: 30)
 * GOVWAY_LIVE_DB_CHECK_CONNECT_TIMEOUT: Timeout di connessione al server, in secondi (default: 5)
 
 
 E' possibile personalizzare il ciclo di controllo di popolamento dei server database impostando le seguenti variabili d'ambiente:
-* GOVWAY_READY_DB_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un tentativo di connessione faallito ed il successivo (default: 2)
+* GOVWAY_READY_DB_CHECK_SLEEP_TIME: tempo di attesa, in secondi, tra un tentativo di connessione fallito ed il successivo (default: 2)
 * GOVWAY_READY_DB_CHECK_MAX_RETRY: Numero massimo di tentativi di connessione (default: 5)
 
 
@@ -436,7 +436,7 @@ Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti c
 Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguenti variabili obbligatorie:
 
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccai JDBC java.sql.Driver (obbligatorio solo per tutti i database tranne HSQL)
+di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio solo per tutti i database tranne HSQL)
 
   ***AVVISO COMPORTAMENTO DEPRECATO: le immagini PostgreSQL al momento contengono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
 
