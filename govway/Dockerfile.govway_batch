@@ -24,7 +24,7 @@ ENV GOVWAY_BATCH_HOME=${govway_batch_home} \
 JAVA_HOME=/usr/lib/jvm/java-${jdk_version}-openjdk \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
-POSTGRES_JDBC_VERSION=42.7.8 \
+POSTGRES_JDBC_VERSION=42.7.9 \
 TZ="Europe/Rome" 
 
 RUN set -eux; \

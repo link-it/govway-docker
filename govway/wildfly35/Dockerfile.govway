@@ -25,9 +25,9 @@ GOVWAY_HOME_HTTPS=${govway_home}_https \
 GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.4 \
-POSTGRES_JDBC_VERSION=42.7.8 \
-WILDFLY_VERSION=36.0.1.Final \
-JBOSS_HOME=/opt/wildfly-36.0.1.Final \
+POSTGRES_JDBC_VERSION=42.7.9 \
+WILDFLY_VERSION=39.0.0.Final \
+JBOSS_HOME=/opt/wildfly-39.0.0.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true \
 TZ="Europe/Rome" 
 

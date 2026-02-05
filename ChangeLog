@@ -1,3 +1,17 @@
+- *3.4.2*
+
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.18.
+
+- *3.3.19*
+
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.115.
+
+- *3.4.2* / *3.3.19*
+
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.9
+   - Una singola immagine supporta ora tutti i database, semplificando build e deployment.
+     Introdotta la variabile obbligatoria GOVWAY_DB_TYPE a runtime per selezionare il database (hsql, postgresql, mysql, mariadb, oracle).
+
 - *3.4.1*
 
    - Aggiornato application server di base (Tomcat) alla versione 11.0.13.
