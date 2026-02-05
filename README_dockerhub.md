@@ -61,7 +61,6 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 * Conformità agli standard di mercato: gestione protocolli standard di mercato, come SOAP 1.1 e 1.2, API restful serializzate in Json o XML o semplici dati binari su Http.
 * Conformità alle specifiche italiane per l'interoperabilità: supporto delle nuove linee guida per l'interoperabilità di AGID (ModI) e gestione dei token rilasciati dalla PDND. Viene inoltre assicurata la retrocompatibilità con il protocollo SPCoop, ancora ampiamente adottato per i servizi della PA.
-* Conformità alle specifiche dell'interoperabilità europea: supporto del protocollo AS4, tramite integrazione con il Building Block eDelivery del progetto europeo CEF (Connecting European Facilities).
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
 ## Release Notes
