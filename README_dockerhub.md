@@ -90,17 +90,35 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Nomenclatura delle immagini fornite
 
-- **standalone**: fornisce un ambiente di prova di GovWay funzionante dove i dati di configurazione e tracciamento vengono mantenuti su un database HSQL interno al container;
+### Versioni 3.4.2 / 3.3.19 e successive
 
-- **postgres** o **oracle**: fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database postgresql o oracle, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
+A partire dalla versione 3.4.2 / 3.3.19, l'immagine Docker è **unica e multi-database**: supporta i database hsql, postgresql, mysql, mariadb e oracle. La scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
+
+> **_BREAKING CHANGE:_** Aggiornando da una versione precedente è necessario aggiungere la variabile d'ambiente `GOVWAY_DB_TYPE` alla configurazione del container (es. docker-compose.yaml o comando docker run). I valori ammessi sono: hsql, postgresql, mysql, mariadb, oracle.
+
+- **standalone** (GOVWAY_DB_TYPE=hsql): fornisce un ambiente di prova di GovWay funzionante dove i dati di configurazione e tracciamento vengono mantenuti su un database HSQL interno al container;
+
+- **orchestrate** (GOVWAY_DB_TYPE=postgresql|mysql|mariadb|oracle): fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database esterno, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
+
+Esistono ulteriori immagini che suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
+
+- **run**: contiene solamente il componente runtime di api gateway;
+
+- **manager**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
+
+### Versioni precedenti alla 3.4.2 / 3.3.19
+
+Nelle versioni precedenti, venivano fornite immagini separate per ogni tipo di database:
+
+- **standalone**: ambiente con database HSQL interno al container;
+
+- **postgres** o **oracle**: immagine specifica per database postgresql o oracle esterno;
+
+- **run_postgres** o **run_oracle**: componente runtime per database postgresql o oracle;
+
+- **manager_postgres** o **manager_oracle**: console e servizi API per database postgresql o oracle.
 
 ### Ambienti run e manager
-
-Esistono ulteriori immagini che consentono di mantenere i dati su un database postgresql o oracle esterno, ma suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
-
-- **run_postgres** o **run_oracle**: contiene solamente il componente runtime di api gateway;
-
-- **manager_postgres** o **manager_oracle**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
 
 Le console disponibili nell’ambiente manager necessitano di accedere ad alcuni servizi esposti dai nodi run, utilizzati per il monitoraggio e la gestione distribuita:
 
@@ -145,8 +163,9 @@ Eseguire il _run_ dell'immagine:
 
 > **_NOTA:_** la variabile 'GOVWAY_DEFAULT_ENTITY_NAME' consente di indicare il nome del soggetto operativo attivo sul dominio gestito attraverso GovWay.
 
-```console 
+```console
 $ docker run \
+  -e GOVWAY_DB_TYPE=hsql \
   -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -e GOVWAY_POP_DB_SKIP=false \
   -e TZ=Europe/Rome \
@@ -155,8 +174,9 @@ linkitaly/govway
 
 I servizi e le interfacce web di GovWay sono accessibili sia su protocollo HTTP, che su protocollo AJP sulle porte 808* e 8009 rispettivamente (nella sezione 'Informazioni di Base' vengono fornite maggiori informazioni a riguardo):
 
-```console 
+```console
 $ docker run \
+ -e GOVWAY_DB_TYPE=hsql \
  -e GOVWAY_POP_DB_SKIP=false \
  -e TZ=Europe/Rome \
  -p 8080:8080 \
@@ -175,11 +195,12 @@ I files, interni all'immagine, utilizzati da GovWay sono:
 
 Si possono rendere persistenti i file sopra indicati montando un volume per ogni directory indicata:
 
-```console 
+```console
 $ mkdir ~/govway_conf
 $ mkdir ~/govway_log
 $ mkdir ~/govway_db
 $ docker run \
+ -e GOVWAY_DB_TYPE=hsql \
  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
  -e GOVWAY_POP_DB_SKIP=false \
  -e TZ=Europe/Rome \
@@ -206,7 +227,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1.p1_postgres
+    image: linkitaly/govway:3.4.1.p1
     ports:
         - 8080:8080
         - 8081:8081
@@ -218,8 +239,9 @@ services:
         - ~/postgresql/jdbc-driver:/tmp/jdbc-driver
     environment:
         - TZ=Europe/Rome
+        - GOVWAY_DB_TYPE=postgresql
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
-        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver        
+        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
         - GOVWAY_DB_SERVER=postgres_hostname:5432
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
@@ -234,7 +256,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1.p1_oracle
+    image: linkitaly/govway:3.4.1.p1
     ports:
         - 8080:8080
         - 8081:8081
@@ -246,6 +268,7 @@ services:
         - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
     environment:
         - TZ=Europe/Rome
+        - GOVWAY_DB_TYPE=oracle
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
         - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
         - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
@@ -315,10 +338,10 @@ Il contesto di accesso ai servizi dell'API gateway per le fruizioni di API:
 
 All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzati gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
 
-Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**. Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
+Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb** o **/opt/oracle**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1.p1_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -412,16 +435,17 @@ Utilizzando docker-compose come esempio di ambiente orchestrato, è possibile ut
 ```yaml
 version: '2'
 services:
- 
+
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.17_batch_postgres
+    image: linkitaly/govway:3.3.17_batch
     volumes:
-       - ~/govway_log:/var/log/govway 
+       - ~/govway_log:/var/log/govway
        - ~/postgresql/jdbc-driver:/tmp/jdbc-driver
-    command: 
+    command:
       - orarie
     environment:
+      - GOVWAY_DB_TYPE=postgresql
       - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
       - GOVWAY_STAT_DB_SERVER=postgres_hostname:5432
       - GOVWAY_STAT_DB_NAME=govwaydb
@@ -433,24 +457,24 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1.p1_batch_postgres
-    command: 
+    image: linkitaly/govway:3.4.1.p1_batch
+    command:
       - giornaliere
     environment:
       - ... come esempio 'batch_stat_orarie' ...
-      
+
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch_postgres
-    command: 
+    image: linkitaly/govway:3.4.1.p1_batch
+    command:
       - generaReportPDND
     environment:
       - ... come esempio 'batch_stat_orarie' ...
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch_postgres
-    command: 
+    image: linkitaly/govway:3.4.1.p1_batch
+    command:
       - pubblicaReportPDND
     environment:
       - ... come esempio 'batch_stat_orarie' ...
@@ -461,16 +485,17 @@ Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracl
 ```yaml
 version: '2'
 services:
- 
+
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.4.1.p1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch
     volumes:
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command: 
+    command:
       - orarie
     environment:
+      - GOVWAY_DB_TYPE=oracle
       - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
       - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
       - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
@@ -483,36 +508,36 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1.p1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command: 
+    command:
       - giornaliere
     environment:
       - ... come esempio 'batch_stat_orarie' ...
-      
+
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command: 
+    command:
       - generaReportPDND
     environment:
       - ... come esempio 'batch_stat_orarie' ...
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch_oracle
+    image: linkitaly/govway:3.4.1.p1_batch
     volumes:
        - ~/govway_conf:/etc/govway
        - ~/govway_log:/var/log/govway
        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command: 
+    command:
       - pubblicaReportPDND
     environment:
       - ... come esempio 'batch_stat_orarie' ...
@@ -540,11 +565,10 @@ Il processo produce un [installer della versione snapshot](https://jenkins.link.
 
 Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat10/Dockerfile.govway):
 
-* `master4`, `master4_standalone` 
-* `master4_postgres`
-* `master4_oracle`
-* `master4_batch_postgres`
-* `master4_batch_oracle`
+* `master4`
+* `master4_batch`
+
+> **_ATTENZIONE:_** I tag precedenti (`master4_standalone`, `master4_postgres`, `master4_oracle`, `master4_batch_postgres`, `master4_batch_oracle`) non verranno più aggiornati e punteranno a versioni obsolete.
 
 ### 3.3.x
 
@@ -553,8 +577,7 @@ Il processo produce un [installer della versione snapshot](https://jenkins.link.
 
 Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfile)](https://github.com/link-it/govway-docker/blob/master/govway/tomcat9/Dockerfile.govway):
 
-* `master`, `master_standalone` 
-* `master_postgres` 
-* `master_oracle`
-* `master_batch_postgres`
-* `master_batch_oracle`
+* `master`
+* `master_batch`
+
+> **_ATTENZIONE:_** I tag precedenti (`master_standalone`, `master_postgres`, `master_oracle`, `master_batch_postgres`, `master_batch_oracle`) non verranno più aggiornati e punteranno a versioni obsolete.

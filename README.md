@@ -1,38 +1,71 @@
 # Immagine docker per GovWay
 
-Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'ambiente consente di produrre immagini in due modalità:
-- **standalone** : in questa modalità l'immagine contiene oltre al gateway anche un database HSQL con persistenza su file, dove vengongono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
-- **orchestrate** : in questa modalità l'immagine viene preparata in modo da collegarsi ad un database esterno
+Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'immagine prodotta è **unica e multi-database**: supporta tutti i database (hsql, postgresql, mysql, mariadb, oracle) e la scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
+
+L'ambiente consente di utilizzare l'immagine in due modalità:
+- **standalone** : in questa modalità l'immagine utilizza un database HSQL interno con persistenza su file, dove vengono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
+- **orchestrate** : in questa modalità l'immagine viene configurata per collegarsi ad un database esterno (postgresql, mysql, mariadb, oracle)
 
 ## Build immagine Docker
-Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente uno script di shell che si occupa di prepare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari. 
+Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente lo script **build_image.sh** che si occupa di preparare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari.
 
-Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, ossia una immagine in modalità standalone realizzata a partire dalla release binaria disponibile su GitHub.
+Lo script può essere avviato senza parametri per ottenere il build dell'immagine di default, realizzata a partire dalla release binaria disponibile su GitHub. L'immagine prodotta è unica e multi-database; la scelta del database (standalone con HSQL o orchestrate con database esterno) avviene a runtime.
 
-Eseguendo invece lo script con il parametro '-h' è possibile conoscere i parametri di personalizzazione esistenti.
+Eseguendo lo script con il parametro '-h' è possibile conoscere i parametri di personalizzazione esistenti.
 
 ## Avvio immagine Docker
 
-Una volta eseguito il build dell'immagine tramite lo script fornito, l'immagine puo essere eseguita con i normali comandi di run docker:
-```shell
-./build_image.sh 
+Una volta eseguito il build dell'immagine tramite lo script **build_image.sh**, l'immagine può essere eseguita con i normali comandi di run docker.
 
+### Avvio in modalità standalone (HSQL)
+```shell
 docker run \
   -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
+  -e GOVWAY_DB_TYPE=hsql \
   -e GOVWAY_POP_DB_SKIP=false \
   -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
 linkitaly/govway:3.4.1.p1
-
 ```
 
-In modalità orchestrate al termine delle operazioni di build, lo script predispone uno scenario di test avviabile con docker-compose, all'interno della directory **"compose"**; lo scenario di test può quindi essere avviato come segue:
-
+### Avvio in modalità orchestrate (database esterno)
+```shell
+docker run \
+  -v ~/govway_log:/var/log/govway -v ~/govway_conf:/etc/govway \
+  -v ./postgresql-42.7.5.jar:/tmp/postgresql-42.7.5.jar \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
+  -e GOVWAY_DB_SERVER=pg-server \
+  -e GOVWAY_DB_NAME=govwaydb \
+  -e GOVWAY_DB_USER=govway \
+  -e GOVWAY_DB_PASSWORD=govway \
+  -e GOVWAY_DS_JDBC_LIBS=/tmp \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  -p 8082:8082 \
+linkitaly/govway:3.4.1.p1
 ```
-./build_image.sh -d postgresql
-cd compose
+
+### Scenari di test con docker-compose
+
+Al termine delle operazioni di build, lo script predispone degli scenari di test avviabili con docker-compose, nelle seguenti directory:
+- **compose/postgresql/** : scenario con database PostgreSQL
+- **compose/mysql/** : scenario con database MySQL
+- **compose/mariadb/** : scenario con database MariaDB
+- **compose/oracle/** : scenario con database Oracle
+
+Per utilizzare uno scenario con database esterno è necessario copiare il driver JDBC appropriato nella directory corrispondente:
+- PostgreSQL: `postgresql-42.7.5.jar`
+- MySQL: `mysql-connector-java-8.0.29.jar`
+- MariaDB: `mariadb-java-client-3.0.6.jar`
+- Oracle: `ojdbc10.jar`
+
+Esempio di avvio con PostgreSQL:
+```
+cp postgresql-42.7.5.jar compose/postgresql/
+cd compose/postgresql
 docker compose up
 ```
 
@@ -89,10 +122,10 @@ Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
 
 All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto uno o più database non inizializzati è possibile utilizzare gli scripts SQL interni per effettuare l'inizializzazione, valorizzando la variabile **'GOVWAY_POP_DB_SKIP'** al valore **false**.
 
-Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard  **/opt/hsql**, **/opt/postgresql** o **/opt/oracle**.  Ad esempio per l'immagine che utilizza un database 'postgresql' è possibile utilizzare il comando:
+Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb** o **/opt/oracle**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente linkitaly/govway:3.4.1.p1_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -118,10 +151,7 @@ Dove `<lista_categorie>` è una lista separata da virgole delle categorie che co
 
 Tracciamento e Statistiche condividono il database con Runtime:
 ```shell
-CONTAINER_ID=$(docker run -d \
-  -e GOVWAY_DEFAULT_ENTITY_NAME=Ente \
-  -e GOVWAY_DB_MAPPING="T,S" \
-  linkitaly/govway:3.4.1.p1_postgres initsql); 
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql -e GOVWAY_DB_MAPPING="T,S" linkitaly/govway:3.4.1.p1 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -180,10 +210,11 @@ I comandi forniti possono variare tra minuscole e maiuscole poichè viene verifi
 Se non viene passato alcun argomento il default è orarie
 Es:
 ```bash
-docker run 
--e <VARIABILI_DI_CONFIGURAZIONE> \
+docker run \
+-e GOVWAY_DB_TYPE=postgresql \
+-e <ALTRE_VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.4.1.p1_batch_postgres giornaliere
+linkitaly/govway:3.4.1.p1_batch giornaliere
 ```
 
 ### Modalita Cron ###
@@ -194,7 +225,8 @@ Se non disponibile è possibile abilitare la modalità cron. In questa modalità
 ## Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento dei container. Le variabili supportate al momento sono queste:
 
-* GOVWAY_DEFAULT_ENTITY_NAME: Indica il nome del soggetto di default utilizzato  (Obbligatorio)
+* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: hsql, postgresql, mysql, mariadb, oracle)
+* GOVWAY_DEFAULT_ENTITY_NAME: Indica il nome del soggetto di default utilizzato (Obbligatorio)
 
 ### Controlli all'avvio del container
 
@@ -380,14 +412,16 @@ Montare il file nel container tramite docker-compose:
 ```yaml
 services:
   govway:
-    image: linkitaly/govway:3.4.1.p1_postgres
+    image: linkitaly/govway:3.4.1.p1
+    environment:
+      - GOVWAY_DB_TYPE=postgresql
     volumes:
       - ./custom.properties:/etc/govway_as_jvm.properties:ro
 ```
 
 O tramite docker run:
 ```bash
-docker run -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.4.1.p1_postgres
+docker run -e GOVWAY_DB_TYPE=postgresql -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.4.1.p1
 ```
 
 Le proprietà definite nel file diventano accessibili come system properties all'interno dell'applicazione GovWay.
@@ -430,13 +464,17 @@ Di seguito una lista di variabili usate in precedenza per la configurazione avan
 * GOVWAY_BATCH_INTERVALLO_CRON: indica l'intervallo di schedulazione del batch in minuti (default: 5 per statistiche orarie | 30 per statisiche giornaliere, generazione e pubblicazione di report PDND) 
 
 
-### Connessione a database esterni 
+### Connessione a database esterni
 
 Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti categorie CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
 Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguenti variabili obbligatorie:
 
+* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: postgresql, mysql, mariadb, oracle)
+
+  **NOTA:** Il batch non supporta il database HSQL in quanto richiede un database esterno per l'accesso concorrente ai dati.
+
 * GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
-di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver (obbligatorio solo per tutti i database tranne HSQL)
+di cui almeno uno deve implementare l'interfaccia JDBC java.sql.Driver
 
   ***AVVISO COMPORTAMENTO DEPRECATO: le immagini PostgreSQL al momento contengono un driver JDBC interno, che viene utilizzato per le connessioni JDBC. Nelle prossime versioni, il driver interno sarà eliminato e sara quindi obbligatorio fornire le librerie attraverso la variabile GOVWAY_DS_JDBC_LIBS***
 
