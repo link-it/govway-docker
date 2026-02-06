@@ -100,6 +100,28 @@ oracle)
 /subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
 
 ;;
+sqlserver)
+
+    GOVWAY_DS_DRIVER_CLASS='com.microsoft.sqlserver.jdbc.SQLServerDriver'
+    GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
+
+    JDBC_RUN_URL='jdbc:sqlserver://\${env.GOVWAY_DB_SERVER};databaseName=\${env.GOVWAY_DB_NAME}\${env.DATASOURCE_CONN_PARAM:}'
+    JDBC_RUN_AUTH="/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=user-name, value=\${env.GOVWAY_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource: write-attribute(name=password, value=\${env.GOVWAY_DB_PASSWORD})"
+
+    JDBC_CONF_URL='jdbc:sqlserver://\${env.GOVWAY_CONF_DB_SERVER};databaseName=\${env.GOVWAY_CONF_DB_NAME}\${env.DATASOURCE_CONF_CONN_PARAM:}'
+    JDBC_CONF_AUTH="/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=user-name, value=\${env.GOVWAY_CONF_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.console: write-attribute(name=password, value=\${env.GOVWAY_CONF_DB_PASSWORD})"
+
+    JDBC_TRAC_URL='jdbc:sqlserver://\${env.GOVWAY_TRAC_DB_SERVER};databaseName=\${env.GOVWAY_TRAC_DB_NAME}\${env.DATASOURCE_TRAC_CONN_PARAM:}'
+    JDBC_TRAC_AUTH="/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=user-name, value=\${env.GOVWAY_TRAC_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.tracciamento: write-attribute(name=password, value=\${env.GOVWAY_TRAC_DB_PASSWORD})"
+
+    JDBC_STAT_URL='jdbc:sqlserver://\${env.GOVWAY_STAT_DB_SERVER};databaseName=\${env.GOVWAY_STAT_DB_NAME}\${env.DATASOURCE_STAT_CONN_PARAM:}'
+    JDBC_STAT_AUTH="/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=user-name, value=\${env.GOVWAY_STAT_DB_USER})
+/subsystem=datasources/data-source=org.govway.datasource.statistiche: write-attribute(name=password, value=\${env.GOVWAY_STAT_DB_PASSWORD})"
+
+;;
 hsql)
     GOVWAY_DS_DRIVER_CLASS='org.hsqldb.jdbc.JDBCDriver'
     GOVWAY_DS_VALID_CONNECTION_SQL='SELECT * FROM (VALUES(1));'

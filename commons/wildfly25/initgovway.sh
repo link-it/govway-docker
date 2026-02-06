@@ -84,10 +84,15 @@ do
         JDBC_URL="jdbc:mysql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
     ;;
-    mariadb) 
+    mariadb)
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=3306
         JDBC_URL="jdbc:mariadb://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
+    ;;
+    sqlserver)
+        [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1433
+        JDBC_URL="jdbc:sqlserver://${SERVER_HOST}:${SERVER_PORT};databaseName=${DBNAME}${QUERYSTRING}"
+        START_TRANSACTION="BEGIN TRANSACTION;"
     ;;
     hsql)
         DBNAME=govway
@@ -176,7 +181,10 @@ fi
         fi
         ;;
         mysql|mariadb)
-        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_schema)='${DBNAME,,}';" 
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_schema)='${DBNAME,,}';"
+        ;;
+        sqlserver)
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='${DBNAME,,}';"
         ;;
         hsql)
         EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='public';" 
@@ -279,7 +287,7 @@ fi
                 fi
                 #
                 # Inizializzazione database ${DESTINAZIONE}
-                # 
+                #
                 echo "INFO: Readyness base dati ${DESTINAZIONE} ... popolamento automatico avviata."
                 java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;

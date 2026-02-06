@@ -42,7 +42,7 @@ CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway
 
 
 case "${GOVWAY_DB_TYPE}" in
-mysql|mariadb|postgresql|oracle)
+mysql|mariadb|postgresql|oracle|sqlserver)
     #
     # Sanity check variabili minime attese
     #
@@ -197,7 +197,7 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
         export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1 FROM DUAL'
 
 
-        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ] 
+        if [ "${GOVWAY_ORACLE_JDBC_URL_TYPE^^}" != 'SID' ]
         then
             export ORACLE_JDBC_SERVER_PREFIX='//'
             export ORACLE_JDBC_DB_SEPARATOR='/'
@@ -206,6 +206,17 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
             export ORACLE_JDBC_DB_SEPARATOR=':'
         fi
 
+    ;;
+    sqlserver)
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='com.microsoft.sqlserver.jdbc.SQLServerDriver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
     ;;
     esac
 
@@ -231,6 +242,13 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
     [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] &&  export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"
     if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
     if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
+
+    # Conversione separatore parametri per SQL Server (usa ; invece di ?)
+    if [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]; then
+        [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ] && export DATASOURCE_STAT_CONN_PARAM=";${GOVWAY_STAT_DS_CONN_PARAM}"
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM=";${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM=";${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_STAT_CONN_PARAM}"; fi
+    fi
 
 
 
@@ -262,8 +280,15 @@ GOVWAY_STAT_DB_USER: ${GOVWAY_STAT_DB_USER}
     oracle)
         # JDBC URLS
         export JDBC_CONF_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_CONF_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
-        export JDBC_TRAC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_TRAC_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}" 
+        export JDBC_TRAC_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_TRAC_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
         export JDBC_STAT_URL="jdbc:oracle:thin:@${ORACLE_JDBC_SERVER_PREFIX}${GOVWAY_STAT_DB_SERVER}${ORACLE_JDBC_DB_SEPARATOR}${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
+
+    ;;
+    sqlserver)
+        # JDBC URLS
+        export JDBC_CONF_URL="jdbc:sqlserver://${GOVWAY_CONF_DB_SERVER};databaseName=${GOVWAY_CONF_DB_NAME}${DATASOURCE_CONF_CONN_PARAM}"
+        export JDBC_TRAC_URL="jdbc:sqlserver://${GOVWAY_TRAC_DB_SERVER};databaseName=${GOVWAY_TRAC_DB_NAME}${DATASOURCE_TRAC_CONN_PARAM}"
+        export JDBC_STAT_URL="jdbc:sqlserver://${GOVWAY_STAT_DB_SERVER};databaseName=${GOVWAY_STAT_DB_NAME}${DATASOURCE_STAT_CONN_PARAM}"
 
     ;;
     esac
