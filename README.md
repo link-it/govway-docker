@@ -300,6 +300,18 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
 
+#### Connessione a database SQL Server ####
+Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le seguenti variabili d'ambiente:
+
+* GOVWAY_SQLSERVER_ENCRYPT (TRUE/FALSE): abilita o disabilita la cifratura del trasporto JDBC (default: TRUE)
+* GOVWAY_SQLSERVER_TRUSTSTORE: path sul filesystem del container, al file truststore Java per la verifica del certificato server (default: vuoto)
+* GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD: password del truststore (default: vuoto)
+
+**Modalità operative:**
+- **Default** (nessuna variabile impostata): cifratura abilitata senza verifica del certificato server (`encrypt=true;trustServerCertificate=true`)
+- **Con truststore** (`GOVWAY_SQLSERVER_TRUSTSTORE` valorizzato): cifratura abilitata con verifica del certificato server (`encrypt=true;trustServerCertificate=false;trustStore=<path>;trustStorePassword=<pass>`)
+- **Disabilitata** (`GOVWAY_SQLSERVER_ENCRYPT=FALSE`): nessuna cifratura (`encrypt=false`)
+
 ### Pooling connessioni database
 
 E' possibile personalizzare alcuni aspetti relativi ai datasource utilizzati da GovWay per accedere al database; per farlo si possono impostare i valori delle variabili d'ambiente elencate di seguito:
@@ -505,6 +517,18 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
+
+#### Connessione a database SQL Server ####
+Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le seguenti variabili d'ambiente:
+
+* GOVWAY_SQLSERVER_ENCRYPT (TRUE/FALSE): abilita o disabilita la cifratura del trasporto JDBC (default: TRUE)
+* GOVWAY_SQLSERVER_TRUSTSTORE: path sul filesystem del container, al file truststore Java per la verifica del certificato server (default: vuoto)
+* GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD: password del truststore (default: vuoto)
+
+**Modalità operative:**
+- **Default** (nessuna variabile impostata): cifratura abilitata senza verifica del certificato server (`encrypt=true;trustServerCertificate=true`)
+- **Con truststore** (`GOVWAY_SQLSERVER_TRUSTSTORE` valorizzato): cifratura abilitata con verifica del certificato server (`encrypt=true;trustServerCertificate=false;trustStore=<path>;trustStorePassword=<pass>`)
+- **Disabilitata** (`GOVWAY_SQLSERVER_ENCRYPT=FALSE`): nessuna cifratura (`encrypt=false`)
 
 
 ### Configurazioni avanzate
