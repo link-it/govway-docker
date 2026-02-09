@@ -115,20 +115,14 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
         then
             GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
         then
             GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
         then
             GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
 
         export GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
@@ -152,20 +146,14 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
         then
             GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
         then
             GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
         then
             GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
 
         export GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
@@ -223,6 +211,35 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             echo "FATAL: Sanity check JDBC ... fallito."
             echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
             exit 1
+        fi
+
+        # Gestione cifratura trasporto SQL Server
+        if [ "${GOVWAY_SQLSERVER_ENCRYPT^^}" == 'FALSE' ]; then
+            SQLSERVER_ENCRYPT_PARAMS='encrypt=false'
+        elif [ -n "${GOVWAY_SQLSERVER_TRUSTSTORE}" ]; then
+            SQLSERVER_ENCRYPT_PARAMS="encrypt=true;trustServerCertificate=false;trustStore=${GOVWAY_SQLSERVER_TRUSTSTORE}"
+            [ -n "${GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD}" ] && SQLSERVER_ENCRYPT_PARAMS="${SQLSERVER_ENCRYPT_PARAMS};trustStorePassword=${GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD}"
+        else
+            SQLSERVER_ENCRYPT_PARAMS='encrypt=true;trustServerCertificate=true'
+        fi
+
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        else
+            GOVWAY_DS_CONN_PARAM="${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
         fi
 
         export GOVWAY_DS_DRIVER_CLASS='com.microsoft.sqlserver.jdbc.SQLServerDriver'
