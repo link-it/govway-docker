@@ -1,10 +1,10 @@
 # Immagine docker per GovWay
 
-Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'immagine prodotta è **unica e multi-database**: supporta tutti i database (hsql, postgresql, mysql, mariadb, oracle) e la scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
+Questo progetto fornisce tutto il necessario per produrre un'ambiente di prova GovWay funzionante, containerizzato in formato Docker. L'immagine prodotta è **unica e multi-database**: supporta tutti i database (hsql, postgresql, mysql, mariadb, oracle, sqlserver) e la scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
 
 L'ambiente consente di utilizzare l'immagine in due modalità:
 - **standalone** : in questa modalità l'immagine utilizza un database HSQL interno con persistenza su file, dove vengono memorizzate le configurazioni e le informazioni elaborate durante l'esercizio del gateway.
-- **orchestrate** : in questa modalità l'immagine viene configurata per collegarsi ad un database esterno (postgresql, mysql, mariadb, oracle)
+- **orchestrate** : in questa modalità l'immagine viene configurata per collegarsi ad un database esterno (postgresql, mysql, mariadb, oracle, sqlserver)
 
 ## Build immagine Docker
 Per semplificare il più possibile la preparazione dell'ambiente, sulla root del progetto è presente lo script **build_image.sh** che si occupa di preparare il buildcontext e di avviare il processo di build con tutti gli argomenti necessari.
@@ -55,12 +55,14 @@ Al termine delle operazioni di build, lo script predispone degli scenari di test
 - **compose/mysql/** : scenario con database MySQL
 - **compose/mariadb/** : scenario con database MariaDB
 - **compose/oracle/** : scenario con database Oracle
+- **compose/sqlserver/** : scenario con database SQL Server
 
 Per utilizzare uno scenario con database esterno è necessario copiare il driver JDBC appropriato nella directory corrispondente:
 - PostgreSQL: `postgresql-42.7.5.jar`
 - MySQL: `mysql-connector-java-8.0.29.jar`
 - MariaDB: `mariadb-java-client-3.0.6.jar`
 - Oracle: `ojdbc10.jar`
+- SQL Server: `mssql-jdbc-*.jar`
 
 Esempio di avvio con PostgreSQL:
 ```
@@ -122,7 +124,7 @@ Il contesto di accesso ai servizi dell`API gateway per le fruizioni di API:
 
 All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto uno o più database non inizializzati è possibile utilizzare gli scripts SQL interni per effettuare l'inizializzazione, valorizzando la variabile **'GOVWAY_POP_DB_SKIP'** al valore **false**.
 
-Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb** o **/opt/oracle**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
+Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb**, **/opt/oracle** o **/opt/sqlserver**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);
@@ -225,7 +227,7 @@ Se non disponibile è possibile abilitare la modalità cron. In questa modalità
 ## Personalizzazioni
 Attraverso l'impostazione di alcune variabili d'ambiente note è possibile personalizzare alcuni aspetti del funzionamento dei container. Le variabili supportate al momento sono queste:
 
-* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: hsql, postgresql, mysql, mariadb, oracle)
+* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: hsql, postgresql, mysql, mariadb, oracle, sqlserver)
 * GOVWAY_DEFAULT_ENTITY_NAME: Indica il nome del soggetto di default utilizzato (Obbligatorio)
 
 ### Controlli all'avvio del container
@@ -297,6 +299,18 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
+
+#### Connessione a database SQL Server ####
+Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le seguenti variabili d'ambiente:
+
+* GOVWAY_SQLSERVER_ENCRYPT (TRUE/FALSE): abilita o disabilita la cifratura del trasporto JDBC (default: TRUE)
+* GOVWAY_SQLSERVER_TRUSTSTORE: path sul filesystem del container, al file truststore Java per la verifica del certificato server (default: vuoto)
+* GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD: password del truststore (default: vuoto)
+
+**Modalità operative:**
+- **Default** (nessuna variabile impostata): cifratura abilitata senza verifica del certificato server (`encrypt=true;trustServerCertificate=true`)
+- **Con truststore** (`GOVWAY_SQLSERVER_TRUSTSTORE` valorizzato): cifratura abilitata con verifica del certificato server (`encrypt=true;trustServerCertificate=false;trustStore=<path>;trustStorePassword=<pass>`)
+- **Disabilitata** (`GOVWAY_SQLSERVER_ENCRYPT=FALSE`): nessuna cifratura (`encrypt=false`)
 
 ### Pooling connessioni database
 
@@ -469,7 +483,7 @@ Di seguito una lista di variabili usate in precedenza per la configurazione avan
 Il batch richiede l'accesso alle tabelle che memorizzano i dati delle seguenti categorie CONFIGURAZIONE, TRACCIAMENTO e STATISTICHE.
 Per default si suppone che queste siano presenti sullo stesso database indicato dalle seguenti variabili obbligatorie:
 
-* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: postgresql, mysql, mariadb, oracle)
+* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (Obbligatorio, valori ammessi: postgresql, mysql, mariadb, oracle, sqlserver)
 
   **NOTA:** Il batch non supporta il database HSQL in quanto richiede un database esterno per l'accesso concorrente ai dati.
 
@@ -503,6 +517,18 @@ Quando ci si connette ad un database esterno Oracle devono essere indicate anche
 
 * GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (default: SERVICENAME)
 * ~GOVWAY_ORACLE_JDBC_PATH: path sul filesystem del container, al driver jdbc da utilizzare~ **[DEPRECATA in favore di GOVWAY_DS_JDBC_LIBS]**
+
+#### Connessione a database SQL Server ####
+Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le seguenti variabili d'ambiente:
+
+* GOVWAY_SQLSERVER_ENCRYPT (TRUE/FALSE): abilita o disabilita la cifratura del trasporto JDBC (default: TRUE)
+* GOVWAY_SQLSERVER_TRUSTSTORE: path sul filesystem del container, al file truststore Java per la verifica del certificato server (default: vuoto)
+* GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD: password del truststore (default: vuoto)
+
+**Modalità operative:**
+- **Default** (nessuna variabile impostata): cifratura abilitata senza verifica del certificato server (`encrypt=true;trustServerCertificate=true`)
+- **Con truststore** (`GOVWAY_SQLSERVER_TRUSTSTORE` valorizzato): cifratura abilitata con verifica del certificato server (`encrypt=true;trustServerCertificate=false;trustStore=<path>;trustStorePassword=<pass>`)
+- **Disabilitata** (`GOVWAY_SQLSERVER_ENCRYPT=FALSE`): nessuna cifratura (`encrypt=false`)
 
 
 ### Configurazioni avanzate

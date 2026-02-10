@@ -51,7 +51,7 @@ fi
 
 
 case "${GOVWAY_DB_TYPE}" in
-mysql|mariadb|postgresql|oracle)
+mysql|mariadb|postgresql|oracle|sqlserver)
 
     #
     # Sanity check variabili minime attese
@@ -115,20 +115,14 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
         then
             GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
         then
             GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
         then
             GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
 
         export GOVWAY_DS_DRIVER_CLASS='com.mysql.cj.jdbc.Driver'
@@ -152,20 +146,14 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
         if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
         then
             GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_CONF_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
         then
             GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_TRAC_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
         if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
         then
             GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM}&zeroDateTimeBehavior=convertToNull"
-        else
-            GOVWAY_STAT_DS_CONN_PARAM='zeroDateTimeBehavior=convertToNull'
         fi
 
         export GOVWAY_DS_DRIVER_CLASS='org.mariadb.jdbc.Driver'
@@ -217,6 +205,46 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             export ORACLE_JDBC_DB_SEPARATOR=':'
         fi
     ;;
+    sqlserver)
+        if [ -z "${GOVWAY_DS_JDBC_LIBS}" ]
+        then
+            echo "FATAL: Sanity check JDBC ... fallito."
+            echo "FATAL: Il path alla directory che contiene il driver JDBC, deve essere indicato tramite la variabile GOVWAY_DS_JDBC_LIBS "
+            exit 1
+        fi
+
+        # Gestione cifratura trasporto SQL Server
+        if [ "${GOVWAY_SQLSERVER_ENCRYPT^^}" == 'FALSE' ]; then
+            SQLSERVER_ENCRYPT_PARAMS='encrypt=false'
+        elif [ -n "${GOVWAY_SQLSERVER_TRUSTSTORE}" ]; then
+            SQLSERVER_ENCRYPT_PARAMS="encrypt=true;trustServerCertificate=false;trustStore=${GOVWAY_SQLSERVER_TRUSTSTORE}"
+            [ -n "${GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD}" ] && SQLSERVER_ENCRYPT_PARAMS="${SQLSERVER_ENCRYPT_PARAMS};trustStorePassword=${GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD}"
+        else
+            SQLSERVER_ENCRYPT_PARAMS='encrypt=true;trustServerCertificate=true'
+        fi
+
+        if [ -n "${GOVWAY_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_DS_CONN_PARAM="${GOVWAY_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        else
+            GOVWAY_DS_CONN_PARAM="${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_CONF_DS_CONN_PARAM="${GOVWAY_CONF_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_TRAC_DS_CONN_PARAM="${GOVWAY_TRAC_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+        if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]
+        then
+            GOVWAY_STAT_DS_CONN_PARAM="${GOVWAY_STAT_DS_CONN_PARAM};${SQLSERVER_ENCRYPT_PARAMS}"
+        fi
+
+        export GOVWAY_DS_DRIVER_CLASS='com.microsoft.sqlserver.jdbc.SQLServerDriver'
+        export GOVWAY_DS_VALID_CONNECTION_SQL='SELECT 1'
+    ;;
     esac
 
 ;;
@@ -250,7 +278,7 @@ hsql)
     else
         echo "FATAL: Valore non consentito per la variabile GOVWAY_DB_TYPE: [GOVWAY_DB_TYPE=${GOVWAY_DB_TYPE}]."
     fi
-    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle ]"
+    echo "       Valori consentiti: [ hsql, mysql, mariadb, postgresql, oracle, sqlserver ]"
     exit 1
 ;;
 esac
@@ -290,6 +318,14 @@ if [ -n "${GOVWAY_DS_CONN_PARAM}" ]; then export DATASOURCE_CONN_PARAM="?${GOVWA
 if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM="?${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
 if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM="?${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
 if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]; then export DATASOURCE_STAT_CONN_PARAM="?${GOVWAY_STAT_DS_CONN_PARAM}"; else export DATASOURCE_STAT_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+
+# Conversione separatore parametri per SQL Server (usa ; invece di ?)
+if [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]; then
+    if [ -n "${GOVWAY_DS_CONN_PARAM}" ]; then export DATASOURCE_CONN_PARAM=";${GOVWAY_DS_CONN_PARAM}"; else export DATASOURCE_CONN_PARAM=""; fi
+    if [ -n "${GOVWAY_CONF_DS_CONN_PARAM}" ]; then export DATASOURCE_CONF_CONN_PARAM=";${GOVWAY_CONF_DS_CONN_PARAM}"; else export DATASOURCE_CONF_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+    if [ -n "${GOVWAY_TRAC_DS_CONN_PARAM}" ]; then export DATASOURCE_TRAC_CONN_PARAM=";${GOVWAY_TRAC_DS_CONN_PARAM}"; else export DATASOURCE_TRAC_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+    if [ -n "${GOVWAY_STAT_DS_CONN_PARAM}" ]; then export DATASOURCE_STAT_CONN_PARAM=";${GOVWAY_STAT_DS_CONN_PARAM}"; else export DATASOURCE_STAT_CONN_PARAM="${DATASOURCE_CONN_PARAM}"; fi
+fi
 
 ## Idle timeout (default 5 min)
 # [ -n "${GOVWAY_CONF_DS_IDLE_TIMEOUT}" ] || export GOVWAY_CONF_DS_IDLE_TIMEOUT="${GOVWAY_DS_IDLE_TIMEOUT}" 

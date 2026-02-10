@@ -79,6 +79,7 @@ COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FU
 COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/postgresql /opt/postgresql
 COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/mysql /opt/mysql
 COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/oracle /opt/oracle
+COPY --from=source_image_full --chown=tomcat:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/sql/sqlserver /opt/sqlserver
 COPY --from=source_image_full --chown=0:0 /opt/change_dir_perms /usr/local/bin
 
 
@@ -136,7 +137,7 @@ rm -rf /tmp/*;
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
 && chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
-&& chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ \
+&& chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ /opt/sqlserver/ \
 && chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 

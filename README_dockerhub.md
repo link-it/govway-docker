@@ -91,13 +91,13 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ### Versioni 3.4.2 / 3.3.19 e successive
 
-A partire dalla versione 3.4.2 / 3.3.19, l'immagine Docker è **unica e multi-database**: supporta i database hsql, postgresql, mysql, mariadb e oracle. La scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
+A partire dalla versione 3.4.2 / 3.3.19, l'immagine Docker è **unica e multi-database**: supporta i database hsql, postgresql, mysql, mariadb, oracle e sqlserver. La scelta del database avviene a runtime tramite la variabile obbligatoria `GOVWAY_DB_TYPE`.
 
-> **_BREAKING CHANGE:_** Aggiornando da una versione precedente è necessario aggiungere la variabile d'ambiente `GOVWAY_DB_TYPE` alla configurazione del container (es. docker-compose.yaml o comando docker run). I valori ammessi sono: hsql, postgresql, mysql, mariadb, oracle.
+> **_BREAKING CHANGE:_** Aggiornando da una versione precedente è necessario aggiungere la variabile d'ambiente `GOVWAY_DB_TYPE` alla configurazione del container (es. docker-compose.yaml o comando docker run). I valori ammessi sono: hsql, postgresql, mysql, mariadb, oracle, sqlserver.
 
 - **standalone** (GOVWAY_DB_TYPE=hsql): fornisce un ambiente di prova di GovWay funzionante dove i dati di configurazione e tracciamento vengono mantenuti su un database HSQL interno al container;
 
-- **orchestrate** (GOVWAY_DB_TYPE=postgresql|mysql|mariadb|oracle): fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database esterno, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
+- **orchestrate** (GOVWAY_DB_TYPE=postgresql|mysql|mariadb|oracle|sqlserver): fornisce un'installazione che consente di avere i dati di configurazione e tracciamento su un database esterno, gestito esternamente o su ambienti orchestrati (Es. Kubernetes, OpenShift).
 
 Esistono ulteriori immagini che suddividono i componenti applicativi tra componenti di runtime e componenti dedicati alla gestione e il monitoraggio. Una suddivisione dei componenti consente di attuare una scalabilità dei nodi run proporzionata alla mole di richieste che devono essere gestite dall'api gateway:
 
@@ -278,6 +278,40 @@ services:
         - GOVWAY_POP_DB_SKIP=true
 ```
 
+Un esempio di docker-compose per SQL Server è invece il seguente (nella dir ~/sqlserver/jdbc-driver deve essere presente il driver jdbc):
+
+```yaml
+version: '2'
+services:
+  govway:
+    container_name: govway
+    image: linkitaly/govway:3.4.1.p1
+    ports:
+        - 8080:8080
+        - 8081:8081
+        - 8082:8082
+        - 8009:8009
+    volumes:
+        - ~/govway_conf:/etc/govway
+        - ~/govway_log:/var/log/govway
+        - ~/sqlserver/jdbc-driver:/tmp/jdbc-driver
+        - ~/sqlserver/truststore.jks:/tmp/truststore.jks
+    environment:
+        - TZ=Europe/Rome
+        - GOVWAY_DB_TYPE=sqlserver
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
+        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
+        - GOVWAY_SQLSERVER_TRUSTSTORE=/tmp/truststore.jks
+        - GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD=changeit
+        - GOVWAY_DB_SERVER=sqlserver_hostname:1433
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=govway
+        - GOVWAY_POP_DB_SKIP=true
+```
+
+Per maggiori informazioni sulla configurazione della cifratura a livello di trasporto per SQL Server (`GOVWAY_SQLSERVER_ENCRYPT`, `GOVWAY_SQLSERVER_TRUSTSTORE`, `GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD`), fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+
 
 I containers vengono avviati con i seguenti comandi:
 
@@ -337,7 +371,7 @@ Il contesto di accesso ai servizi dell'API gateway per le fruizioni di API:
 
 All'avvio del container, sia in modalità standalone che con immagini orchestrate, vengono eseguite delle verifiche sul database per assicurarne la raggiungibilità ed il corretto popolamento; in caso venga riconosciuto un database non inizializzato vengono utilizzati gli scripts SQL interni per effettuare l'inizializzazione a meno che la variabile 'GOVWAY_POP_DB_SKIP' risulta abilitata.
 
-Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb** o **/opt/oracle**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
+Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb**, **/opt/oracle** o **/opt/sqlserver**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
 CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);

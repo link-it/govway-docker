@@ -545,6 +545,133 @@ services:
 EOYAML
   echo "ATTENZIONE: Copiare il driver jdbc Oracle 'ojdbc10.jar' dentro la directory './compose/oracle/'" > compose/oracle/README.first
 
+  # SQL Server
+  mkdir -p compose/sqlserver/govway_{conf,log}
+  mkdir -p compose/sqlserver/mssql_startup
+  chmod 777 compose/sqlserver/govway_{conf,log}
+  cat - << 'EOENTRYPOINT' > compose/sqlserver/mssql_startup/entrypoint.sh
+#!/bin/bash
+# Avvio automatizzato di SQL Server con creazione database e utente
+
+# Avvio SQL Server in background
+/opt/mssql/bin/sqlservr &
+MSSQL_PID=$!
+
+# Attesa che SQL Server sia pronto
+echo "Attesa avvio SQL Server..."
+READY=0
+for i in {1..60}; do
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "SQL Server pronto."
+        READY=1
+        break
+    fi
+    echo "Attesa... ($i/60)"
+    sleep 1
+done
+
+if [ $READY -eq 0 ]; then
+    echo "ERRORE: SQL Server non risponde dopo 60 secondi."
+    exit 1
+fi
+
+# Esecuzione script di inizializzazione
+if [ -f /mssql_startup/init_db.sql ]; then
+    echo "Inizializzazione database e utente..."
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -i /mssql_startup/init_db.sql
+    if [ $? -eq 0 ]; then
+        echo "Inizializzazione completata."
+    else
+        echo "ATTENZIONE: Errore durante l'inizializzazione (il database potrebbe esistere gia')."
+    fi
+fi
+
+# Attesa processo SQL Server in foreground
+wait $MSSQL_PID
+EOENTRYPOINT
+  chmod +x compose/sqlserver/mssql_startup/entrypoint.sh
+  cat - << 'EOSQL' > compose/sqlserver/mssql_startup/init_db.sql
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'govwaydb')
+    CREATE DATABASE govwaydb;
+GO
+
+IF NOT EXISTS (SELECT name FROM sys.server_principals WHERE name = 'govway')
+    CREATE LOGIN govway WITH PASSWORD = 'GovWay@123', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;
+GO
+
+USE govwaydb;
+GO
+
+IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'govway')
+    CREATE USER govway FOR LOGIN govway;
+GO
+
+ALTER ROLE db_owner ADD MEMBER govway;
+GO
+EOSQL
+  cat - << EOYAML > compose/sqlserver/docker-compose.yaml
+version: '2'
+services:
+  govway:
+    container_name: govway_mssql_${SHORT}
+    image: ${TAG}_${docker_server_platform}
+    depends_on:
+        - database
+    ports:
+        - 8080:8080
+    volumes:
+        - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
+        - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
+        # Il driver deve essere copiato manualmente nella directory corrente
+        - ./mssql-jdbc.jar:/tmp/mssql-jdbc.jar
+    environment:
+        - GOVWAY_DB_TYPE=sqlserver
+        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
+        - GOVWAY_DB_SERVER=mssql_govway_${SHORT}:1433
+        - GOVWAY_DB_NAME=govwaydb
+        - GOVWAY_DB_USER=govway
+        - GOVWAY_DB_PASSWORD=GovWay@123
+        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_POP_DB_SKIP=false
+# Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
+#  batch_stat_orarie:
+#    container_name: govway_batch_${SHORT}
+#    image: ${REGISTRY_PREFIX}/govway:${VER:-${LATEST_GOVWAY_RELEASE}}_batch
+#    #command: Giornaliere
+#    #command: Orarie # << default
+#    depends_on:
+#        - database
+#    volumes:
+#        - ./mssql-jdbc.jar:/tmp/mssql-jdbc.jar
+#    environment:
+#        - GOVWAY_DB_TYPE=sqlserver
+#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_STAT_DB_SERVER=mssql_govway_${SHORT}:1433
+#        - GOVWAY_STAT_DB_NAME=govwaydb
+#        - GOVWAY_STAT_DB_USER=govway
+#        - GOVWAY_STAT_DB_PASSWORD=GovWay@123
+#        - GOVWAY_BATCH_USA_CRON=yes
+  database:
+    container_name: mssql_govway_${SHORT}
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+        - ACCEPT_EULA=Y
+        - MSSQL_SA_PASSWORD=GovWay@123
+    volumes:
+        - ./mssql_startup:/mssql_startup
+    entrypoint: /mssql_startup/entrypoint.sh
+    ports:
+        - 1433:1433
+EOYAML
+  cat - << EOREADME > compose/sqlserver/README.first
+ATTENZIONE: Copiare il driver jdbc SQL Server 'mssql-jdbc-*.jar' dentro la directory './compose/sqlserver/'
+            e rinominarlo in 'mssql-jdbc.jar'
+
+Il database e l'utente vengono creati automaticamente all'avvio del container SQL Server
+tramite lo script in mssql_startup/.
+EOREADME
+
   # HSQL (standalone, senza database esterno)
   mkdir -p compose/hsql/govway_{conf,log}
   chmod 777 compose/hsql/govway_{conf,log}
@@ -571,10 +698,11 @@ EOYAML
   echo "  - compose/mysql/"
   echo "  - compose/mariadb/"
   echo "  - compose/oracle/"
+  echo "  - compose/sqlserver/"
   echo "  - compose/hsql/"
   echo
   echo "NOTA: Impostare GOVWAY_DB_TYPE in base al database scelto."
-  echo "      Valori supportati: hsql, postgresql, mysql, mariadb, oracle"
+  echo "      Valori supportati: hsql, postgresql, mysql, mariadb, oracle, sqlserver"
   echo
 fi
 exit 0

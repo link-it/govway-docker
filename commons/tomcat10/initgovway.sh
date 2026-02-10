@@ -84,10 +84,15 @@ do
         JDBC_URL="jdbc:mysql://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
     ;;
-    mariadb) 
+    mariadb)
         [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=3306
         JDBC_URL="jdbc:mariadb://${SERVER_HOST}:${SERVER_PORT}/${DBNAME}${QUERYSTRING}"
         START_TRANSACTION="START TRANSACTION;"
+    ;;
+    sqlserver)
+        [ "${SERVER_PORT}" == "${SERVER_HOST}" ] && SERVER_PORT=1433
+        JDBC_URL="jdbc:sqlserver://${SERVER_HOST}:${SERVER_PORT};databaseName=${DBNAME}${QUERYSTRING}"
+        START_TRANSACTION=""
     ;;
     hsql)
         DBNAME=govway
@@ -176,7 +181,10 @@ fi
         fi
         ;;
         mysql|mariadb)
-        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_schema)='${DBNAME,,}';" 
+        EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_schema)='${DBNAME,,}';"
+        ;;
+        sqlserver)
+        EXIST_QUERY="SELECT count(TABLE_NAME) FROM INFORMATION_SCHEMA.TABLES WHERE LOWER(TABLE_NAME)='${DBINFO,,}' AND LOWER(TABLE_CATALOG)='${DBNAME,,}';"
         ;;
         hsql)
         EXIST_QUERY="SELECT count(table_name) FROM information_schema.tables WHERE LOWER(table_name)='${DBINFO,,}' and LOWER(table_catalog)='public';" 
@@ -278,8 +286,60 @@ fi
 \\.' -e 's/^\/$/.\n:;/' /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
                 fi
                 #
+                # Aggiusto l'SQL per il database SQL Server
+                #
+                if [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]
+                then
+                    if [ "${DESTINAZIONE}" == 'RUN' -o "${USE_RUN_DB}" == 'FALSE' ]
+                    then
+                        # Fase 1: Verifica e impostazione collation
+                        echo "INFO: Readyness base dati ${DESTINAZIONE} ... verifica collation database."
+                        COLLATION=$(java ${INVOCAZIONE_CLIENT} --sql="SELECT collation_name FROM sys.databases WHERE name = '${DBNAME}';" govwayDB${DESTINAZIONE} 2>/dev/null)
+                        COLLATION="${COLLATION// /}"
+                        if [ -n "${COLLATION}" ]
+                        then
+                            COLLATION_OK=true
+                            echo "${COLLATION}" | grep -q '_CS_' || COLLATION_OK=false
+                            echo "${COLLATION}" | grep -q '_UTF8$' || COLLATION_OK=false
+                            if [ "${COLLATION_OK}" == 'false' ]
+                            then
+                                echo "WARN: Readyness base dati ${DESTINAZIONE} ... collation '${COLLATION}' non conforme (richiesta _CS_ e _UTF8). Impostazione Latin1_General_100_CS_AS_SC_UTF8."
+                                java ${INVOCAZIONE_CLIENT} --continueOnErr=false --sql="ALTER DATABASE ${DBNAME} COLLATE Latin1_General_100_CS_AS_SC_UTF8;" govwayDB${DESTINAZIONE}
+                                if [ $? -ne 0 ]
+                                then
+                                    echo "FATAL: Readyness base dati ${DESTINAZIONE} ... ALTER DATABASE COLLATE fallito."
+                                    exit 1
+                                fi
+                            else
+                                echo "INFO: Readyness base dati ${DESTINAZIONE} ... collation '${COLLATION}' conforme."
+                            fi
+                        fi
+
+                        # Fase 2: Esecuzione ALTER DATABASE isolation level (fuori transazione)
+                        # Sostituzione nome database hardcoded 'govway' con il nome effettivo
+                        sed -i "s/ALTER DATABASE govway/ALTER DATABASE ${DBNAME}/gI" /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
+
+                        # Estrazione ALTER DATABASE (non ammessi dentro una transazione)
+                        grep -i '^ALTER DATABASE' /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql | sed 's/[[:space:]]*$//' | sed '/;$/!s/$/;/' > /var/tmp/${GOVWAY_DB_TYPE}/alter_db_${DESTINAZIONE}.sql
+
+                        if [ -s /var/tmp/${GOVWAY_DB_TYPE}/alter_db_${DESTINAZIONE}.sql ]
+                        then
+                            echo "INFO: Readyness base dati ${DESTINAZIONE} ... esecuzione ALTER DATABASE isolation level."
+                            java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} < /var/tmp/${GOVWAY_DB_TYPE}/alter_db_${DESTINAZIONE}.sql
+                            if [ $? -ne 0 ]
+                            then
+                                echo "FATAL: Readyness base dati ${DESTINAZIONE} ... ALTER DATABASE fallito."
+                                exit 1
+                            fi
+                        fi
+                    fi
+
+                    # Rimozione ALTER DATABASE dal file principale (in ogni caso)
+                    sed -i '/^ALTER DATABASE/d' /var/tmp/${GOVWAY_DB_TYPE}/GovWay${SUFFISSO}.sql
+                fi
+                #
                 # Inizializzazione database ${DESTINAZIONE}
-                # 
+                #
                 echo "INFO: Readyness base dati ${DESTINAZIONE} ... popolamento automatico avviata."
                 java ${INVOCAZIONE_CLIENT} --continueOnErr=false govwayDB${DESTINAZIONE} << EOSCRIPT
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;

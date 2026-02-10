@@ -104,6 +104,32 @@ if [ "${GOVWAY_DB_TYPE}" == 'mysql' -o "${GOVWAY_DB_TYPE}" == 'mariadb' ]; then
     done
 fi
 
+# Gestione ALTER DATABASE per SQL Server (solo in modalità estrazione manuale)
+# Gli statement ALTER DATABASE (isolation level, snapshot) non possono essere eseguiti dentro una transazione.
+# Vengono estratti in file separati per consentire l'esecuzione manuale fuori transazione.
+# Quando invocato da entrypoint ($1=nohelp), l'estrazione viene gestita da initgovway.sh
+if [ -z "$1" ] && [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]; then
+    echo "INFO: Applicazione trasformazioni SQL per SQL Server"
+
+    for SQL_FILE in /opt/${GOVWAY_DB_TYPE}/GovWay*.sql; do
+        [ ! -f "$SQL_FILE" ] && continue
+
+        BASENAME=$(basename "$SQL_FILE" .sql)
+        ALTER_FILE="/opt/${GOVWAY_DB_TYPE}/${BASENAME}_AlterDB.sql"
+
+        # Estrai ALTER DATABASE in file separato
+        grep -i '^ALTER DATABASE' "$SQL_FILE" | sed 's/[[:space:]]*$//' | sed '/;$/!s/$/;/' > "$ALTER_FILE"
+
+        if [ -s "$ALTER_FILE" ]; then
+            # Rimuovi ALTER DATABASE dal file principale
+            sed -i '/^ALTER DATABASE/d' "$SQL_FILE"
+            echo "INFO: Estratti statement ALTER DATABASE da ${BASENAME}.sql in ${BASENAME}_AlterDB.sql"
+        else
+            rm -f "$ALTER_FILE"
+        fi
+    done
+fi
+
 echo ""
 echo "INFO: Scripts SQL inizializzati per database tipo: ${GOVWAY_DB_TYPE}"
 echo ""
@@ -126,6 +152,15 @@ echo "  GovWayStatistiche.sql + GovWayStatistiche_init.sql    -> ${db_mapping[ST
 echo ""
 echo "  Percorso script: /opt/${GOVWAY_DB_TYPE}/"
 echo ""
+if [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]; then
+echo "  NOTA SQL Server:"
+echo "  1) Il database deve utilizzare una collation case-sensitive e UTF-8"
+echo "     (es. Latin1_General_100_CS_AS_SC_UTF8)."
+echo "  2) I files '*_AlterDB.sql' devono essere eseguiti PRIMA degli script principali"
+echo "     e FUORI da qualsiasi transazione. Sostituire il nome database 'govway' con"
+echo "     il nome effettivo del database di destinazione."
+echo ""
+fi
 echo "======================================================================"
 
 fi

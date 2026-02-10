@@ -9,7 +9,7 @@
 - *3.4.2* / *3.3.19*
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.9
-   - Aggiunto supporto per il database mysql/mariadb
+   - Aggiunto supporto per il database mysql/mariadb e sqlserver
    - Una singola immagine supporta ora tutti i database, semplificando build e deployment.
      Introdotta la variabile obbligatoria GOVWAY_DB_TYPE a runtime per selezionare il database (hsql, postgresql, mysql, mariadb, oracle).
 
