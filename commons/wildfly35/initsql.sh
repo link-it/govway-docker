@@ -156,9 +156,8 @@ if [ "${GOVWAY_DB_TYPE}" == 'sqlserver' ]; then
 echo "  NOTA SQL Server:"
 echo "  1) Il database deve utilizzare una collation case-sensitive e UTF-8"
 echo "     (es. Latin1_General_100_CS_AS_SC_UTF8)."
-echo "  2) Gli statement ALTER DATABASE sono stati estratti in file *_AlterDB.sql."
-echo "     Questi devono essere eseguiti PRIMA degli script principali e FUORI"
-echo "     da qualsiasi transazione. Sostituire il nome database 'govway' con"
+echo "  2) I files '*_AlterDB.sql' devono essere eseguiti PRIMA degli script principali"
+echo "     e FUORI da qualsiasi transazione. Sostituire il nome database 'govway' con"
 echo "     il nome effettivo del database di destinazione."
 echo ""
 fi
