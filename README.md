@@ -27,7 +27,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.4.1.p1
+linkitaly/govway:3.4.2
 ```
 
 ### Avvio in modalità orchestrate (database esterno)
@@ -45,7 +45,7 @@ docker run \
   -p 8080:8080 \
   -p 8081:8081 \
   -p 8082:8082 \
-linkitaly/govway:3.4.1.p1
+linkitaly/govway:3.4.2
 ```
 
 ### Scenari di test con docker-compose
@@ -127,7 +127,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Se si vuole esaminare gli script o utilizzarli manualmente, è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb**, **/opt/oracle** o **/opt/sqlserver**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.2 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -153,7 +153,7 @@ Dove `<lista_categorie>` è una lista separata da virgole delle categorie che co
 
 Tracciamento e Statistiche condividono il database con Runtime:
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql -e GOVWAY_DB_MAPPING="T,S" linkitaly/govway:3.4.1.p1 initsql);
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql -e GOVWAY_DB_MAPPING="T,S" linkitaly/govway:3.4.2 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -216,7 +216,7 @@ docker run \
 -e GOVWAY_DB_TYPE=postgresql \
 -e <ALTRE_VARIABILI_DI_CONFIGURAZIONE> \
 .... \
-linkitaly/govway:3.4.1.p1_batch giornaliere
+linkitaly/govway:3.4.2_batch giornaliere
 ```
 
 ### Modalita Cron ###
@@ -426,7 +426,7 @@ Montare il file nel container tramite docker-compose:
 ```yaml
 services:
   govway:
-    image: linkitaly/govway:3.4.1.p1
+    image: linkitaly/govway:3.4.2
     environment:
       - GOVWAY_DB_TYPE=postgresql
     volumes:
@@ -435,7 +435,7 @@ services:
 
 O tramite docker run:
 ```bash
-docker run -e GOVWAY_DB_TYPE=postgresql -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.4.1.p1
+docker run -e GOVWAY_DB_TYPE=postgresql -v ./custom.properties:/etc/govway_as_jvm.properties:ro linkitaly/govway:3.4.2
 ```
 
 Le proprietà definite nel file diventano accessibili come system properties all'interno dell'applicazione GovWay.

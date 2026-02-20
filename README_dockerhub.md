@@ -7,7 +7,12 @@
 
 ### 3.4.x
 
-* `3.4.1.p1`, `3.4.1.p1_standalone`, `latest`
+* `3.4.2`, `latest`
+* `3.4.2_run`
+* `3.4.2_manager`
+* `3.4.2_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.2/govway/tomcat10/Dockerfile.govway)
+* `3.4.1.p1`, `3.4.1.p1_standalone`
 * `3.4.1.p1_postgres`
 * `3.4.1.p1_run_postgres`
 * `3.4.1.p1_manager_postgres`
@@ -17,19 +22,14 @@
 * `3.4.1.p1_manager_oracle`
 * `3.4.1.p1_batch_oracle`
 * [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.1.p1/govway/tomcat10/Dockerfile.govway)
-* `3.4.0`, `3.4.0_standalone`, `latest`
-* `3.4.0_postgres`
-* `3.4.0_run_postgres`
-* `3.4.0_manager_postgres`
-* `3.4.0_batch_postgres`
-* `3.4.0_oracle`
-* `3.4.0_run_oracle`
-* `3.4.0_manager_oracle`
-* `3.4.0_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.0/govway/tomcat10/Dockerfile.govway)
 
 ### 3.3.x
 
+* `3.3.19`
+* `3.3.19_run`
+* `3.3.19_manager`
+* `3.3.19_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19/govway/tomcat10/Dockerfile.govway)
 * `3.3.18`, `3.3.18_standalone` 
 * `3.3.18_postgres`
 * `3.3.18_run_postgres`
@@ -40,16 +40,6 @@
 * `3.3.18_manager_oracle`
 * `3.3.18_batch_oracle`
 * [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.18/govway/tomcat9/Dockerfile.govway)
-* `3.3.17`, `3.3.17_standalone` 
-* `3.3.17_postgres`
-* `3.3.17_run_postgres`
-* `3.3.17_manager_postgres`
-* `3.3.17_batch_postgres`
-* `3.3.17_oracle`
-* `3.3.17_run_oracle`
-* `3.3.17_manager_oracle`
-* `3.3.17_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.17/govway/tomcat9/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -65,6 +55,21 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.4.2*
+
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.18.
+
+- *3.3.19*
+
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.115.
+
+- *3.4.2* / *3.3.19*
+
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.9
+   - Aggiunto supporto per il database mysql/mariadb e sqlserver
+   - Una singola immagine supporta ora tutti i database, semplificando build e deployment.
+     Introdotta la variabile obbligatoria GOVWAY_DB_TYPE a runtime per selezionare il database (hsql, postgresql, mysql, mariadb, oracle).
+
 - *3.4.1* / *3.3.18*
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.8
@@ -74,15 +79,6 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
    - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM.
    - Introdotto 'Health Check' per ambiente manager
    - Aggiornato application server di base (Tomcat) alla versione 9.0.111 per la 3.3.18 e alla versione 11.0.13 per la 3.4.1.
-
-- *3.3.17*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.107.
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.7
-
-- *3.3.16.p2*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.105.
 
 - Storico completo delle modifiche consultabile nel [ChangeLog](https://github.com/link-it/govway-docker/blob/master/ChangeLog) del progetto [Govway-Docker](https://github.com/link-it/govway-docker/).
 
@@ -226,7 +222,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1.p1
+    image: linkitaly/govway:3.4.2
     ports:
         - 8080:8080
         - 8081:8081
@@ -255,7 +251,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1.p1
+    image: linkitaly/govway:3.4.2
     ports:
         - 8080:8080
         - 8081:8081
@@ -285,7 +281,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.1.p1
+    image: linkitaly/govway:3.4.2
     ports:
         - 8080:8080
         - 8081:8081
@@ -374,7 +370,7 @@ All'avvio del container, sia in modalità standalone che con immagini orchestrat
 Per esaminare gli script SQL di inizializzazione o utilizzarli manualmente è possibile recuperarli dall'immagine in una delle directory standard **/opt/hsql**, **/opt/postgresql**, **/opt/mysql**, **/opt/mariadb**, **/opt/oracle** o **/opt/sqlserver**. Ad esempio per estrarre gli script SQL per PostgreSQL è possibile utilizzare il comando:
 
 ```shell
-CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.1.p1 initsql);
+CONTAINER_ID=$(docker run -d -e GOVWAY_DEFAULT_ENTITY_NAME=Ente -e GOVWAY_DB_TYPE=postgresql linkitaly/govway:3.4.2 initsql);
 docker wait ${CONTAINER_ID};
 docker cp ${CONTAINER_ID}:/opt/postgresql .;
 docker rm ${CONTAINER_ID}
@@ -490,7 +486,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1.p1_batch
+    image: linkitaly/govway:3.4.2_batch
     command:
       - giornaliere
     environment:
@@ -498,7 +494,7 @@ services:
 
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch
+    image: linkitaly/govway:3.4.2_batch
     command:
       - generaReportPDND
     environment:
@@ -506,77 +502,12 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch
+    image: linkitaly/govway:3.4.2_batch
     command:
       - pubblicaReportPDND
     environment:
       - ... come esempio 'batch_stat_orarie' ...
 ```
-
-Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracle11g/jdbc-driver deve essere presente il driver jdbc):
-
-```yaml
-version: '2'
-services:
-
-  batch_stat_orarie:
-    container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.4.1.p1_batch
-    volumes:
-       - ~/govway_log:/var/log/govway
-       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command:
-      - orarie
-    environment:
-      - GOVWAY_DB_TYPE=oracle
-      - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-      - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
-      - GOVWAY_STAT_DB_SERVER=oracle_hostname:1521
-      - GOVWAY_STAT_DB_NAME=govwaydb
-      - GOVWAY_STAT_DB_USER=govway
-      - GOVWAY_STAT_DB_PASSWORD=govway
-      - GOVWAY_BATCH_USA_CRON=true
-      - GOVWAY_BATCH_INTERVALLO_CRON=5
-      - TZ=Europe/Rome
-
-  batch_stat_giornaliere:
-    container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.1.p1_batch
-    volumes:
-       - ~/govway_conf:/etc/govway
-       - ~/govway_log:/var/log/govway
-       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command:
-      - giornaliere
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
-
-  batch_generazione_report_pdnd:
-    container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch
-    volumes:
-       - ~/govway_conf:/etc/govway
-       - ~/govway_log:/var/log/govway
-       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command:
-      - generaReportPDND
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
-
-  batch_pubblicazione_report_pdnd:
-    container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.1.p1_batch
-    volumes:
-       - ~/govway_conf:/etc/govway
-       - ~/govway_log:/var/log/govway
-       - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    command:
-      - pubblicaReportPDND
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
-
-```
-
 
 I containers vengono avviati con i seguenti comandi:
 
