@@ -29,7 +29,7 @@
 * `3.3.19_run`
 * `3.3.19_manager`
 * `3.3.19_batch`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19/govway/tomcat10/Dockerfile.govway)
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19/govway/tomcat9/Dockerfile.govway)
 * `3.3.18`, `3.3.18_standalone` 
 * `3.3.18_postgres`
 * `3.3.18_run_postgres`
