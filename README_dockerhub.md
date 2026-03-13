@@ -7,11 +7,11 @@
 
 ### 3.4.x
 
-* `3.4.2`, `latest`
-* `3.4.2_run`
-* `3.4.2_manager`
-* `3.4.2_batch`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.2/govway/tomcat10/Dockerfile.govway)
+* `3.4.2.p1`, `latest`
+* `3.4.2.p1_run`
+* `3.4.2.p1_manager`
+* `3.4.2.p1_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.2.p1/govway/tomcat10/Dockerfile.govway)
 * `3.4.1.p1`, `3.4.1.p1_standalone`
 * `3.4.1.p1_postgres`
 * `3.4.1.p1_run_postgres`
@@ -25,11 +25,11 @@
 
 ### 3.3.x
 
-* `3.3.19`
-* `3.3.19_run`
-* `3.3.19_manager`
-* `3.3.19_batch`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19/govway/tomcat9/Dockerfile.govway)
+* `3.3.19.p1`
+* `3.3.19.p1_run`
+* `3.3.19.p1_manager`
+* `3.3.19.p1_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19.p1/govway/tomcat9/Dockerfile.govway)
 * `3.3.18`, `3.3.18_standalone` 
 * `3.3.18_postgres`
 * `3.3.18_run_postgres`
@@ -222,7 +222,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.2
+    image: linkitaly/govway:3.4.2.p1
     ports:
         - 8080:8080
         - 8081:8081
@@ -251,7 +251,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.2
+    image: linkitaly/govway:3.4.2.p1
     ports:
         - 8080:8080
         - 8081:8081
@@ -486,7 +486,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.2_batch
+    image: linkitaly/govway:3.4.2.p1_batch
     command:
       - giornaliere
     environment:
@@ -494,7 +494,7 @@ services:
 
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.2_batch
+    image: linkitaly/govway:3.4.2.p1_batch
     command:
       - generaReportPDND
     environment:
@@ -502,7 +502,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.2_batch
+    image: linkitaly/govway:3.4.2.p1_batch
     command:
       - pubblicaReportPDND
     environment:
