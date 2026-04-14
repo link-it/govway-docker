@@ -25,6 +25,7 @@ GOVWAY_FULLVERSION=${govway_fullversion}
 
 COPY commons/ant.install.properties.template /var/tmp/
 
+ARG TARGETARCH
 ARG govway_stats_mode=runtime
 RUN set -eux; \
 if [ ${govway_appserver} == 'tomcat9' -o ${govway_appserver} == 'wildfly25' ]; then \
@@ -50,7 +51,8 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
   -e 's%org.openspcoop2.pdd.idGenerator=UUIDv1%org.openspcoop2.pdd.idGenerator=${GOVWAY_RESOLVED_UUID_ALG}%' \
   installer/setup/ant/distrib-build.xml installer/setup/antinstall-config.xml  /var/tmp/ant.install.properties.template; \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
-./install.sh text-auto 
+if [ "$TARGETARCH" = "arm64" ] && [ "${jdk_version}" = "11" ]; then export JAVA_TOOL_OPTIONS="-Xint"; fi; \
+./install.sh text-auto
 
 ARG runtime_custom_archives=commons/ant.install.properties.template
 ARG manager_custom_archives=commons/ant.install.properties.template
