@@ -53,7 +53,7 @@ sed -i -r -e 's%ui="(.*)"%ui="\1,text-auto"%' \
 mv /var/tmp/ant.install.properties.template installer/setup/; \
 if [ "$TARGETARCH" = "arm64" ] && [ "${jdk_version}" = "11" ]; then \
   cp ${JAVA_HOME}/bin/java ${JAVA_HOME}/bin/java.orig; \
-  printf '#!/bin/sh\nexec %s/bin/java.orig -Xint "$@"\n' "${JAVA_HOME}" > ${JAVA_HOME}/bin/java; \
+  printf '#!/bin/sh\nexec %s/bin/java.orig -XX:TieredStopAtLevel=1 "$@"\n' "${JAVA_HOME}" > ${JAVA_HOME}/bin/java; \
   chmod +x ${JAVA_HOME}/bin/java; \
 fi; \
 ./install.sh text-auto
