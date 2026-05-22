@@ -5,6 +5,7 @@
 - *3.4.3*
 
    - Aggiornato application server di base (Tomcat) alla versione 11.0.22.
+   - Aggiornato il runtime Java alla versione 25 per le immagini basate su Tomcat 11 e WildFly 39 (in precedenza Java 21).
 
 - *3.3.20*
 

@@ -93,7 +93,7 @@ while getopts "ht:v:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
       [ ${#TAG} -eq ${#NO_COLON} -o "${TAG:0:1}" == ':' -o "${TAG:(-1):1}" == ':' ] && { echo "Il tag fornito \"$TAG\" non utilizza la sintassi <repository>:<tagname>"; exit 2; } ;;
     v) VER="$OPTARG"; [ -n "$BRANCH" ] && { echo "Le opzioni -v e -b sono incompatibili. Impostare solo una delle due."; exit 2; } ;;
     g) APPSERV="${OPTARG}"; case "$APPSERV" in tomcat9);;tomcat10);;wildfly25);;wildfly35);;*) echo "Application server non supportato: $APPSERV"; exit 2;; esac ;;
-    k) JDKVER="${OPTARG}"; case "$JDKVER" in 11);;21);;*) echo "Versione JDK non supportato: $JDKVER"; exit 2;; esac ;;
+    k) JDKVER="${OPTARG}"; case "$JDKVER" in 11);;21);;25);;*) echo "Versione JDK non supportato: $JDKVER"; exit 2;; esac ;;
     l) LOCALFILE="$OPTARG"
         [ ! -f "${LOCALFILE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${LOCALFILE}]."; exit 3; } 
        ;;
@@ -152,7 +152,7 @@ then
   fi
 fi
 
-[  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=21
+[  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=25
 
 rm -rf buildcontext
 mkdir -p buildcontext/

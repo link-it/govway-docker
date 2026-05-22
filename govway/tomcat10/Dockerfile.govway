@@ -3,7 +3,7 @@ ARG govway_fullversion
 ARG source_image
 ARG govway_home=/etc/govway
 ARG govway_log=/var/log/govway
-ARG jdk_version=21
+ARG jdk_version=25
 
 # Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
 FROM ${source_image} AS source_image_full
