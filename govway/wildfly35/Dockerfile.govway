@@ -26,8 +26,8 @@ GOVWAY_LOGDIR=${govway_log} \
 GOVWAY_FULLVERSION=${govway_fullversion} \
 HSQLDB_FULLVERSION=2.7.4 \
 POSTGRES_JDBC_VERSION=42.7.11 \
-WILDFLY_VERSION=39.0.0.Final \
-JBOSS_HOME=/opt/wildfly-39.0.0.Final \
+WILDFLY_VERSION=40.0.0.Final \
+JBOSS_HOME=/opt/wildfly-40.0.0.Final \
 LAUNCH_JBOSS_IN_BACKGROUND=true \
 TZ="Europe/Rome" 
 
