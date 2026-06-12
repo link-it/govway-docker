@@ -7,39 +7,29 @@
 
 ### 3.4.x
 
-* `3.4.2.p1`, `latest`
+* `3.4.3`, `latest`
+* `3.4.3_run`
+* `3.4.3_manager`
+* `3.4.3_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.3/govway/tomcat10/Dockerfile.govway)
+* `3.4.2.p1`
 * `3.4.2.p1_run`
 * `3.4.2.p1_manager`
 * `3.4.2.p1_batch`
 * [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.2.p1/govway/tomcat10/Dockerfile.govway)
-* `3.4.1.p1`, `3.4.1.p1_standalone`
-* `3.4.1.p1_postgres`
-* `3.4.1.p1_run_postgres`
-* `3.4.1.p1_manager_postgres`
-* `3.4.1.p1_batch_postgres`
-* `3.4.1.p1_oracle`
-* `3.4.1.p1_run_oracle`
-* `3.4.1.p1_manager_oracle`
-* `3.4.1.p1_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.4.1.p1/govway/tomcat10/Dockerfile.govway)
 
 ### 3.3.x
 
+* `3.3.20`
+* `3.3.20_run`
+* `3.3.20_manager`
+* `3.3.20_batch`
+* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.20/govway/tomcat9/Dockerfile.govway)
 * `3.3.19.p1`
 * `3.3.19.p1_run`
 * `3.3.19.p1_manager`
 * `3.3.19.p1_batch`
 * [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.19.p1/govway/tomcat9/Dockerfile.govway)
-* `3.3.18`, `3.3.18_standalone` 
-* `3.3.18_postgres`
-* `3.3.18_run_postgres`
-* `3.3.18_manager_postgres`
-* `3.3.18_batch_postgres`
-* `3.3.18_oracle`
-* `3.3.18_run_oracle`
-* `3.3.18_manager_oracle`
-* `3.3.18_batch_oracle`
-* [`Dockerfile`](https://github.com/link-it/govway-docker/blob/gw_3.3.18/govway/tomcat9/Dockerfile.govway)
 
 ## Riferimenti al progetto
 * [Informazioni sul progetto GovWay](https://govway.org/)
@@ -54,6 +44,19 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 * Conformità alle specifiche per la fatturazione elettronica sul canale SdiCoop.
 
 ## Release Notes
+
+- *3.4.3* / *3.3.20*
+
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.11
+
+- *3.4.3*
+
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.22.
+   - Aggiornato il runtime Java alla versione 25 per le immagini basate su Tomcat 11 e WildFly 39 (in precedenza Java 21).
+
+- *3.3.20*
+
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.118.
 
 - *3.4.2*
 
@@ -222,7 +225,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.2.p1
+    image: linkitaly/govway:3.4.3
     ports:
         - 8080:8080
         - 8081:8081
@@ -251,7 +254,7 @@ version: '2'
 services:
   govway:
     container_name: govway
-    image: linkitaly/govway:3.4.2.p1
+    image: linkitaly/govway:3.4.3
     ports:
         - 8080:8080
         - 8081:8081
@@ -486,7 +489,7 @@ services:
 
   batch_stat_giornaliere:
     container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.2.p1_batch
+    image: linkitaly/govway:3.4.3_batch
     command:
       - giornaliere
     environment:
@@ -494,7 +497,7 @@ services:
 
   batch_generazione_report_pdnd:
     container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.2.p1_batch
+    image: linkitaly/govway:3.4.3_batch
     command:
       - generaReportPDND
     environment:
@@ -502,7 +505,7 @@ services:
 
   batch_pubblicazione_report_pdnd:
     container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.2.p1_batch
+    image: linkitaly/govway:3.4.3_batch
     command:
       - pubblicaReportPDND
     environment:
