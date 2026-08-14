@@ -459,6 +459,58 @@ EOCLI
 
     touch "${MODULE_INIT_FILE}"
 fi
+##########################################################################
+# Configurazione HTTPS: risoluzione password (_FILE con priorità) ed export.
+# Deve stare qui nell'entrypoint, non in config_https.sh: l'export deve essere
+# ereditato da standalone.sh, lanciato più avanti in questo stesso processo.
+# Idempotente: safe da rieseguire ad ogni riavvio (config_https.sh prepara
+# rigenera solo se manca il materiale su disco).
+##########################################################################
+for _govway_https_pass_base in GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD GOVWAY_AS_HTTPS_KEY_PASSWORD GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD
+do
+    for _govway_https_pass_suffix in '' _EROGAZIONI _FRUIZIONI _GESTIONE
+    do
+        _govway_https_varname="${_govway_https_pass_base}${_govway_https_pass_suffix}"
+        _govway_https_filevar="${_govway_https_varname}_FILE"
+        if [ -n "${!_govway_https_filevar}" ]
+        then
+            [ -n "${!_govway_https_varname}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${_govway_https_varname} che ${_govway_https_filevar}; ha priorità ${_govway_https_filevar}."
+            if [ ! -r "${!_govway_https_filevar}" ]
+            then
+                echo "FATAL: Configurazione HTTPS ... il file indicato da ${_govway_https_filevar} non è leggibile dall'utente $(id -u -n): [${!_govway_https_filevar}]"
+                exit 1
+            fi
+            { set +x; } 2>/dev/null
+            _govway_https_passval=
+            IFS= read -r _govway_https_passval < "${!_govway_https_filevar}"
+            printf -v "${_govway_https_varname}" '%s' "${_govway_https_passval}"
+            export "${_govway_https_varname}"
+            set -x
+        elif [ -n "${!_govway_https_varname}" ]
+        then
+            export "${_govway_https_varname}"
+        fi
+    done
+done
+
+/usr/local/bin/config_https.sh prepara
+
+# Determina se HTTPS sarebbe attivo, solo per classificare la gravità di un eventuale
+# errore di jboss-cli.sh più avanti (config_https.sh gira in un processo separato: la
+# sua variabile interna HTTPS_ENABLED non è visibile qui).
+HTTPS_WOULD_BE_ENABLED=false
+case "${GOVWAY_AS_HTTPS_LISTENER^^}" in
+    FALSE) : ;;
+    TRUE|HTTPS-8443) HTTPS_WOULD_BE_ENABLED=true ;;
+    *)
+        for _s in '' _EROGAZIONI _FRUIZIONI _GESTIONE
+        do
+            _v="GOVWAY_AS_HTTPS_CERTIFICATE${_s}"; [ -n "${!_v}" ] && HTTPS_WOULD_BE_ENABLED=true
+            _v="GOVWAY_AS_HTTPS_KEYSTORE${_s}";    [ -n "${!_v}" ] && HTTPS_WOULD_BE_ENABLED=true
+        done
+        ;;
+esac
+
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
     # Riconversione variabili con il carattere '-' nel nome
@@ -540,7 +592,24 @@ EOCLI
 
     fi
 
-    [ -f /tmp/__standalone_fix_connettori.cli ] && ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
+    if [ -f /tmp/__standalone_fix_connettori.cli ] || [ "${HTTPS_WOULD_BE_ENABLED}" = true ]
+    then
+        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
+        /usr/local/bin/config_https.sh cli /tmp/__standalone_fix_connettori.cli
+        echo 'stop-embedded-server' >> /tmp/__standalone_fix_connettori.cli
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
+        JBOSS_CLI_CONNETTORI_RC=$?
+        if [ ${JBOSS_CLI_CONNETTORI_RC} -ne 0 ]
+        then
+            if [ "${HTTPS_WOULD_BE_ENABLED}" = true ]
+            then
+                echo "FATAL: Configurazione connettori/HTTPS ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
+                exit 1
+            else
+                echo "WARN: Configurazione connettori ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
+            fi
+        fi
+    fi
     touch "${CONNETTORI_INIT_FILE}"
 fi
 

@@ -37,7 +37,7 @@ RUN set -eux; \
 mkdir -p ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR};  \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk${jdk_version}-jre tar netcat-openbsd unzip xmlstarlet bash fontconfig ttf-dejavu; \
+apk add --no-cache curl openjdk${jdk_version}-jre tar netcat-openbsd unzip xmlstarlet bash fontconfig ttf-dejavu openssl; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 addgroup -S wildfly; \
@@ -87,7 +87,7 @@ COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli
 RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${JBOSS_HOME}/standalone/configuration || echo "Personalizzazioni per AS non presenti"
 
 
-COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh /usr/local/bin/
+COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh commons/config_https.sh /usr/local/bin/
 
 ARG oracle_custom_jdbc=commons/entrypoint.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
@@ -110,6 +110,9 @@ echo "Abilito utilizzo degli header X-Forwarding" \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true) \n\
 echo "Rimuovo connettore https" \n\
 /subsystem=undertow/server=default-server/https-listener=https:remove() \n\
+echo "Aggiungo socket-binding per HTTPS fruizioni/gestione (erogazioni riusa il socket-binding https esistente)" \n\
+/socket-binding-group=standard-sockets/socket-binding=https-out:add(port=${jboss.https.out.port:8444}) \n\
+/socket-binding-group=standard-sockets/socket-binding=https-gest:add(port=${jboss.https.gest.port:8445}) \n\
 echo "Abilitazione Non standard wrapper" \n\
 /subsystem=undertow/servlet-container=default:write-attribute(name=allow-non-standard-wrappers, value=true) \n\
 echo "Correggo max post size" \n\
@@ -134,15 +137,15 @@ echo "Sposto Server Log"\n\
 #/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header:add\n\
 stop-embedded-server \n\
 ' > /tmp/govway_standalone_configuration.cli; \
-chmod 750 /usr/local/bin/config_datasource.sh; \
+chmod 750 /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh; \
 ${JBOSS_HOME}/bin/jboss-cli.sh --file=/tmp/govway_standalone_configuration.cli \
 && rm -rf ${JBOSS_HOME}/standalone/{data,log,configuration/standalone_xml_history} /tmp/govway_standalone_configuration.cli /tmp/*
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses \
-&& chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R wildfly:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh ${JBOSS_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${JBOSS_HOME}/standalone ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ /opt/sqlserver/ \
 && { for d in ${JBOSS_HOME}/modules/*Mod/main/; do [ -d "$d" ] && chmod -Rf g+rwX "$d"; done; true; } \
-&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 
 
@@ -153,6 +156,6 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 /usr/share/licenses/govway/
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 USER wildfly
-EXPOSE 8080 8081 8082 8009
+EXPOSE 8080 8081 8082 8009 8443 8444 8445
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 CMD []
