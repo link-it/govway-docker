@@ -341,6 +341,8 @@ I servizi attivi all'interno dell'immagine sono in ascolto sia in protocollo _**
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
 
+Le stesse tre categorie di traffico sono disponibili anche in **HTTPS**, rispettivamente sulle porte **8443**, **8444** e **8445** (disattivate per default, si attivano con `GOVWAY_AS_HTTPS_LISTENER=true` o automaticamente se viene fornito un certificato — vedi `GOVWAY_AS_HTTPS_*` nel README del progetto).
+
 Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno si devono pubblicare al momento dell'avvio del immagine. 
 Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
 

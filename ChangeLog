@@ -1,5 +1,6 @@
 - *3.4.4* / *3.3.21*
 
+   - Aggiunto supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti e quattro gli application server, con quattro modalità di provisioning del certificato (self-signed, PEM montato, keystore montato, mTLS/client-auth).
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
 
 - *3.4.3* / *3.3.20*

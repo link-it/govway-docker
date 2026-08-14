@@ -72,7 +72,7 @@ docker compose up
 ```
 
 Sotto la directory compose vengono create le sottodirectories **govway_conf** e **govway_log**, su cui il container montera' i path _**/etc/govway**_ ed _**/var/log/govway**_  rispettivamente.
-L'accesso è previsto in protocollo HTTP sulle porte _**8080, 8081, 8082**_ .
+L'accesso è previsto in protocollo HTTP sulle porte _**8080, 8081, 8082**_ (le stesse porte sono disponibili anche in HTTPS su _**8443, 8444, 8445**_, vedi [Configurazione HTTPS/TLS](#configurazione-httpstls)).
 
 ## Informazioni di Base
 
@@ -359,6 +359,7 @@ Per configurare con quali protocolli i listener di wildfly accetteranno le richi
 
 * GOVWAY_AS_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )
 * GOVWAY_AS_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
+* GOVWAY_AS_HTTPS_LISTENER: Abilita o disabilita i listener HTTPS sulle porte 8443/8444/8445 (default: false, implicitamente true se è presente materiale crittografico — vedi [Configurazione HTTPS/TLS](#configurazione-httpstls), valori ammissibili [true, false, https-8443] )
 
 A seconda del protocollo che si vuole configurare, valorizzando la relativa variabile a **true** si abiliteranno tutti e tre listener previsti di erogazione, fruizione e gestione. Viceversa valorizzando a **false** i tre listener verranno disabilitati.
 Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un solo un listener per il protocollo scelto, sulla rispettiva porta di default.
@@ -391,6 +392,64 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * ~WILDFLY_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS]**
 * ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS]**
 * ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di GOVWAY_AS_MAX_POST_SIZE]**
+
+#### Configurazione HTTPS/TLS
+
+Oltre alle porte HTTP (8080/8081/8082) è possibile esporre le stesse tre categorie di traffico (erogazione/fruizione/gestione) anche in HTTPS, rispettivamente sulle porte **8443**, **8444** e **8445**. Le porte HTTP restano attive: HTTPS si affianca, non le sostituisce.
+
+**Attivazione**: senza alcuna variabile `GOVWAY_AS_HTTPS_*` impostata, il comportamento è identico a prima (nessuna modifica alla configurazione, nessuna porta HTTPS in ascolto). HTTPS si attiva:
+- esplicitamente con `GOVWAY_AS_HTTPS_LISTENER=true` (o `https-8443` per abilitare solo la porta di erogazione);
+- oppure implicitamente, in automatico, non appena viene valorizzata una qualsiasi variabile di certificato/keystore (vedi sotto).
+
+Se richiesto ma senza alcun materiale crittografico indicato, viene generato un certificato **self-signed di test** (loggato con un WARN esplicito: da non usare in produzione).
+
+| Variabile | Default | Note |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_LISTENER` | `false` (`true` implicito se è presente materiale TLS) | `true` / `false` / `https-8443` |
+| `GOVWAY_AS_HTTPS_PORT_EROGAZIONI` / `_FRUIZIONI` / `_GESTIONE` | `8443` / `8444` / `8445` | |
+| `GOVWAY_AS_HTTPS_CERTIFICATE` (+ `_KEY`, `_CHAIN`) | — | modo PEM: certificato/chiave/catena montati |
+| `GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD` / `_FILE` | vuoto | solo se la chiave PEM è cifrata |
+| `GOVWAY_AS_HTTPS_KEYSTORE` (+ `_TYPE`, `_ALIAS`) | — | modo keystore: PKCS12/JKS montato |
+| `GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD` / `_FILE` | `govway` nel self-signed, obbligatoria col keystore montato | |
+| `GOVWAY_AS_HTTPS_KEY_PASSWORD` / `_FILE` | = password del keystore | solo se l'alias ha una password diversa da quella del keystore |
+| `GOVWAY_AS_HTTPS_CLIENT_AUTH` (+ per porta `_EROGAZIONI`/`_FRUIZIONI`/`_GESTIONE`) | `none` | `none` / `optional` / `required` — mTLS, tipicamente richiesto su erogazione/fruizione e `none` su gestione (altrimenti la console non è raggiungibile da browser) |
+| `GOVWAY_AS_HTTPS_TRUSTSTORE` (+ `_TYPE`, `_PASSWORD`/`_FILE`) | — | truststore già pronto, per client auth |
+| `GOVWAY_AS_HTTPS_CA_CERTIFICATE` | — | via consigliata per client auth: bundle PEM di CA (anche multi-CA), convertito automaticamente in truststore |
+| `GOVWAY_AS_HTTPS_PROTOCOLS` | `TLSv1.2,TLSv1.3` | |
+| `GOVWAY_AS_HTTPS_CIPHERS` | default dell'application server | sintassi non portabile fra Tomcat e WildFly |
+| `GOVWAY_AS_HTTPS_SELF_SIGNED_CN` / `_SAN` / `_VALIDITY` | `localhost` / `DNS:localhost,DNS:<hostname>,IP:127.0.0.1` / `825` | solo per il certificato self-signed |
+
+Ogni variabile senza suffisso vale globalmente per tutte e tre le porte; aggiungendo `_EROGAZIONI`, `_FRUIZIONI` o `_GESTIONE` si può fare un override per singola porta (utile soprattutto per `GOVWAY_AS_HTTPS_CLIENT_AUTH`).
+
+Le password seguono la convenzione **`X` / `X_FILE`**, con `X_FILE` (path a un file contenente la password) prioritario se entrambe sono impostate — coerente con le immagini Docker ufficiali (es. `GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD`).
+
+Esempi:
+```bash
+# (a) Solo attivazione, certificato self-signed generato automaticamente
+docker run ... -e GOVWAY_AS_HTTPS_LISTENER=true ...
+
+# (b) Certificato PEM montato
+docker run ... -v /path/certs:/certs:ro \
+  -e GOVWAY_AS_HTTPS_CERTIFICATE=/certs/fullchain.pem \
+  -e GOVWAY_AS_HTTPS_CERTIFICATE_KEY=/certs/privkey.pem ...
+
+# (c) Keystore PKCS12 montato
+docker run ... -v /path/keystore.p12:/certs/keystore.p12:ro \
+  -e GOVWAY_AS_HTTPS_KEYSTORE=/certs/keystore.p12 \
+  -e GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD_FILE=/run/secrets/keystore_password ...
+
+# (d) mTLS su erogazione/fruizione, console di gestione raggiungibile senza certificato client
+docker run ... \
+  -e GOVWAY_AS_HTTPS_CLIENT_AUTH=required \
+  -e GOVWAY_AS_HTTPS_CLIENT_AUTH_GESTIONE=none \
+  -e GOVWAY_AS_HTTPS_CA_CERTIFICATE=/certs/ca-bundle.pem ...
+```
+
+**Limiti noti**:
+- Su Tomcat, la verifica della catena CA (`GOVWAY_AS_HTTPS_CA_CERTIFICATE`) usa JSSE (non è disponibile `tomcat-native`/OpenSSL): un bundle PEM viene sempre convertito internamente in un truststore.
+- Il modo PEM (b) richiede una conversione a PKCS12 su WildFly (Elytron non ha un tipo key-store PEM); su Tomcat invece il PEM è supportato nativamente, nessuna conversione.
+- La riconfigurazione non è "a caldo": cambiare porte o materiale crittografico richiede di ricreare il container (i marker di inizializzazione rendono l'operazione one-shot per container, come per i datasource).
+- SNI e certificati diversi per host virtuale sullo stesso connettore non sono supportati.
 
 ### Configurazioni avanzate
 * GOVWAY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento dell'application server. (default: 20s)

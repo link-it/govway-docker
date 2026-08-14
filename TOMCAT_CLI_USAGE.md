@@ -301,6 +301,25 @@ Eseguire:
 /usr/local/bin/tomcat-cli.sh /path/to/cleanup.cli
 ```
 
+### Esempio 7: Connettore HTTPS con Certificato Annidato
+
+Un caso non ovvio: `add`/`top` accettano come target un nodo creato da una direttiva **precedente dello stesso file** (il documento XML vive in memoria e si salva solo alla fine di tutto il file, non ad ogni direttiva). Questo permette di costruire una gerarchia `Connector` → `SSLHostConfig` → `Certificate` in tre passi sequenziali, anche se `Connector` e `SSLHostConfig` non esistono ancora quando il file inizia:
+
+```
+# 1) Crea il Connector (non esiste ancora nessun SSLHostConfig sotto)
+/Server/Service/Connector:add port=8443, protocol=HTTP/1.1, SSLEnabled=true, scheme=https, secure=true, executor=https-in-worker
+
+# 2) SSLHostConfig viene aggiunto sotto il Connector appena creato: l'XPath lo trova
+#    perché nel frattempo il documento in memoria è già stato aggiornato dalla direttiva 1)
+/Server/Service/Connector[@port="8443"]/SSLHostConfig:add protocols=TLSv1.2+TLSv1.3
+
+# 3) Idem per Certificate, annidato sotto l'SSLHostConfig appena creato
+/Server/Service/Connector[@port="8443"]/SSLHostConfig/Certificate:add certificateKeystoreFile=/path/keystore.p12
+/Server/Service/Connector[@port="8443"]/SSLHostConfig/Certificate:write-attribute certificateKeystoreType=PKCS12
+```
+
+Il predicato `[@port="8443"]` è obbligatorio in ogni direttiva successiva alla prima: `XPathConstants.NODE` restituisce sempre il **primo** nodo che soddisfa l'XPath, quindi con tre `Connector` (uno per erogazione, uno per fruizione, uno per gestione) un XPath senza predicato colpirebbe sempre lo stesso. Questo pattern è usato dal blocco HTTPS di `commons/tomcat*/entrypoint.sh`.
+
 ## Utilizzo con le Immagini Docker GovWay
 
 ### Durante l'Inizializzazione del Container
@@ -389,6 +408,17 @@ docker run -e HTTP_PORT=9090 \
 ```
 
 Le variabili vengono espanse automaticamente da Tomcat all'avvio del container.
+
+#### Perché le password vanno passate per indirezione
+
+Per qualsiasi direttiva che coinvolge una password (es. `certificateKeystorePassword` nella configurazione HTTPS), il file `.cli` deve contenere **sempre e solo** il letterale `${NOME_VARIABILE}`, mai il valore risolto. Due motivi concreti, non solo prudenza:
+
+1. **`TomcatConfigCli.java` stampa su stdout ogni parametro che processa** (`System.out.println("- Parametro[" + key + "] = " + value)`). Se il `.cli` contenesse il valore reale di una password, questo finirebbe nei log del container (`docker logs`), che spesso vengono allegati a ticket di supporto o raccolti da sistemi di log aggregation.
+2. Gli script che generano questi file girano con `set -x` attivo (per debug), scrivendo ogni comando eseguito in `/tmp/entrypoint_debug.log`. Se uno script leggesse il valore della password in una variabile bash e la usasse per **costruire** la stringa della direttiva, quel valore comparirebbe in chiaro nella riga di trace. Scrivendo invece sempre il letterale `${VAR}`, lo script non deve mai leggere/interpolare il valore della password: la risoluzione avviene solo dopo, dentro la JVM di Tomcat, leggendo la propria variabile d'ambiente.
+
+Corollario da non dimenticare: se la variabile referenziata è **assente e senza default `:-`**, Tomcat lascia il letterale `${VAR}` nell'attributo XML così com'è — con conseguenze diverse a seconda dell'attributo (`NumberFormatException` se è un numero, keystore non trovato se è un path, ecc.), tipicamente un crash-loop del container. Ogni attributo passato per indirezione deve quindi avere o un default `:-`, o la garanzia che la variabile sia valorizzata al momento in cui l'entrypoint genera il file `.cli`.
+
+Da notare anche una conseguenza collaterale utile: scrivendo sempre `${VAR}` invece del valore, una virgola nel valore reale (es. una lista di cifrari OpenSSL tipo `HIGH:!aNULL`, che di per sé non contiene virgole, ma altri valori potrebbero) non interferisce mai con lo split ingenuo su `,` che `TomcatConfigCli` applica ai parametri — perché al momento dello split il file contiene solo il nome della variabile, non il suo contenuto.
 
 ## Esempi Reali di GovWay
 
