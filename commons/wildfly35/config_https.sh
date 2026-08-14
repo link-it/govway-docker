@@ -46,9 +46,11 @@ govway_https_check_pkcs12_legacy() {
     # Rileva l'OID PBES2 (1.2.840.113549.1.5.13) direttamente nei byte del file, senza
     # bisogno della password (gli identificativi di algoritmo non sono cifrati). Un
     # PKCS12 con questo algoritmo (default di OpenSSL 3.x e delle versioni recenti di
-    # keytool) può non essere letto correttamente da alcune combinazioni WildFly/JDK
-    # (stesso problema riscontrato lato Tomcat - vedi PIANO_HTTPS_TLS.md). Qui non
-    # possiamo rigenerare il file dell'utente: meglio un FATAL esplicito che un
+    # keytool) non viene decifrato correttamente da BouncyCastle (bundlato in ogni
+    # webapp GovWay e registrato come provider JCE, intercetta la risoluzione generica
+    # di KeyStore.getInstance("PKCS12") al posto di quella nativa JDK - non è un limite
+    # della JVM, stesso problema riscontrato lato Tomcat, vedi PIANO_HTTPS_TLS.md). Qui
+    # non possiamo rigenerare il file dell'utente: meglio un FATAL esplicito che un
     # crash-loop criptico.
     local path="$1" type="$2" varname="$3" pbes2_oid
     [ -z "${path}" ] && return 0
@@ -57,7 +59,7 @@ govway_https_check_pkcs12_legacy() {
     if grep -q -a -F "${pbes2_oid}" "${path}" 2>/dev/null
     then
         echo "FATAL: Configurazione HTTPS ... il file indicato da ${varname} usa l'algoritmo PKCS12 moderno (PBES2/AES-256)."
-        echo "FATAL: Questa combinazione WildFly/JDK potrebbe non leggerlo correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
+        echo "FATAL: BouncyCastle (bundlato in ogni webapp GovWay) non lo decifra correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
         echo "FATAL: Rigenerarlo con 'openssl pkcs12 -export -legacy ...' oppure con 'keytool ... -J-Dkeystore.pkcs12.legacy'."
         exit 1
     fi
@@ -73,10 +75,11 @@ govway_https_has_material() {
     return 1
 }
 
-# -legacy: il default di OpenSSL 3.x (PBES2/PBKDF2/AES-256) produce un PKCS12 che alcune
-# combinazioni JSSE non riescono a decifrare (fallisce con "keystore password was incorrect"
-# / BadPaddingException pur essendo file e password corretti, verificato con keytool).
-# RC2/3DES legacy è universalmente compatibile.
+# -legacy: il default di OpenSSL 3.x (PBES2/PBKDF2/AES-256) produce un PKCS12 che
+# BouncyCastle (bundlato in ogni webapp GovWay, non è un limite della JVM/JSSE) non
+# riesce a decifrare (fallisce con "keystore password was incorrect" / BadPaddingException
+# pur essendo file e password corretti, verificabile con keytool fuori da un processo
+# GovWay). RC2/3DES legacy è universalmente compatibile.
 govway_https_pem_to_p12() {
     # $1=certfile $2=keyfile $3=chainfile(o vuoto) $4=keypass_env(nome variabile, o vuoto) $5=outfile $6=storepass_env(nome variabile)
     local certfile="$1" keyfile="$2" chainfile="$3" keypassenv="$4" outfile="$5" storepassenv="$6"
@@ -126,8 +129,9 @@ govway_https_ca_to_truststore() {
     # ks.size()==0, poi WFLYELY fallisce con "trustAnchors must be non-empty"). Si usa
     # invece keytool -importcert, un'invocazione per certificato del bundle.
     # -J-Dkeystore.pkcs12.legacy: il default moderno (PBES2/AES-256) usato da keytool
-    # stesso non viene letto correttamente da questa combinazione WildFly/JDK; forza
-    # la cifratura legacy RC2/3DES (stesso problema riscontrato lato Tomcat).
+    # stesso non viene decifrato correttamente da BouncyCastle (bundlato in GovWay,
+    # non è un limite della JVM); forza la cifratura legacy RC2/3DES (stesso problema
+    # riscontrato lato Tomcat).
     local cabundle="$1" outfile="$2" storepassenv="$3" tmpdir i=0 certfile
     tmpdir=$(mktemp -d)
     awk -v dir="${tmpdir}" '
