@@ -450,6 +450,7 @@ docker run ... \
 - Il modo PEM (b) richiede una conversione a PKCS12 su WildFly (Elytron non ha un tipo key-store PEM); su Tomcat invece il PEM è supportato nativamente, nessuna conversione.
 - La riconfigurazione non è "a caldo": cambiare porte o materiale crittografico richiede di ricreare il container (i marker di inizializzazione rendono l'operazione one-shot per container, come per i datasource).
 - SNI e certificati diversi per host virtuale sullo stesso connettore non sono supportati.
+- Nel modo keystore/truststore montato (c/d con `GOVWAY_AS_HTTPS_TRUSTSTORE`), se il file **PKCS12** fornito usa l'algoritmo di cifratura moderno (default di OpenSSL 3.x e delle versioni recenti di `keytool`: PBES2/PBKDF2/AES-256), il container **si arresta subito con un errore esplicito** invece di avviarsi: alcune combinazioni JVM/application server non riescono a leggerlo correttamente e fallirebbero più avanti con un errore fuorviante ("keystore password was incorrect" anche a password corretta). Rigenerare il file con `openssl pkcs12 -export -legacy ...` oppure `keytool ... -J-Dkeystore.pkcs12.legacy`. I formati **JKS** non sono affetti da questa limitazione.
 
 ### Configurazioni avanzate
 * GOVWAY_SUSPEND_TIMEOUT: Tempo massimo di attesa per la chiusura delle richiesta attive in fase di spegnimento dell'application server. (default: 20s)

@@ -568,6 +568,28 @@ then
         esac
     }
 
+    govway_https_check_pkcs12_legacy() {
+        # $1 = path del file, $2 = tipo (JKS non è a rischio, si controlla solo PKCS12), $3 = nome variabile per il messaggio
+        # Rileva l'OID PBES2 (1.2.840.113549.1.5.13) direttamente nei byte del file, senza
+        # bisogno della password (gli identificativi di algoritmo non sono cifrati). Un
+        # PKCS12 con questo algoritmo (default di OpenSSL 3.x e delle versioni recenti di
+        # keytool) non viene letto correttamente da alcune combinazioni Tomcat/JDK (fallisce
+        # con "keystore password was incorrect" / BadPaddingException pur con password
+        # corretta - vedi PIANO_HTTPS_TLS.md). Qui non possiamo rigenerare il file
+        # dell'utente: meglio un FATAL esplicito che un crash-loop criptico.
+        local path="$1" type="$2" varname="$3" pbes2_oid
+        [ -z "${path}" ] && return 0
+        [ "${type^^}" = "PKCS12" ] || return 0
+        pbes2_oid=$(printf '\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0d')
+        if grep -q -a -F "${pbes2_oid}" "${path}" 2>/dev/null
+        then
+            echo "FATAL: Configurazione HTTPS ... il file indicato da ${varname} usa l'algoritmo PKCS12 moderno (PBES2/AES-256)."
+            echo "FATAL: Questa combinazione Tomcat/JDK non lo legge correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
+            echo "FATAL: Rigenerarlo con 'openssl pkcs12 -export -legacy ...' oppure con 'keytool ... -J-Dkeystore.pkcs12.legacy'."
+            exit 1
+        fi
+    }
+
     govway_https_selfsigned() {
         # $1 = suffisso porta (EROGAZIONI|FRUIZIONI|GESTIONE), $2 = directory di output
         local suffix="$1" outdir="$2" cnvar sanvar validityvar cn san validity
@@ -808,6 +830,7 @@ then
             then
                 # modo (c): keystore PKCS12/JKS montato
                 kstype="${!keystoretypevar:-$(govway_https_sniff_type "${!keystorevar}")}"
+                govway_https_check_pkcs12_legacy "${!keystorevar}" "${kstype}" "${keystorevar}"
                 govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:add certificateKeystoreFile=\${${keystorevar}}"
                 govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystoreType=${kstype}"
                 [ -n "${!keystorealiasvar}" ] && govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyAlias=\${${keystorealiasvar}}"
@@ -851,6 +874,7 @@ then
                     govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststorePassword=govway"
                 else
                     tstype="${!truststoretypevar:-$(govway_https_sniff_type "${!truststorevar}")}"
+                    govway_https_check_pkcs12_legacy "${!truststorevar}" "${tstype}" "${truststorevar}"
                     govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreFile=\${${truststorevar}}"
                     govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreType=${tstype}"
                     # NOTA: Tomcat non ha un attributo truststorePasswordFile nativo (limite noto, vedi doc).

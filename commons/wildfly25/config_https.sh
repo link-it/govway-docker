@@ -41,6 +41,28 @@ govway_https_sniff_type() {
     esac
 }
 
+govway_https_check_pkcs12_legacy() {
+    # $1 = path del file, $2 = tipo (JKS non è a rischio, si controlla solo PKCS12), $3 = nome variabile per il messaggio
+    # Rileva l'OID PBES2 (1.2.840.113549.1.5.13) direttamente nei byte del file, senza
+    # bisogno della password (gli identificativi di algoritmo non sono cifrati). Un
+    # PKCS12 con questo algoritmo (default di OpenSSL 3.x e delle versioni recenti di
+    # keytool) può non essere letto correttamente da alcune combinazioni WildFly/JDK
+    # (stesso problema riscontrato lato Tomcat - vedi PIANO_HTTPS_TLS.md). Qui non
+    # possiamo rigenerare il file dell'utente: meglio un FATAL esplicito che un
+    # crash-loop criptico.
+    local path="$1" type="$2" varname="$3" pbes2_oid
+    [ -z "${path}" ] && return 0
+    [ "${type^^}" = "PKCS12" ] || return 0
+    pbes2_oid=$(printf '\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0d')
+    if grep -q -a -F "${pbes2_oid}" "${path}" 2>/dev/null
+    then
+        echo "FATAL: Configurazione HTTPS ... il file indicato da ${varname} usa l'algoritmo PKCS12 moderno (PBES2/AES-256)."
+        echo "FATAL: Questa combinazione WildFly/JDK potrebbe non leggerlo correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
+        echo "FATAL: Rigenerarlo con 'openssl pkcs12 -export -legacy ...' oppure con 'keytool ... -J-Dkeystore.pkcs12.legacy'."
+        exit 1
+    fi
+}
+
 govway_https_has_material() {
     local s v
     for s in "" _EROGAZIONI _FRUIZIONI _GESTIONE
@@ -238,6 +260,15 @@ govway_https_resolve_suffix() {
     then
         echo "FATAL: Configurazione HTTPS ... ${CUR_KEYSTOREPASSVAR} è obbligatoria quando è impostata ${CUR_KEYSTOREVAR}."
         exit 1
+    fi
+
+    if [ -n "${!CUR_KEYSTOREVAR}" ]
+    then
+        govway_https_check_pkcs12_legacy "${!CUR_KEYSTOREVAR}" "${!CUR_KEYSTORETYPEVAR:-$(govway_https_sniff_type "${!CUR_KEYSTOREVAR}")}" "${CUR_KEYSTOREVAR}"
+    fi
+    if [ -n "${!CUR_TRUSTSTOREVAR}" ]
+    then
+        govway_https_check_pkcs12_legacy "${!CUR_TRUSTSTOREVAR}" "${!CUR_TRUSTSTORETYPEVAR:-$(govway_https_sniff_type "${!CUR_TRUSTSTOREVAR}")}" "${CUR_TRUSTSTOREVAR}"
     fi
 
     # Materiale di nostra generazione (self-signed/PEM->P12): sempre sotto CONF_DIR,
