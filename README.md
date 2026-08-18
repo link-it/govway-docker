@@ -533,3 +533,88 @@ Quando ci si connette ad un database esterno SQL Server è possibile configurare
 
 ### Configurazioni avanzate
 * GOVWAY_JVM_AGENT_JAR: Path ad un jar agent da caricare all'avvio dell'applicazione (Ex. OpenTelemetry)
+
+## Informazioni sull'immagine tools
+
+Utilizzando lo switch "-a tools" dello script di build si ottiene un'immagine **rilasciata separatamente**, `linkitaly/govway-tools:<versione>` (un repository Docker diverso da `linkitaly/govway`, non un tag), che espone i tool a linea di comando prodotti dall'installer GovWay:
+
+* **govway-config-loader**: caricamento di un export della console tramite azioni `create`, `createOrUpdate`, `delete`
+* **govway-template-scan**: verifica dei template presenti nella configurazione
+* **govway-vault-cli**: cifratura/decifratura/aggiornamento delle password gestite dal vault di GovWay, tramite azioni `encrypt`, `decrypt`, `update`
+
+Come le immagini batch, non viene istanziato alcun application server: il container esegue un singolo tool e termina, adatto sia ad un `docker run` singolo che ad un Pod/Job Kubernetes ad esecuzione unica.
+
+```bash
+./build_image.sh -a tools -v 3.4.3
+```
+
+L'immagine espone un unico entrypoint che fa da dispatcher sul tool e sull'azione richiesti:
+
+```bash
+docker run --rm \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
+  -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
+  -e GOVWAY_DS_JDBC_LIBS=/tmp \
+  -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
+  -v ./archivio.zip:/archivio.zip \
+  linkitaly/govway-tools:3.4.3 config-loader create /archivio.zip
+```
+
+```bash
+docker run --rm \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
+  -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
+  -e GOVWAY_DS_JDBC_LIBS=/tmp \
+  -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
+  linkitaly/govway-tools:3.4.3 template-scan '.*'
+```
+
+```bash
+docker run --rm linkitaly/govway-tools:3.4.3 vault-cli encrypt -system_in=miosegreto -system_out
+```
+
+I comandi supportati sono:
+* `config-loader create <archivePath>`
+* `config-loader createOrUpdate <archivePath>`
+* `config-loader delete <archivePath>`
+* `template-scan <regex>`
+* `vault-cli encrypt [args...]`
+* `vault-cli decrypt [args...]`
+* `vault-cli update [args...]`
+
+I file di configurazione dei tre tool (originariamente distinti per ciascun tool nell'installer) sono centralizzati in un'unica directory `/etc/govway`, montabile come volume per personalizzazioni persistenti (es. `byok.properties`, `hsm.properties`); i log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
+
+## Personalizzazioni Tools
+
+### Connessione a database esterni
+
+I tool `config-loader`, `template-scan` e `vault-cli update` richiedono l'accesso al database di CONFIGURAZIONE di GovWay. La configurazione della connessione segue due modalità **automatiche e alternative** tra loro, scelte in base alla presenza o meno di `GOVWAY_DB_TYPE`:
+
+* **variabili d'ambiente** (`GOVWAY_DB_TYPE` impostata): l'entrypoint genera a runtime le proprietà di connessione dalle variabili sotto elencate;
+* **file di configurazione** (`GOVWAY_DB_TYPE` non impostata): il tool utilizza le properties già presenti in `/etc/govway` — quelle di default incluse nell'immagine, oppure quelle fornite dall'utente tramite un bind-mount su `/etc/govway` (o sul singolo file di properties del tool).
+
+Variabili per la modalità a variabili d'ambiente:
+
+* GOVWAY_DB_TYPE: Indica il tipo di database da utilizzare (valori ammessi: postgresql, mysql, mariadb, oracle, sqlserver)
+
+  **NOTA:** Il database HSQL non è supportato: i tool operano su un database esterno già popolato, non su un'istanza file-based locale.
+
+* GOVWAY_DB_SERVER: nome dns o ip address del server database (obbligatorio se GOVWAY_DB_TYPE è impostata)
+* GOVWAY_DB_NAME: nome del database (obbligatorio se GOVWAY_DB_TYPE è impostata)
+* GOVWAY_DB_USER: username da utilizzare per l'accesso al database (obbligatorio se GOVWAY_DB_TYPE è impostata)
+* GOVWAY_DB_PASSWORD: password di accesso al database (obbligatorio se GOVWAY_DB_TYPE è impostata)
+* GOVWAY_DS_JDBC_LIBS: path sul filesystem del container, ad una directory dove sono contenuti uno o più file jar necessari per l'interfacciamento al database
+
+  ***AVVISO COMPORTAMENTO DEPRECATO: se non fornita e il database è PostgreSQL, viene utilizzato il driver JDBC interno all'immagine. Nelle prossime versioni sarà obbligatorio fornire le librerie attraverso GOVWAY_DS_JDBC_LIBS.***
+
+  **NOTA:** `GOVWAY_DS_JDBC_LIBS` viene collegata al classpath del tool **solo** quando `GOVWAY_DB_TYPE` è impostata. Nella modalità "file di configurazione" (nessuna `GOVWAY_DB_TYPE`), il driver va fornito esportando direttamente la variabile del tool interessato (`TOOL_JDBC` per template-scan, `BATCH_JDBC` per config-loader, `VAULT_JDBC` per vault-cli) oppure montandolo dentro la relativa directory `jdbc/` dell'immagine.
+
+#### Connessione a database Oracle ####
+Quando ci si connette ad un database esterno Oracle deve essere indicata anche la seguente variabile d'ambiente
+
+* GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle
+
+#### Connessione a database SQL Server ####
+Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le stesse variabili d'ambiente descritte per l'immagine principale: GOVWAY_SQLSERVER_ENCRYPT, GOVWAY_SQLSERVER_TRUSTSTORE, GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD.

@@ -523,6 +523,40 @@ $ docker-compose up
 > **_NOTA:_** Negli esempi forniti per l'ambiente docker-compose, non essendo possibile schedulare jobs in maniera orchestrata, è stata abilitata la modalità 'cron' tramite l'abilitazione della variabile 'GOVWAY_BATCH_USA_CRON' e la definizione dell'intervallo di schedulazione del batch in minuti tramite la variabile 'GOVWAY_BATCH_INTERVALLO_CRON'. Su ambienti dove esiste la possibilità di schedulare jobs (es. Cronjobs kubernetes) deve essere disabilitata la variabile 'GOVWAY_BATCH_USA_CRON' o in alternativa non deve essere dichiarata (assume per default il valore false).
 
 
+## Ambiente tools (CLI installer)
+
+> **_NOTA:_** A differenza delle varianti `_run`/`_manager`/`_batch`, l'immagine tools viene pubblicata in un **repository Docker Hub separato**: `linkitaly/govway-tools`, non un tag di `linkitaly/govway`.
+
+L'installer GovWay produce, oltre agli archivi applicativi, tre tool a linea di comando: **govway-config-loader** (caricamento di un export della console), **govway-template-scan** (verifica dei template presenti in configurazione) e **govway-vault-cli** (cifratura/decifratura/aggiornamento delle password gestite dal vault). L'immagine `linkitaly/govway-tools` li rende disponibili senza dover installare a mano GovWay: nessun application server, un solo tool eseguito per ogni avvio del container, adatta sia a un `docker run` singolo che a un Pod/Job Kubernetes ad esecuzione unica.
+
+```console
+$ docker run --rm \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
+  -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
+  -e GOVWAY_DS_JDBC_LIBS=/tmp \
+  -v ~/postgresql/jdbc-driver:/tmp \
+  -v ~/archivio.zip:/archivio.zip \
+  linkitaly/govway-tools:3.4.3 config-loader create /archivio.zip
+```
+
+```console
+$ docker run --rm \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
+  -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
+  -e GOVWAY_DS_JDBC_LIBS=/tmp \
+  -v ~/postgresql/jdbc-driver:/tmp \
+  linkitaly/govway-tools:3.4.3 template-scan '.*'
+```
+
+```console
+$ docker run --rm linkitaly/govway-tools:3.4.3 vault-cli encrypt -system_in=miosegreto -system_out
+```
+
+I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>` e `vault-cli encrypt|decrypt|update [args...]`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale (database HSQL non supportato: i tool operano su un database esterno già popolato); se `GOVWAY_DB_TYPE` non viene impostata, il tool utilizza le properties già presenti in `/etc/govway`, montabile come volume per fornire una configurazione completa (comprese eventuali `byok.properties`/`hsm.properties`). I log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
+
+
 ## Versione Snapshot
 
 ### 3.4.x

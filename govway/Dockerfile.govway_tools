@@ -1,0 +1,100 @@
+# stage sorgente da utilizzare per il build dell'immagine finale
+ARG govway_fullversion
+ARG source_image
+ARG govway_tools_home=/opt/govway-tools
+ARG govway_home=/etc/govway
+ARG govway_log=/var/log/govway
+ARG jdk_version=21
+
+# Trasformo l'argomento di build source_image in un nome di stage (da usare su COPY --from=...)
+FROM ${source_image} AS source_image_full
+
+
+
+FROM alpine:latest AS source_image_built
+LABEL org.opencontainers.image.authors="manca@link.it"
+LABEL org.opencontainers.image.description="Immagine utilizzata per l'esecuzione dei tool CLI prodotti dall'installer GovWay (config-loader, template-scan, vault-cli)"
+ARG govway_fullversion
+ARG govway_tools_home
+ARG govway_home
+ARG govway_log
+ARG jdk_version
+
+
+USER root
+ENV GOVWAY_TOOLS_HOME=${govway_tools_home} \
+GOVWAY_HOME=${govway_home} \
+JAVA_HOME=/usr/lib/jvm/java-${jdk_version}-openjdk \
+GOVWAY_LOGDIR=${govway_log} \
+GOVWAY_FULLVERSION=${govway_fullversion} \
+POSTGRES_JDBC_VERSION=42.7.13 \
+TZ="Europe/Rome"
+
+RUN set -eux; \
+apk update; \
+apk upgrade; \
+apk add --no-cache curl openjdk${jdk_version}-jre bash; \
+rm -rf /var/cache/apk/*; \
+echo "${TZ}" > /etc/timezone; \
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar;
+
+COPY --from=source_image_full --chown=root:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/tools/ ${GOVWAY_TOOLS_HOME}/
+
+# Config centralizzata su ${GOVWAY_HOME}: i 9 file di properties dei tre tool hanno nomi
+# tutti distinti (nessuna sovrapposizione), possono quindi convivere in un'unica directory,
+# assieme agli eventuali byok.properties/hsm.properties/govway.map.properties/govway.secrets.properties
+# che config-loader e vault-cli si aspettano già di default sotto /etc/govway.
+RUN set -eux; \
+mkdir -p ${GOVWAY_HOME}; \
+for d in ${GOVWAY_TOOLS_HOME}/*/properties; do cp "${d}"/* ${GOVWAY_HOME}/; done; \
+rm -rf ${GOVWAY_TOOLS_HOME}/*/properties; \
+chown -R root:0 ${GOVWAY_HOME}; \
+chmod -Rf g+rwX ${GOVWAY_HOME}
+
+# Log centralizzati su ${GOVWAY_LOGDIR}: i nomi dei file di log dei tre tool sono già univoci
+# (govway_cli_configLoader*, govway_cli_templateScan*, govway_cli_vault*), quindi la dir log/
+# di ciascun tool diventa un symlink verso la stessa directory condivisa.
+RUN set -eux; \
+mkdir -p ${GOVWAY_LOGDIR}; \
+for d in ${GOVWAY_TOOLS_HOME}/*/; do rm -rf "${d}log"; ln -s ${GOVWAY_LOGDIR} "${d}log"; done; \
+chown -R root:0 ${GOVWAY_LOGDIR}; \
+chmod -Rf g+rwX ${GOVWAY_LOGDIR}
+
+# Rende overridabili via env var i path hardcoded negli script di lancio (stessa tecnica già
+# usata in Dockerfile.govway_batch) e cambia il default di *_CONFIG da "properties" (locale,
+# rimossa al passo precedente) a ${GOVWAY_HOME}.
+RUN set -eux; \
+sed -i -r \
+  -e "s%^BATCH_CONFIG=.*\$%BATCH_CONFIG=\${BATCH_CONFIG:-${GOVWAY_HOME}}%" \
+  -e 's%^BATCH_JDBC=.*$%BATCH_JDBC=${BATCH_JDBC:-jdbc}%' \
+  ${GOVWAY_TOOLS_HOME}/govway-config-loader/*.sh; \
+sed -i -r \
+  -e "s%^TOOL_CONFIG=.*\$%TOOL_CONFIG=\${TOOL_CONFIG:-${GOVWAY_HOME}}%" \
+  -e 's%^TOOL_JDBC=.*$%TOOL_JDBC=${TOOL_JDBC:-jdbc}%' \
+  ${GOVWAY_TOOLS_HOME}/govway-template-scan/*.sh; \
+sed -i -r \
+  -e "s%^VAULT_CONFIG=.*\$%VAULT_CONFIG=\${VAULT_CONFIG:-${GOVWAY_HOME}}%" \
+  -e 's%^VAULT_JDBC=.*$%VAULT_JDBC=${VAULT_JDBC:-jdbc}%' \
+  ${GOVWAY_TOOLS_HOME}/govway-vault-cli/*.sh; \
+chmod +x ${GOVWAY_TOOLS_HOME}/*/*.sh
+
+# Deduplica automatica delle librerie lib/ dei tre tool (identiche per larghissima parte,
+# verificato nessun conflitto di versione tra jar omonimi) tramite symlink verso lib-common/.
+COPY commons/tools/dedupe_libs.sh /usr/local/bin/dedupe_libs.sh
+RUN chmod +x /usr/local/bin/dedupe_libs.sh && \
+    /usr/local/bin/dedupe_libs.sh ${GOVWAY_TOOLS_HOME} && \
+    rm -f /usr/local/bin/dedupe_libs.sh && \
+    chown -R root:0 ${GOVWAY_TOOLS_HOME} && \
+    chmod -Rf g+rwX ${GOVWAY_TOOLS_HOME}
+
+RUN mkdir -p /usr/share/licenses/govway/third-party-licenses
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/LICENSE* \
+/opt/govway-installer-${GOVWAY_FULLVERSION}/doc/COPYING* \
+/usr/share/licenses/govway/
+COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
+
+COPY commons/tools/entrypoint.sh /usr/local/bin/
+RUN chown root:0 /usr/local/bin/entrypoint.sh && chmod -Rf g+rwX /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
