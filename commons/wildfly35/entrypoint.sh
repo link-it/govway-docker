@@ -310,9 +310,37 @@ esac
 
 # Settaggio Valori per i parametri dei datasource GOVWAY
 ## Prepared statement cache size (default 20)
-# [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
-# [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
+# [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
+# [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
 # [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
+
+# Con hsql la cache dei prepared statement di IronJacamar interagisce male col Cached
+# Connection Manager (use-ccm=true): quest'ultimo chiude d'ufficio gli statement non
+# chiusi quando la connessione rientra nel pool, e il codice di bootstrap di GovWay
+# (OpenSPCoop2Startup, fuori da un contesto transazionale gestito) può poi riottenere
+# dalla cache lo stesso PreparedStatement già chiuso. HSQLDB segnala questo caso con lo
+# stesso messaggio generico usato per una connessione chiusa ("connection exception:
+# closed", X_08003), il che aveva inizialmente fatto sospettare un problema di ciclo di
+# vita della connessione/del database — la causa reale è invece il riuso di uno statement
+# in cache già chiuso. Su hsql va quindi sempre a 0 (nessuna cache, come il default di
+# Tomcat/DBCP2 - poolPreparedStatements=false), anche se l'utente ha impostato un valore
+# diverso: non è un tuning facoltativo, un valore >0 riproduce il bug in modo silenzioso.
+if [ "${GOVWAY_DB_TYPE}" == hsql ]
+then
+    [ -n "${GOVWAY_DS_PSCACHESIZE}" -a "${GOVWAY_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_DS_PSCACHESIZE=${GOVWAY_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" -a "${GOVWAY_CONF_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_CONF_DS_PSCACHESIZE=${GOVWAY_CONF_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" -a "${GOVWAY_TRAC_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_TRAC_DS_PSCACHESIZE=${GOVWAY_TRAC_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" -a "${GOVWAY_STAT_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_STAT_DS_PSCACHESIZE=${GOVWAY_STAT_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    export GOVWAY_DS_PSCACHESIZE=0
+    export GOVWAY_CONF_DS_PSCACHESIZE=0
+    export GOVWAY_TRAC_DS_PSCACHESIZE=0
+    export GOVWAY_STAT_DS_PSCACHESIZE=0
+else
+    export GOVWAY_DS_PSCACHESIZE=${GOVWAY_DS_PSCACHESIZE:-20}
+    export GOVWAY_CONF_DS_PSCACHESIZE=${GOVWAY_CONF_DS_PSCACHESIZE:-20}
+    export GOVWAY_TRAC_DS_PSCACHESIZE=${GOVWAY_TRAC_DS_PSCACHESIZE:-20}
+    export GOVWAY_STAT_DS_PSCACHESIZE=${GOVWAY_STAT_DS_PSCACHESIZE:-20}
+fi
 
 ## parametri di connessione URL JDBC (default vuoto)
 if [ -n "${GOVWAY_DS_CONN_PARAM}" ]; then export DATASOURCE_CONN_PARAM="?${GOVWAY_DS_CONN_PARAM}"; else export DATASOURCE_CONN_PARAM=""; fi
@@ -670,6 +698,13 @@ GOVWAY_RESOLVED_UUID_ALG="${GOVWAY_UUID_ALG}"
 [ "${GOVWAY_UUID_ALG,,}" == 'v1' -o -z "${GOVWAY_UUID_ALG}" ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv1
 [ "${GOVWAY_UUID_ALG,,}" == 'v4' ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv4sec
 export GOVWAY_RESOLVED_UUID_ALG
+
+# Le sessioni embed-server precedenti (fix datasource/modulo/connettori/https) lasciano
+# mount VFS temporanei sotto standalone/tmp/embedded-server ("WFLYVFS000002: Failed to
+# clean existing content for temp file provider" ad ogni sessione). Se non ripuliti,
+# l'avvio reale può risolvere le risorse di un modulo/jar in modo inconsistente (es.
+# ClassNotFoundException su una classe effettivamente presente nel jar deployato).
+rm -rf "${JBOSS_HOME}/standalone/tmp/embedded-server" "${JBOSS_HOME}/standalone/tmp/vfs" 2>/dev/null
 
 # Mi assicuro che i diritti della directory di log siano sufficienti
 /usr/local/bin/change_dir_perms ${GOVWAY_LOGDIR}
