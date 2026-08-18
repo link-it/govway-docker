@@ -22,6 +22,8 @@ declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govwa
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
 declare -r DATASOURCE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_datasource_init"
+declare -r HTTPS_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_https_init"
+declare -r HTTPS_CLI_FILE='/tmp/__standalone_fix_https.cli'
 
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
@@ -489,10 +491,14 @@ EOCLI
 fi
 ##########################################################################
 # Configurazione HTTPS: risoluzione password (_FILE con priorità) ed export.
-# Deve stare qui nell'entrypoint, non in config_https.sh: l'export deve essere
+# A differenza di Tomcat (dove solo la password del truststore manca di un
+# attributo nativo *PasswordFile), le risorse elytron key-manager/trust-manager
+# di WildFly referenziano tutte le password via ${env.VAR}: vanno quindi
+# risolte ed esportate tutte qui, non solo quella del truststore.
+# Deve stare nell'entrypoint, non in config_https.sh: l'export deve essere
 # ereditato da standalone.sh, lanciato più avanti in questo stesso processo.
-# Idempotente: safe da rieseguire ad ogni riavvio (config_https.sh prepara
-# rigenera solo se manca il materiale su disco).
+# Ungated di proposito: un export bash non sopravvive a un riavvio del
+# container, quindi va rieseguito a ogni avvio.
 ##########################################################################
 for _govway_https_pass_base in GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD GOVWAY_AS_HTTPS_KEY_PASSWORD GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD
 do
@@ -520,24 +526,6 @@ do
         fi
     done
 done
-
-/usr/local/bin/config_https.sh prepara
-
-# Determina se HTTPS sarebbe attivo, solo per classificare la gravità di un eventuale
-# errore di jboss-cli.sh più avanti (config_https.sh gira in un processo separato: la
-# sua variabile interna HTTPS_ENABLED non è visibile qui).
-HTTPS_WOULD_BE_ENABLED=false
-case "${GOVWAY_AS_HTTPS_LISTENER^^}" in
-    FALSE) : ;;
-    TRUE|HTTPS-8443) HTTPS_WOULD_BE_ENABLED=true ;;
-    *)
-        for _s in '' _EROGAZIONI _FRUIZIONI _GESTIONE
-        do
-            _v="GOVWAY_AS_HTTPS_CERTIFICATE${_s}"; [ -n "${!_v}" ] && HTTPS_WOULD_BE_ENABLED=true
-            _v="GOVWAY_AS_HTTPS_KEYSTORE${_s}";    [ -n "${!_v}" ] && HTTPS_WOULD_BE_ENABLED=true
-        done
-        ;;
-esac
 
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
@@ -620,25 +608,44 @@ EOCLI
 
     fi
 
-    if [ -f /tmp/__standalone_fix_connettori.cli ] || [ "${HTTPS_WOULD_BE_ENABLED}" = true ]
+    if [ -f /tmp/__standalone_fix_connettori.cli ]
     then
-        [ ! -f /tmp/__standalone_fix_connettori.cli ] && echo 'embed-server --server-config=standalone.xml --std-out=echo' > /tmp/__standalone_fix_connettori.cli
-        /usr/local/bin/config_https.sh cli /tmp/__standalone_fix_connettori.cli
         echo 'stop-embedded-server' >> /tmp/__standalone_fix_connettori.cli
         ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
         JBOSS_CLI_CONNETTORI_RC=$?
         if [ ${JBOSS_CLI_CONNETTORI_RC} -ne 0 ]
         then
-            if [ "${HTTPS_WOULD_BE_ENABLED}" = true ]
-            then
-                echo "FATAL: Configurazione connettori/HTTPS ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
-                exit 1
-            else
-                echo "WARN: Configurazione connettori ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
-            fi
+            echo "WARN: Configurazione connettori ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
         fi
     fi
     touch "${CONNETTORI_INIT_FILE}"
+fi
+
+##########################################################################
+# Configurazione HTTPS (erogazioni/fruizioni/gestione)
+# Logica in commons/wildfly*/config_https.sh: qui solo orchestrazione e gate.
+# Sessione embed-server dedicata (separata da quella dei connettori AJP/HTTP)
+# per restare strutturalmente comparabile con l'equivalente Tomcat.
+##########################################################################
+if [ ! -f "${HTTPS_INIT_FILE}" ]
+then
+    if /usr/local/bin/config_https.sh abilitato
+    then
+        echo "INFO: Configurazione HTTPS ... in corso"
+        /usr/local/bin/config_https.sh prepara
+        echo 'embed-server --server-config=standalone.xml --std-out=echo' > "${HTTPS_CLI_FILE}"
+        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}"
+        echo 'stop-embedded-server' >> "${HTTPS_CLI_FILE}"
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="${HTTPS_CLI_FILE}"
+        JBOSS_CLI_HTTPS_RC=$?
+        if [ ${JBOSS_CLI_HTTPS_RC} -ne 0 ]
+        then
+            echo "FATAL: Configurazione HTTPS ... jboss-cli.sh terminato con errore (${JBOSS_CLI_HTTPS_RC})."
+            exit 1
+        fi
+        echo "INFO: Configurazione HTTPS ... completata"
+    fi
+    touch "${HTTPS_INIT_FILE}"
 fi
 
 if [ -d "${ENTRYPOINT_D}" -o  -d "${ENTRYPOINT_D_DEPRECATO}" ]

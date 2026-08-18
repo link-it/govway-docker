@@ -515,407 +515,55 @@ EOCLI
 fi
 
 ##########################################################################
+# Configurazione HTTPS: risoluzione della password del truststore (_FILE con
+# priorità). È l'unica, sui quattro tipi di materiale HTTPS di Tomcat, priva
+# di un attributo nativo *PasswordFile (per gli altri usiamo
+# certificateKeystorePasswordFile/certificateKeyPasswordFile, che Tomcat legge
+# da sé senza bisogno di risolverli qui - vedi commons/tomcat*/config_https.sh).
+# Deve stare nell'entrypoint, non in config_https.sh: l'export deve essere
+# ereditato da catalina.sh, lanciato più avanti in questo stesso processo.
+# Ungated di proposito: un export bash non sopravvive a un riavvio del
+# container, quindi va rieseguito a ogni avvio.
+##########################################################################
+for _govway_https_pass_suffix in '' _EROGAZIONI _FRUIZIONI _GESTIONE
+do
+    _govway_https_varname="GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD${_govway_https_pass_suffix}"
+    _govway_https_filevar="${_govway_https_varname}_FILE"
+    if [ -n "${!_govway_https_filevar}" ]
+    then
+        [ -n "${!_govway_https_varname}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${_govway_https_varname} che ${_govway_https_filevar}; ha priorità ${_govway_https_filevar}."
+        if [ ! -r "${!_govway_https_filevar}" ]
+        then
+            echo "FATAL: Configurazione HTTPS ... il file indicato da ${_govway_https_filevar} non è leggibile dall'utente $(id -u -n): [${!_govway_https_filevar}]"
+            exit 1
+        fi
+        { set +x; } 2>/dev/null
+        _govway_https_passval=
+        IFS= read -r _govway_https_passval < "${!_govway_https_filevar}"
+        printf -v "${_govway_https_varname}" '%s' "${_govway_https_passval}"
+        export "${_govway_https_varname}"
+        set -x
+    elif [ -n "${!_govway_https_varname}" ]
+    then
+        export "${_govway_https_varname}"
+    fi
+done
+
+##########################################################################
 # Configurazione HTTPS (erogazioni/fruizioni/gestione)
+# Logica in commons/tomcat*/config_https.sh: qui solo orchestrazione e gate.
 ##########################################################################
 if [ ! -f "${HTTPS_INIT_FILE}" ]
 then
-
-    govway_https_varname() {
-        local base="$1" suffix="$2" suffixed="${1}_${2}"
-        if [ -n "${!suffixed}" ]
-        then
-            echo "${suffixed}"
-        else
-            echo "${base}"
-        fi
-    }
-
-    govway_https_emit() {
-        printf '%s\n' "$1" >> "${HTTPS_CLI_FILE}"
-    }
-
-    govway_https_check_file() {
-        # $1 = path da verificare in lettura, $2 = nome variabile per il messaggio di errore
-        if [ -n "$1" ] && [ ! -r "$1" ]
-        then
-            echo "FATAL: Configurazione HTTPS ... il file indicato da $2 non è leggibile dall'utente $(id -u -n): [$1]"
-            exit 1
-        fi
-    }
-
-    govway_https_resolve_password() {
-        # $1 = nome della variabile password già risolta per porta.
-        # Se è impostata la variabile *_FILE la legge in un blocco senza xtrace e la esporta
-        # con lo stesso nome, senza mai stampare il valore.
-        local varname="$1" filevar="${1}_FILE"
-        if [ -n "${!filevar}" ]
-        then
-            [ -n "${!varname}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${varname} che ${filevar}; ha priorità ${filevar}."
-            govway_https_check_file "${!filevar}" "${filevar}"
-            { set +x; } 2>/dev/null
-            local _v
-            IFS= read -r _v < "${!filevar}"
-            printf -v "${varname}" '%s' "${_v}"
-            export "${varname}"
-            set -x
-        fi
-    }
-
-    govway_https_sniff_type() {
-        case "${1,,}" in
-            *.jks|*.keystore) echo JKS ;;
-            *) echo PKCS12 ;;
-        esac
-    }
-
-    govway_https_check_pkcs12_legacy() {
-        # $1 = path del file, $2 = tipo (JKS non è a rischio, si controlla solo PKCS12), $3 = nome variabile per il messaggio
-        # Rileva l'OID PBES2 (1.2.840.113549.1.5.13) direttamente nei byte del file, senza
-        # bisogno della password (gli identificativi di algoritmo non sono cifrati). Un
-        # PKCS12 con questo algoritmo (default di OpenSSL 3.x e delle versioni recenti di
-        # keytool) non viene decifrato correttamente da BouncyCastle (bundlato in ogni
-        # webapp GovWay e registrato come provider JCE, intercetta la risoluzione generica
-        # di KeyStore.getInstance("PKCS12") al posto di quella nativa JDK - non è un limite
-        # della JVM, vedi PIANO_HTTPS_TLS.md). Fallisce con "keystore password was
-        # incorrect" / BadPaddingException pur con password corretta. Qui non possiamo
-        # rigenerare il file dell'utente: meglio un FATAL esplicito che un crash-loop criptico.
-        local path="$1" type="$2" varname="$3" pbes2_oid
-        [ -z "${path}" ] && return 0
-        [ "${type^^}" = "PKCS12" ] || return 0
-        pbes2_oid=$(printf '\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0d')
-        if grep -q -a -F "${pbes2_oid}" "${path}" 2>/dev/null
-        then
-            echo "FATAL: Configurazione HTTPS ... il file indicato da ${varname} usa l'algoritmo PKCS12 moderno (PBES2/AES-256)."
-            echo "FATAL: BouncyCastle (bundlato in ogni webapp GovWay) non lo decifra correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
-            echo "FATAL: Rigenerarlo con 'openssl pkcs12 -export -legacy ...' oppure con 'keytool ... -J-Dkeystore.pkcs12.legacy'."
-            exit 1
-        fi
-    }
-
-    govway_https_selfsigned() {
-        # $1 = suffisso porta (EROGAZIONI|FRUIZIONI|GESTIONE), $2 = directory di output
-        local suffix="$1" outdir="$2" cnvar sanvar validityvar cn san validity
-        cnvar=$(govway_https_varname GOVWAY_AS_HTTPS_SELF_SIGNED_CN "${suffix}")
-        sanvar=$(govway_https_varname GOVWAY_AS_HTTPS_SELF_SIGNED_SAN "${suffix}")
-        validityvar=$(govway_https_varname GOVWAY_AS_HTTPS_SELF_SIGNED_VALIDITY "${suffix}")
-        cn="${!cnvar:-localhost}"
-        san="${!sanvar:-DNS:localhost,DNS:$(hostname),IP:127.0.0.1}"
-        validity="${!validityvar:-825}"
-
-        mkdir -p "${outdir}"
-        if [ ! -f "${outdir}/keystore.p12" ]
-        then
-            # -legacy: il default di OpenSSL 3.x (PBES2/PBKDF2/AES-256) non viene decifrato
-            # correttamente da BouncyCastle (bundlato in ogni webapp GovWay, non è un limite
-            # della JVM/JSSE) - fallisce con "keystore password was incorrect" /
-            # BadPaddingException pur essendo il file e la password corretti, verificabile
-            # con keytool fuori da un processo GovWay. RC2/3DES legacy è compatibile.
-            openssl req -x509 -newkey rsa:2048 -nodes \
-                -keyout "${outdir}/key.pem" -out "${outdir}/cert.pem" \
-                -days "${validity}" -subj "/CN=${cn}" \
-                -addext "subjectAltName=${san}" \
-                -addext "basicConstraints=critical,CA:FALSE" \
-                -addext "keyUsage=digitalSignature,keyEncipherment" \
-                -addext "extendedKeyUsage=serverAuth" \
-            && GOVWAY_HTTPS_TMP_PASS='govway' openssl pkcs12 -export -legacy \
-                -in "${outdir}/cert.pem" -inkey "${outdir}/key.pem" \
-                -out "${outdir}/keystore.p12.tmp" -name govway \
-                -passout env:GOVWAY_HTTPS_TMP_PASS \
-            && mv -f "${outdir}/keystore.p12.tmp" "${outdir}/keystore.p12" \
-            || { echo "FATAL: Configurazione HTTPS ... generazione del certificato self-signed fallita per ${suffix}."; exit 1; }
-            rm -f "${outdir}/key.pem"
-            echo "WARN: Configurazione HTTPS ... generato certificato self-signed per ${suffix} - USO ESCLUSIVAMENTE DI TEST: ${outdir}/cert.pem"
-        fi
-    }
-
-    govway_https_ca_to_truststore() {
-        # $1 = path del bundle PEM di CA, $2 = directory di output
-        # NOTA: si usa keytool -importcert (un'invocazione per certificato), non
-        # "openssl pkcs12 -export -nokeys": quest'ultimo produce un "Certificate bag"
-        # che il PKCS12KeyStore di Java non riconosce come trusted-entry (KeyStore.load
-        # riesce ma ks.size()==0, e SSLUtilBase.getTrustManagers fallisce poi con
-        # "trustAnchors parameter must be non-empty") anche se il file è strutturalmente
-        # valido e ispezionabile con openssl. keytool marca correttamente l'entry.
-        # -J-Dkeystore.pkcs12.legacy: come per il keystore, il default moderno
-        # (PBES2/AES-256) usato da keytool stesso non viene decifrato correttamente da
-        # BouncyCastle (bundlato in GovWay, non è un limite della JVM); forza la
-        # cifratura legacy RC2/3DES.
-        local cabundle="$1" outdir="$2" tmpdir i=0 certfile
-        mkdir -p "${outdir}"
-        if [ ! -f "${outdir}/truststore.p12" ]
-        then
-            tmpdir=$(mktemp -d)
-            awk -v dir="${tmpdir}" '
-                /-----BEGIN CERTIFICATE-----/ { n++; f = dir "/ca-" n ".pem" }
-                f { print > f }
-                /-----END CERTIFICATE-----/ { close(f); f = "" }
-            ' "${cabundle}"
-            GOVWAY_HTTPS_TMP_PASS='govway'
-            export GOVWAY_HTTPS_TMP_PASS
-            for certfile in "${tmpdir}"/ca-*.pem
-            do
-                [ -f "${certfile}" ] || continue
-                i=$((i + 1))
-                "${JAVA_HOME}/bin/keytool" -importcert -noprompt -J-Dkeystore.pkcs12.legacy \
-                    -alias "ca-${i}" -file "${certfile}" \
-                    -keystore "${outdir}/truststore.p12.tmp" -storetype PKCS12 \
-                    -storepass:env GOVWAY_HTTPS_TMP_PASS \
-                    > /dev/null \
-                || { echo "FATAL: Configurazione HTTPS ... importazione del certificato CA #${i} nel truststore fallita."; rm -rf "${tmpdir}"; exit 1; }
-            done
-            unset GOVWAY_HTTPS_TMP_PASS
-            rm -rf "${tmpdir}"
-            if [ "${i}" -eq 0 ]
-            then
-                echo "FATAL: Configurazione HTTPS ... nessun certificato trovato in ${cabundle}."
-                exit 1
-            fi
-            mv -f "${outdir}/truststore.p12.tmp" "${outdir}/truststore.p12"
-        fi
-    }
-
-    govway_https_has_material() {
-        local s v
-        for s in "" _EROGAZIONI _FRUIZIONI _GESTIONE
-        do
-            v="GOVWAY_AS_HTTPS_CERTIFICATE${s}"; [ -n "${!v}" ] && return 0
-            v="GOVWAY_AS_HTTPS_KEYSTORE${s}";    [ -n "${!v}" ] && return 0
-        done
-        return 1
-    }
-
-    # --- Risoluzione modalità di attivazione ---
-    HTTPS_ENABLED=false
-    HTTPS_ONLY_EROGAZIONI=false
-    case "${GOVWAY_AS_HTTPS_LISTENER^^}" in
-        FALSE)      HTTPS_ENABLED=false ;;
-        TRUE)       HTTPS_ENABLED=true ;;
-        HTTPS-8443) HTTPS_ENABLED=true; HTTPS_ONLY_EROGAZIONI=true ;;
-        '')
-            if govway_https_has_material
-            then
-                HTTPS_ENABLED=true
-                echo "INFO: Configurazione HTTPS ... rilevato materiale crittografico, abilitazione automatica dei listener HTTPS."
-            fi
-            ;;
-        *)
-            echo "FATAL: Valore non consentito per la variabile GOVWAY_AS_HTTPS_LISTENER: [GOVWAY_AS_HTTPS_LISTENER=${GOVWAY_AS_HTTPS_LISTENER}]."
-            echo "       Valori consentiti: [ true, false, https-8443 ]"
-            exit 1
-            ;;
-    esac
-
-    if [ "${HTTPS_ENABLED}" = true ]
+    if /usr/local/bin/config_https.sh abilitato
     then
         echo "INFO: Configurazione HTTPS ... in corso"
-        declare -A GOVWAY_HTTPS_DEFAULT_PORT=( [EROGAZIONI]=8443 [FRUIZIONI]=8444 [GESTIONE]=8445 )
-        declare -A GOVWAY_HTTPS_EXECUTOR=( [EROGAZIONI]=https-in-worker [FRUIZIONI]=https-out-worker [GESTIONE]=https-gest-worker )
-        declare -a GOVWAY_HTTPS_USED_PORTS=()
-
-        for suffix in EROGAZIONI FRUIZIONI GESTIONE
-        do
-            [ "${HTTPS_ONLY_EROGAZIONI}" = true ] && [ "${suffix}" != EROGAZIONI ] && continue
-
-            portvar=$(govway_https_varname GOVWAY_AS_HTTPS_PORT "${suffix}")
-            port="${!portvar:-${GOVWAY_HTTPS_DEFAULT_PORT[${suffix}]}}"
-            executor="${GOVWAY_HTTPS_EXECUTOR[${suffix}]}"
-
-            case "${port}" in
-                8080|8081|8082|8009)
-                    echo "FATAL: Configurazione HTTPS ... la porta ${port} configurata per ${suffix} collide con un connettore HTTP/AJP esistente."
-                    exit 1
-                    ;;
-            esac
-            case " ${GOVWAY_HTTPS_USED_PORTS[*]} " in
-                *" ${port} "*)
-                    echo "FATAL: Configurazione HTTPS ... la porta ${port} è già utilizzata da un altro connettore HTTPS."
-                    exit 1
-                    ;;
-            esac
-            GOVWAY_HTTPS_USED_PORTS+=("${port}")
-
-            certvar=$(govway_https_varname GOVWAY_AS_HTTPS_CERTIFICATE "${suffix}")
-            keyvar=$(govway_https_varname GOVWAY_AS_HTTPS_CERTIFICATE_KEY "${suffix}")
-            chainvar=$(govway_https_varname GOVWAY_AS_HTTPS_CERTIFICATE_CHAIN "${suffix}")
-            keypassvar=$(govway_https_varname GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD "${suffix}")
-            keypassfilevar=$(govway_https_varname GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD_FILE "${suffix}")
-            keystorevar=$(govway_https_varname GOVWAY_AS_HTTPS_KEYSTORE "${suffix}")
-            keystoretypevar=$(govway_https_varname GOVWAY_AS_HTTPS_KEYSTORE_TYPE "${suffix}")
-            keystorealiasvar=$(govway_https_varname GOVWAY_AS_HTTPS_KEYSTORE_ALIAS "${suffix}")
-            keystorepassvar=$(govway_https_varname GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD "${suffix}")
-            keystorepassfilevar=$(govway_https_varname GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD_FILE "${suffix}")
-            keyentrypassvar=$(govway_https_varname GOVWAY_AS_HTTPS_KEY_PASSWORD "${suffix}")
-            keyentrypassfilevar=$(govway_https_varname GOVWAY_AS_HTTPS_KEY_PASSWORD_FILE "${suffix}")
-            clientauthvar=$(govway_https_varname GOVWAY_AS_HTTPS_CLIENT_AUTH "${suffix}")
-            truststorevar=$(govway_https_varname GOVWAY_AS_HTTPS_TRUSTSTORE "${suffix}")
-            truststoretypevar=$(govway_https_varname GOVWAY_AS_HTTPS_TRUSTSTORE_TYPE "${suffix}")
-            truststorepassvar=$(govway_https_varname GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD "${suffix}")
-            cacertvar=$(govway_https_varname GOVWAY_AS_HTTPS_CA_CERTIFICATE "${suffix}")
-            protocolsvar=$(govway_https_varname GOVWAY_AS_HTTPS_PROTOCOLS "${suffix}")
-            ciphersvar=$(govway_https_varname GOVWAY_AS_HTTPS_CIPHERS "${suffix}")
-            http2var=$(govway_https_varname GOVWAY_AS_HTTPS_HTTP2 "${suffix}")
-
-            # --- validazione pre-flight ---
-            if [ -n "${!certvar}" ] && [ -n "${!keystorevar}" ]
-            then
-                echo "FATAL: Configurazione HTTPS ... per ${suffix} sono state impostate sia ${certvar} che ${keystorevar}: le modalità PEM e keystore sono mutuamente esclusive."
-                exit 1
-            fi
-
-            clientauth="${!clientauthvar:-none}"
-            case "${clientauth,,}" in
-                none|optional|required) : ;;
-                *)
-                    echo "FATAL: Configurazione HTTPS ... valore non consentito per ${clientauthvar}: [${clientauth}]. Valori consentiti: [ none, optional, required ]"
-                    exit 1
-                    ;;
-            esac
-            if [ "${clientauth,,}" != none ] && [ -z "${!truststorevar}" ] && [ -z "${!cacertvar}" ]
-            then
-                echo "FATAL: Configurazione HTTPS ... ${clientauthvar}=${clientauth} richiede ${truststorevar} oppure ${cacertvar}."
-                exit 1
-            fi
-
-            govway_https_check_file "${!certvar}" "${certvar}"
-            govway_https_check_file "${!keyvar}" "${keyvar}"
-            govway_https_check_file "${!chainvar}" "${chainvar}"
-            govway_https_check_file "${!keystorevar}" "${keystorevar}"
-            govway_https_check_file "${!truststorevar}" "${truststorevar}"
-            govway_https_check_file "${!cacertvar}" "${cacertvar}"
-
-            if [ -n "${!keystorevar}" ] && [ -z "${!keystorepassvar}" ] && [ -z "${!keystorepassfilevar}" ]
-            then
-                echo "FATAL: Configurazione HTTPS ... ${keystorepassvar} (o ${keystorepassfilevar}) è obbligatoria quando è impostata ${keystorevar}."
-                exit 1
-            fi
-
-            outdir="${CATALINA_HOME}/conf/https/${suffix,,}"
-
-            # --- Connector + SSLHostConfig (comuni a tutte le modalità) ---
-            govway_https_emit "# HTTPS ${suffix}: connettore sulla porta ${port}"
-            govway_https_emit "/Server/Service/Connector:add port=${port}, protocol=HTTP/1.1, SSLEnabled=true, scheme=https, secure=true, connectionTimeout=20000, executor=${executor}, maxHttpHeaderSize=\${GOVWAY_AS_MAX_HTTP_SIZE:-1048576}, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, bindOnInit=false"
-
-            protocols="${!protocolsvar:-TLSv1.2,TLSv1.3}"
-            govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:add protocols=${protocols//,/+}"
-
-            if [ -n "${!ciphersvar}" ]
-            then
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute ciphers=\${${ciphersvar}}"
-            fi
-
-            http2val="${!http2var}"
-            if [ "${http2val^^}" = TRUE ]
-            then
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/UpgradeProtocol:add className=org.apache.coyote.http2.Http2Protocol"
-            fi
-
-            # --- materiale crittografico del server (modi a/b/c) ---
-            if [ -n "${!certvar}" ]
-            then
-                # modo (b): PEM, nessuna conversione necessaria su Tomcat (supporto nativo anche con JSSE)
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:add certificateFile=\${${certvar}}"
-                keyfile_emit_var="${certvar}"
-                [ -n "${!keyvar}" ] && keyfile_emit_var="${keyvar}"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyFile=\${${keyfile_emit_var}}"
-                if [ -n "${!chainvar}" ]
-                then
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateChainFile=\${${chainvar}}"
-                fi
-                if [ -n "${!keypassfilevar}" ]
-                then
-                    [ -n "${!keypassvar}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${keypassvar} che ${keypassfilevar}; ha priorità ${keypassfilevar}."
-                    govway_https_check_file "${!keypassfilevar}" "${keypassfilevar}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyPasswordFile=\${${keypassfilevar}}"
-                elif [ -n "${!keypassvar}" ]
-                then
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyPassword=\${${keypassvar}}"
-                fi
-            elif [ -n "${!keystorevar}" ]
-            then
-                # modo (c): keystore PKCS12/JKS montato
-                kstype="${!keystoretypevar:-$(govway_https_sniff_type "${!keystorevar}")}"
-                govway_https_check_pkcs12_legacy "${!keystorevar}" "${kstype}" "${keystorevar}"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:add certificateKeystoreFile=\${${keystorevar}}"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystoreType=${kstype}"
-                [ -n "${!keystorealiasvar}" ] && govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyAlias=\${${keystorealiasvar}}"
-                if [ -n "${!keystorepassfilevar}" ]
-                then
-                    [ -n "${!keystorepassvar}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${keystorepassvar} che ${keystorepassfilevar}; ha priorità ${keystorepassfilevar}."
-                    govway_https_check_file "${!keystorepassfilevar}" "${keystorepassfilevar}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystorePasswordFile=\${${keystorepassfilevar}}"
-                else
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystorePassword=\${${keystorepassvar}}"
-                fi
-                # certificateKeyPassword: solo se l'alias ha una password diversa da quella del keystore
-                # (default Tomcat: se assente, usa certificateKeystorePassword anche per la chiave)
-                if [ -n "${!keyentrypassfilevar}" ]
-                then
-                    [ -n "${!keyentrypassvar}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${keyentrypassvar} che ${keyentrypassfilevar}; ha priorità ${keyentrypassfilevar}."
-                    govway_https_check_file "${!keyentrypassfilevar}" "${keyentrypassfilevar}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyPasswordFile=\${${keyentrypassfilevar}}"
-                elif [ -n "${!keyentrypassvar}" ]
-                then
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyPassword=\${${keyentrypassvar}}"
-                fi
-            else
-                # modo (a): self-signed, generato con openssl (MAI con generate-self-signed-certificate-host)
-                govway_https_selfsigned "${suffix}" "${outdir}"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:add certificateKeystoreFile=${outdir}/keystore.p12"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystoreType=PKCS12"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeystorePassword=govway"
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig/Certificate:write-attribute certificateKeyAlias=govway"
-            fi
-
-            # --- client authentication / mTLS (modo d) ---
-            if [ "${clientauth,,}" != none ]
-            then
-                govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute certificateVerification=${clientauth,,}"
-                if [ -n "${!cacertvar}" ]
-                then
-                    govway_https_ca_to_truststore "${!cacertvar}" "${outdir}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreFile=${outdir}/truststore.p12"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreType=PKCS12"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststorePassword=govway"
-                else
-                    tstype="${!truststoretypevar:-$(govway_https_sniff_type "${!truststorevar}")}"
-                    govway_https_check_pkcs12_legacy "${!truststorevar}" "${tstype}" "${truststorevar}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreFile=\${${truststorevar}}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststoreType=${tstype}"
-                    # NOTA: Tomcat non ha un attributo truststorePasswordFile nativo (limite noto, vedi doc).
-                    # La password del truststore viene risolta qui e resta visibile nell'ambiente del processo Tomcat.
-                    govway_https_resolve_password "${truststorepassvar}"
-                    govway_https_emit "/Server/Service/Connector[@port=\"${port}\"]/SSLHostConfig:write-attribute truststorePassword=\${${truststorepassvar}:-govway}"
-                fi
-            fi
-        done
-
-        # --- reverse proxy / forwarding: opt-in, non tocca il comportamento di default ---
-        proxyfwdval="${GOVWAY_AS_HTTPS_PROXY_FORWARDING}"
-        if [ "${proxyfwdval^^}" = TRUE ]
-        then
-            erogport="${GOVWAY_HTTPS_USED_PORTS[0]}"
-            govway_https_emit "/Server/Service/Engine/Host/Valve[@className=\"org.apache.catalina.valves.RemoteIpValve\"]:write-attribute httpsServerPort=${erogport}"
-        fi
-
+        /usr/local/bin/config_https.sh prepara
+        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}"
         /usr/local/bin/tomcat-cli.sh "${HTTPS_CLI_FILE}"
-
-        # --- post-verifica: tomcat-cli.sh ignora l'exit status di java, verifico direttamente server.xml ---
-        for suffix in EROGAZIONI FRUIZIONI GESTIONE
-        do
-            [ "${HTTPS_ONLY_EROGAZIONI}" = true ] && [ "${suffix}" != EROGAZIONI ] && continue
-            portvar=$(govway_https_varname GOVWAY_AS_HTTPS_PORT "${suffix}")
-            port="${!portvar:-${GOVWAY_HTTPS_DEFAULT_PORT[${suffix}]}}"
-            check=$(xmlstarlet sel -t -v "count(/Server/Service/Connector[@port='${port}'][@SSLEnabled='true'])" "${CATALINA_HOME}/conf/server.xml" 2>/dev/null)
-            if [ "${check}" != "1" ]
-            then
-                echo "FATAL: Configurazione HTTPS ... il connettore sulla porta ${port} (${suffix}) non risulta creato correttamente in server.xml."
-                exit 1
-            fi
-        done
-
+        /usr/local/bin/config_https.sh verifica || exit 1
         echo "INFO: Configurazione HTTPS ... completata"
     fi
-
     touch "${HTTPS_INIT_FILE}"
 fi
 

@@ -88,7 +88,7 @@ COPY ${govway_as_custom_scripts}* /var/tmp/custom_cli
 RUN [ -d /var/tmp/custom_cli ] && cp -r /var/tmp/custom_cli/ ${CATALINA_HOME}/conf || echo "Personalizzazioni per AS non presenti"
 
 
-COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh commons/tomcat-cli.sh /usr/local/bin/
+COPY commons/entrypoint.sh commons/initgovway.sh commons/initsql.sh commons/config_datasource.sh commons/config_https.sh commons/tomcat-cli.sh /usr/local/bin/
 
 ARG oracle_custom_jdbc=commons/entrypoint.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
@@ -135,16 +135,16 @@ echo -e '# Rimuovi Resource UserDatabase \n\
 # Nascondo informazioni del server\n\
 /Server/Service/Engine/Host/Valve:add className=org.apache.catalina.valves.ErrorReportValve, showReport=false, showServerInfo=false \n\
 ' > /tmp/tomcat_configuration.cli; \
-chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh ; \
+chmod 750 /usr/local/bin/tomcat-cli.sh /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh ; \
 /usr/local/bin/tomcat-cli.sh /tmp/tomcat_configuration.cli; \
 echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> "${CATALINA_HOME}/conf/catalina.properties"; \
 rm -rf /tmp/*;
 
 
 RUN mkdir -p /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /usr/share/licenses/govway/third-party-licenses ${CATALINA_HOME}/conf/https \
-&& chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
+&& chown -R tomcat:0 /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh /usr/local/bin/tomcat-cli.sh ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ \
 && chmod -Rf g+rwX  ${CATALINA_HOME} ${GOVWAY_HOME} ${GOVWAY_HOME_HTTPS} ${GOVWAY_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/database/ /opt/hsql/ /opt/postgresql/ /opt/mysql/ /opt/oracle/ /opt/sqlserver/ \
-&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/tomcat-cli.sh \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/initgovway.sh /usr/local/bin/initsql.sh /usr/local/bin/config_datasource.sh /usr/local/bin/config_https.sh /usr/local/bin/tomcat-cli.sh \
 && chmod u+s /usr/local/bin/change_dir_perms
 
 

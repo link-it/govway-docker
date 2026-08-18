@@ -2,13 +2,21 @@
 
 # Configurazione HTTPS per i listener undertow (erogazioni/fruizioni/gestione) via Elytron.
 #
-# Sottocomandi:
+# Sottocomandi (stesso schema di commons/tomcat*/config_https.sh, per confronto diretto):
+#   config_https.sh abilitato    -> exit 0 se HTTPS è attivo (o va attivato in automatico
+#                                    perché è presente materiale crittografico), exit 1
+#                                    altrimenti. Usato dall'entrypoint per decidere se vale
+#                                    la pena aprire una sessione embed-server (~10-20s).
 #   config_https.sh prepara      -> valida le variabili, genera/converte il materiale
 #                                    crittografico (self-signed, PEM->PKCS12, truststore
 #                                    da bundle CA). Va invocato con le password HTTPS
 #                                    già risolte (_FILE con priorità) ed esportate
 #                                    dall'entrypoint.
 #   config_https.sh cli <file>   -> accoda le direttive jboss-cli al file indicato.
+#
+# A differenza di Tomcat non esiste un sottocomando "verifica": jboss-cli.sh, a
+# differenza di tomcat-cli.sh, aborta già da solo al primo comando fallito, quindi
+# l'exit status intercettato dall'entrypoint è di per sé sufficiente.
 #
 # NOTA: nessun ciclo embed-server qui dentro: il chiamante (entrypoint.sh) è responsabile
 # di aprire/chiudere il blocco embed-server nel file .cli.
@@ -41,30 +49,6 @@ govway_https_sniff_type() {
     esac
 }
 
-govway_https_check_pkcs12_legacy() {
-    # $1 = path del file, $2 = tipo (JKS non è a rischio, si controlla solo PKCS12), $3 = nome variabile per il messaggio
-    # Rileva l'OID PBES2 (1.2.840.113549.1.5.13) direttamente nei byte del file, senza
-    # bisogno della password (gli identificativi di algoritmo non sono cifrati). Un
-    # PKCS12 con questo algoritmo (default di OpenSSL 3.x e delle versioni recenti di
-    # keytool) non viene decifrato correttamente da BouncyCastle (bundlato in ogni
-    # webapp GovWay e registrato come provider JCE, intercetta la risoluzione generica
-    # di KeyStore.getInstance("PKCS12") al posto di quella nativa JDK - non è un limite
-    # della JVM, stesso problema riscontrato lato Tomcat, vedi PIANO_HTTPS_TLS.md). Qui
-    # non possiamo rigenerare il file dell'utente: meglio un FATAL esplicito che un
-    # crash-loop criptico.
-    local path="$1" type="$2" varname="$3" pbes2_oid
-    [ -z "${path}" ] && return 0
-    [ "${type^^}" = "PKCS12" ] || return 0
-    pbes2_oid=$(printf '\x2a\x86\x48\x86\xf7\x0d\x01\x05\x0d')
-    if grep -q -a -F "${pbes2_oid}" "${path}" 2>/dev/null
-    then
-        echo "FATAL: Configurazione HTTPS ... il file indicato da ${varname} usa l'algoritmo PKCS12 moderno (PBES2/AES-256)."
-        echo "FATAL: BouncyCastle (bundlato in ogni webapp GovWay) non lo decifra correttamente (fallisce con 'keystore password was incorrect' anche con la password giusta)."
-        echo "FATAL: Rigenerarlo con 'openssl pkcs12 -export -legacy ...' oppure con 'keytool ... -J-Dkeystore.pkcs12.legacy'."
-        exit 1
-    fi
-}
-
 govway_https_has_material() {
     local s v
     for s in "" _EROGAZIONI _FRUIZIONI _GESTIONE
@@ -75,18 +59,13 @@ govway_https_has_material() {
     return 1
 }
 
-# -legacy: il default di OpenSSL 3.x (PBES2/PBKDF2/AES-256) produce un PKCS12 che
-# BouncyCastle (bundlato in ogni webapp GovWay, non è un limite della JVM/JSSE) non
-# riesce a decifrare (fallisce con "keystore password was incorrect" / BadPaddingException
-# pur essendo file e password corretti, verificabile con keytool fuori da un processo
-# GovWay). RC2/3DES legacy è universalmente compatibile.
 govway_https_pem_to_p12() {
     # $1=certfile $2=keyfile $3=chainfile(o vuoto) $4=keypass_env(nome variabile, o vuoto) $5=outfile $6=storepass_env(nome variabile)
     local certfile="$1" keyfile="$2" chainfile="$3" keypassenv="$4" outfile="$5" storepassenv="$6"
     local chainopt=() passinopt=()
     [ -n "${chainfile}" ] && chainopt=(-certfile "${chainfile}")
     [ -n "${keypassenv}" ] && [ -n "${!keypassenv}" ] && passinopt=(-passin "env:${keypassenv}")
-    openssl pkcs12 -export -legacy -inkey "${keyfile}" -in "${certfile}" "${chainopt[@]}" \
+    openssl pkcs12 -export -inkey "${keyfile}" -in "${certfile}" "${chainopt[@]}" \
         -name govway -macalg sha1 "${passinopt[@]}" \
         -passout "env:${storepassenv}" -out "${outfile}.tmp" \
     && mv -f "${outfile}.tmp" "${outfile}"
@@ -128,10 +107,6 @@ govway_https_ca_to_truststore() {
     # PKCS12KeyStore di Java non riconosce come trusted-entry (KeyStore.load riesce ma
     # ks.size()==0, poi WFLYELY fallisce con "trustAnchors must be non-empty"). Si usa
     # invece keytool -importcert, un'invocazione per certificato del bundle.
-    # -J-Dkeystore.pkcs12.legacy: il default moderno (PBES2/AES-256) usato da keytool
-    # stesso non viene decifrato correttamente da BouncyCastle (bundlato in GovWay,
-    # non è un limite della JVM); forza la cifratura legacy RC2/3DES (stesso problema
-    # riscontrato lato Tomcat).
     local cabundle="$1" outfile="$2" storepassenv="$3" tmpdir i=0 certfile
     tmpdir=$(mktemp -d)
     awk -v dir="${tmpdir}" '
@@ -143,7 +118,7 @@ govway_https_ca_to_truststore() {
     do
         [ -f "${certfile}" ] || continue
         i=$((i + 1))
-        "${JAVA_HOME}/bin/keytool" -importcert -noprompt -J-Dkeystore.pkcs12.legacy \
+        "${JAVA_HOME}/bin/keytool" -importcert -noprompt \
             -alias "ca-${i}" -file "${certfile}" \
             -keystore "${outfile}.tmp" -storetype PKCS12 \
             -storepass:env "${storepassenv}" \
@@ -264,15 +239,6 @@ govway_https_resolve_suffix() {
     then
         echo "FATAL: Configurazione HTTPS ... ${CUR_KEYSTOREPASSVAR} è obbligatoria quando è impostata ${CUR_KEYSTOREVAR}."
         exit 1
-    fi
-
-    if [ -n "${!CUR_KEYSTOREVAR}" ]
-    then
-        govway_https_check_pkcs12_legacy "${!CUR_KEYSTOREVAR}" "${!CUR_KEYSTORETYPEVAR:-$(govway_https_sniff_type "${!CUR_KEYSTOREVAR}")}" "${CUR_KEYSTOREVAR}"
-    fi
-    if [ -n "${!CUR_TRUSTSTOREVAR}" ]
-    then
-        govway_https_check_pkcs12_legacy "${!CUR_TRUSTSTOREVAR}" "${!CUR_TRUSTSTORETYPEVAR:-$(govway_https_sniff_type "${!CUR_TRUSTSTOREVAR}")}" "${CUR_TRUSTSTOREVAR}"
     fi
 
     # Materiale di nostra generazione (self-signed/PEM->P12): sempre sotto CONF_DIR,
@@ -431,6 +397,16 @@ sottocomando_cli() {
 }
 
 case "$1" in
+    abilitato)
+        risolvi_modalita
+        if [ "${HTTPS_ENABLED}" = true ]
+        then
+            [ -z "${GOVWAY_AS_HTTPS_LISTENER}" ] && echo "INFO: Configurazione HTTPS ... rilevato materiale crittografico, abilitazione automatica dei listener HTTPS."
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
     prepara)
         sottocomando_prepara
         ;;
@@ -439,7 +415,7 @@ case "$1" in
         sottocomando_cli "$2"
         ;;
     *)
-        echo "Uso: $0 {prepara|cli <file>}"
+        echo "Uso: $0 {abilitato|prepara|cli <file>}"
         exit 1
         ;;
 esac
