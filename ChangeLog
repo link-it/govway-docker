@@ -2,6 +2,14 @@
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
 
+- *3.4.4*
+
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.25.
+
+- *3.3.21*
+
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.121.
+
 - *3.4.3* / *3.3.20*
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.11
