@@ -438,32 +438,81 @@ then
 
     touch "${MODULE_INIT_FILE}"
 fi
+# Normalizzazione e compatibilita' delle variabili dei listener.
+# Fuori dal blocco one-shot piu' sotto: sono export che l'application server risolve
+# dall'ambiente ad ogni avvio (le espressioni ${...} restano nel server.xml/standalone.xml),
+# quindi vanno rieseguiti anche al riavvio di un container gia' inizializzato.
+# Riconversione variabili con il carattere '-' nel nome
+for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
+
+# Mantenimento delle variabili precedenti per compatibilita
+[ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
+[ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
+
+[ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
+
+# GOVWAY_AS_AJP_WORKER_MAX_THREADS: nome storico del worker del connettore AJP di erogazione,
+# mantenuto per compatibilita'. Il nome documentato e' GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS,
+# coerente con gli analoghi dei listener HTTP e HTTPS ed e' quello letto dall'application server.
+[ -n "${GOVWAY_AS_AJP_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile GOVWAY_AS_AJP_WORKER_MAX_THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${GOVWAY_AS_AJP_WORKER_MAX_THREADS}"; }
+
+
+##########################################################################
+# Segreto condiviso dei connettori AJP (attributi 'secret'/'secretRequired' di Tomcat,
+# mitigazione di CVE-2020-1938). Risoluzione della variabile _FILE, prioritaria, ed export:
+# ungated perche' un export non sopravvive al riavvio del container e Tomcat risolve
+# l'attributo dal proprio ambiente ad ogni avvio.
+##########################################################################
+# L'intera risoluzione sta in una regione non tracciata: con 'set -x' attivo anche un
+# semplice test [ -n "${GOVWAY_AS_AJP_SECRET_VALUE}" ] stamperebbe il segreto in chiaro nel
+# file di debug. Fuori da qui si usa solo il flag AJP_SECRET_CONFIGURATO.
+{ set +x; } 2>/dev/null
+AJP_SECRET_CONFIGURATO=false
+if [ -n "${GOVWAY_AS_AJP_SECRET_VALUE_FILE}" ]
+then
+    [ -n "${GOVWAY_AS_AJP_SECRET_VALUE}" ] && echo "WARN: Configurazione AJP ... sono state impostate sia GOVWAY_AS_AJP_SECRET_VALUE che GOVWAY_AS_AJP_SECRET_VALUE_FILE; ha priorità GOVWAY_AS_AJP_SECRET_VALUE_FILE."
+    if [ ! -r "${GOVWAY_AS_AJP_SECRET_VALUE_FILE}" ]
+    then
+        echo "FATAL: Configurazione AJP ... il file indicato da GOVWAY_AS_AJP_SECRET_VALUE_FILE non è leggibile dall'utente $(id -u -n): [${GOVWAY_AS_AJP_SECRET_VALUE_FILE}]"
+        exit 1
+    fi
+    GOVWAY_AS_AJP_SECRET_VALUE=
+    IFS= read -r GOVWAY_AS_AJP_SECRET_VALUE < "${GOVWAY_AS_AJP_SECRET_VALUE_FILE}"
+    export GOVWAY_AS_AJP_SECRET_VALUE
+    AJP_SECRET_CONFIGURATO=true
+elif [ -n "${GOVWAY_AS_AJP_SECRET_VALUE}" ]
+then
+    export GOVWAY_AS_AJP_SECRET_VALUE
+    AJP_SECRET_CONFIGURATO=true
+fi
+set -x
+if [ "${GOVWAY_AS_AJP_SECRET^^}" == 'TRUE' -a "${AJP_SECRET_CONFIGURATO}" == 'false' ]
+then
+    echo "FATAL: Configurazione AJP ... GOVWAY_AS_AJP_SECRET=true richiede che il segreto sia indicato con GOVWAY_AS_AJP_SECRET_VALUE (o GOVWAY_AS_AJP_SECRET_VALUE_FILE): senza segreto Tomcat non avvia il connettore AJP."
+    exit 1
+fi
+
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    # Riconversione variabili con il carattere '-' nel nome
-    for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
-
-    # Mantenimento delle variabili precedenti per compatibilita
-    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
-    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
-
-    [ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAXTHREADS}"; }
-    [ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
 
     [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
 
     if [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'TRUE' ]
     then
+        # Il connettore di erogazione e' gia' presente sulla 8009 con l'executor 'ajp-worker':
+        # qui si aggiungono solo quelli di fruizione e gestione, sulle stesse porte usate
+        # dalle immagini WildFly (8010 e 8011).
         cat - << EOCLI > /tmp/__fix_connettori.cli
-/Server/Executor:add name=ajp-out-worker, namePrefix=ajp-out-worker-, maxThreads=\${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:-100}\n\
-/Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}\n\
-/Server/Executor:add name=ajp-gest-worker, namePrefix=ajp-gest-worker-, maxThreads=\${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS:20}\n\
-/Server/Service/Connector:add port=8009, protocol=AJP/1.3, redirectPort=8443, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}\n\
+/Server/Service/Executor:top name=ajp-out-worker, namePrefix=ajp-out-worker-, maxThreads=\${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:-100}
+/Server/Service/Connector:add port=8010, protocol=AJP/1.3, redirectPort=\${GOVWAY_AS_HTTPS_PORT_FRUIZIONI:-8444}, executor=ajp-out-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}
+/Server/Service/Executor:top name=ajp-gest-worker, namePrefix=ajp-gest-worker-, maxThreads=\${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS:-20}
+/Server/Service/Connector:add port=8011, protocol=AJP/1.3, redirectPort=\${GOVWAY_AS_HTTPS_PORT_GESTIONE:-8445}, executor=ajp-gest-worker, maxPostSize=\${GOVWAY_AS_MAX_POST_SIZE:-10485760}, secretRequired=\${GOVWAY_AS_AJP_SECRET:-false}
 EOCLI
     elif  [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ]
     then
@@ -472,7 +521,7 @@ EOCLI
         #   lo avevano attivo all'avvio comunque
         cat - << EOCLI > /tmp/__fix_connettori.cli
 /Server/Service/Connector[@port="8009"]:delete
-/Server/Executor[@name="ajp-worker"]:delete
+/Server/Service/Executor[@name="ajp-worker"]:delete
 EOCLI
     elif [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'AJP-8009' ]
     then
@@ -489,9 +538,9 @@ EOCLI
 /Server/Service/Connector[@port="8080"]:delete
 /Server/Service/Connector[@port="8081"]:delete
 /Server/Service/Connector[@port="8082"]:delete
-/Server/Executor[@name="http-in-worker"]:delete
-/Server/Executor[@name="http-out-worker"]:delete
-/Server/Executor[@name="http-gest-worker"]:delete
+/Server/Service/Executor[@name="http-in-worker"]:delete
+/Server/Service/Executor[@name="http-out-worker"]:delete
+/Server/Service/Executor[@name="http-gest-worker"]:delete
 EOCLI
     elif [ "${GOVWAY_AS_HTTP_LISTENER^^}" == 'TRUE' ]
     then
@@ -504,10 +553,36 @@ EOCLI
 echo "Elimino Worker e Listener http"
 /Server/Service/Connector[@port="8081"]:delete
 /Server/Service/Connector[@port="8082"]:delete
-/Server/Executor[@name="http-out-worker"]:delete
-/Server/Executor[@name="http-gest-worker"]:delete
+/Server/Service/Executor[@name="http-out-worker"]:delete
+/Server/Service/Executor[@name="http-gest-worker"]:delete
 EOCLI
 
+    fi
+
+
+    # Segreto condiviso e indirizzo di ascolto dei connettori AJP. Il valore del segreto non
+    # viene mai scritto nel file .cli: si referenzia solo il nome della variabile, che Tomcat
+    # risolve dal proprio ambiente (vedi TOMCAT_CLI_USAGE.md).
+    if [ ! "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ] && [ "${AJP_SECRET_CONFIGURATO}" == 'true' -o -n "${GOVWAY_AS_AJP_ADDRESS}" ]
+    then
+        AJP_PORTS=8009
+        [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'TRUE' ] && AJP_PORTS="8009 8010 8011"
+        for ajp_port in ${AJP_PORTS}
+        do
+            if [ "${AJP_SECRET_CONFIGURATO}" == 'true' ]
+            then
+                cat - << EOCLI >> /tmp/__fix_connettori.cli
+/Server/Service/Connector[@port="${ajp_port}"]:write-attribute secret=\${GOVWAY_AS_AJP_SECRET_VALUE:-}
+/Server/Service/Connector[@port="${ajp_port}"]:write-attribute secretRequired=true
+EOCLI
+            fi
+            if [ -n "${GOVWAY_AS_AJP_ADDRESS}" ]
+            then
+                cat - << EOCLI >> /tmp/__fix_connettori.cli
+/Server/Service/Connector[@port="${ajp_port}"]:write-attribute address=\${GOVWAY_AS_AJP_ADDRESS:-127.0.0.1}
+EOCLI
+            fi
+        done
     fi
 
     [ -f /tmp/__fix_connettori.cli ] && /usr/local/bin/tomcat-cli.sh "/tmp/__fix_connettori.cli"

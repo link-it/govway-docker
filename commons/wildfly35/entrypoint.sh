@@ -527,22 +527,42 @@ do
     done
 done
 
+# Normalizzazione e compatibilita' delle variabili dei listener.
+# Fuori dal blocco one-shot piu' sotto: sono export che l'application server risolve
+# dall'ambiente ad ogni avvio (le espressioni ${...} restano nel server.xml/standalone.xml),
+# quindi vanno rieseguiti anche al riavvio di un container gia' inizializzato.
+# Riconversione variabili con il carattere '-' nel nome
+for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
+
+# Mantenimento delle variabili precedenti per compatibilita
+[ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
+[ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
+
+[ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
+
+# GOVWAY_AS_AJP_WORKER_MAX_THREADS: nome storico del worker del connettore AJP di erogazione,
+# mantenuto per compatibilita'. Il nome documentato e' GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS,
+# coerente con gli analoghi dei listener HTTP e HTTPS ed e' quello letto dall'application server.
+[ -n "${GOVWAY_AS_AJP_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile GOVWAY_AS_AJP_WORKER_MAX_THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${GOVWAY_AS_AJP_WORKER_MAX_THREADS}"; }
+
+
+# Il listener AJP di Undertow non prevede alcun segreto condiviso (la mitigazione di
+# CVE-2020-1938 su WildFly e' 'allowed-request-attributes-pattern') e l'indirizzo di ascolto
+# e' quello dell'interfaccia public, non un attributo del listener: le variabili seguenti
+# sono supportate solo dalle immagini Tomcat.
+for _ajp_tomcat_only in GOVWAY_AS_AJP_SECRET GOVWAY_AS_AJP_SECRET_VALUE GOVWAY_AS_AJP_SECRET_VALUE_FILE GOVWAY_AS_AJP_ADDRESS
+do
+    [ -n "${!_ajp_tomcat_only}" ] && echo "WARN: Configurazione AJP ... la variabile ${_ajp_tomcat_only} è supportata solo dalle immagini Tomcat e viene ignorata."
+done
+
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    # Riconversione variabili con il carattere '-' nel nome
-    for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
-
-    # Mantenimento delle variabili precedenti per compatibilita
-    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
-    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
-
-    [ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAXTHREADS}"; }
-    [ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
 
     [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
 
@@ -551,12 +571,12 @@ then
         cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
 embed-server --server-config=standalone.xml --std-out=echo
 echo "Aggiungo Worker e Listener ajp"
-/subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.WILDFLY_AJP_OUT_WORKER-MAX-THREADS:100})
+/subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:100})
 /socket-binding-group=standard-sockets/socket-binding=ajp-out:add(port=\${jboss.ajp.out.port:8010})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
-/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GEST_WORKER-MAX-THREADS:20})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.GOVWAY_AS_MAX_POST_SIZE:10485760})
+/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS:20})
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.GOVWAY_AS_MAX_POST_SIZE:10485760})
 EOCLI
     elif  [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ]
     then

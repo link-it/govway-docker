@@ -94,6 +94,8 @@ Le immagini prodotte utilizzano un application server ospite, in ascolto per def
 - **8081**: Listener dedicato al traffico in fruizione (max-thread-pool default: 100)
 - **8082**: Listener dedicato al traffico di gestione (max-thread-pool default: 20)
 
+Le stesse tre categorie di traffico possono essere esposte anche in protocollo _**HTTPS**_, rispettivamente sulle porte **8443**, **8444** e **8445**. I listener HTTPS sono disattivati per default e si abilitano come descritto in [Configurazione HTTPS/TLS](#configurazione-httpstls).
+
 E' possibile personalizzare i listener da attivare tramite variabili d'ambiente descritte nei paragrafi successivi.
 Tutte queste porte sono esposte dal container e per accedere ai servizi dall'esterno si devono pubblicare al momento dell'avvio del immagine. 
 Le interfacce web di monitoraggio configurazione sono quindi disponibili sulle URL:
@@ -355,15 +357,16 @@ Datasource STATISTICHE
 
 
 ### Configurazione Listener 
-Per configurare con quali protocolli i listener di wildfly accetteranno le richieste, è possibile utilizzare le seguenti variabili:
+Per configurare con quali protocolli i listener dell'application server accetteranno le richieste, è possibile utilizzare le seguenti variabili (valide per tutte le immagini, sia Tomcat che WildFly):
 
-* GOVWAY_AS_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )
+* GOVWAY_AS_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, un solo listener sulla porta 8009 - vedi [Configurazione AJP](#configurazione-ajp), valori ammissibili [true, false, ajp-8009] )
 * GOVWAY_AS_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )
-* GOVWAY_AS_HTTPS_LISTENER: Abilita o disabilita i listener HTTPS sulle porte 8443/8444/8445 (default: false, implicitamente true se è presente materiale crittografico — vedi [Configurazione HTTPS/TLS](#configurazione-httpstls), valori ammissibili [true, false, https-8443] )
+* GOVWAY_AS_HTTPS_LISTENER: Abilita o disabilita i listener HTTPS sulle porte 8443/8444/8445 (default: false, abilitati automaticamente se viene fornito un certificato del server - vedi [Configurazione HTTPS/TLS](#configurazione-httpstls), valori ammissibili [true, false, https-8443] )
 
 A seconda del protocollo che si vuole configurare, valorizzando la relativa variabile a **true** si abiliteranno tutti e tre listener previsti di erogazione, fruizione e gestione. Viceversa valorizzando a **false** i tre listener verranno disabilitati.
-Utilizzando i valori speciali **http-8080** o **ajp-8009** verrà abilitato un solo un listener per il protocollo scelto, sulla rispettiva porta di default.
+Utilizzando i valori speciali **http-8080**, **ajp-8009** o **https-8443** verrà abilitato un solo listener per il protocollo scelto, sulla rispettiva porta di default.
 
+Il punto di partenza è diverso a seconda del protocollo: in HTTP sono già attivi tutti e tre i listener (8080, 8081 e 8082), in AJP il solo listener di erogazione (8009), in HTTPS nessuno. Le specificità dei due protocolli non attivi per default sono descritte in [Configurazione AJP](#configurazione-ajp) e [Configurazione HTTPS/TLS](#configurazione-httpstls).
 
 I listener possono essere ulteriormente configurati tramite le seguenti variabili:
 
@@ -371,18 +374,23 @@ I listener possono essere ulteriormente configurati tramite le seguenti variabil
 * GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100) 
 * GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico di gestione, (default: 20)
 
-* GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100) 
-* GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100) 
-* GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)
+* GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, l'unico attivo nella configurazione di default, (default: 50)
+* GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in fruizione, utilizzata solo con GOVWAY_AS_AJP_LISTENER=true, (default: 100)
+* GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, utilizzata solo con GOVWAY_AS_AJP_LISTENER=true, (default: 20)
+
+
+* GOVWAY_AS_HTTPS_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTPS per il traffico in erogazione, (default: 100)
+* GOVWAY_AS_HTTPS_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTPS per il traffico in fruizione, (default: 100)
+* GOVWAY_AS_HTTPS_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTPS per il traffico di gestione, (default: 20)
 
 * GOVWAY_AS_MAX_POST_SIZE: Dimensione massima consentita per il body dei messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)
-* GOVWAY_AS_MAX_HTTP_SIZE: Dimensione massima cumulata di tutti gli header http inviati. Si applica a tutti i listener abilitati (default: 10485760 bytes)
+* GOVWAY_AS_MAX_HTTP_SIZE: Dimensione massima cumulata di tutti gli header http inviati. Si applica a tutti i listener abilitati (default: 1048576 bytes sulle immagini Tomcat, 10485760 bytes sulle immagini WildFly)
 
 #### Avviso variabili deprecate
 Di seguito una lista di variabili usate in precedenza per la configurazione dei Listener. Queste variabili sono state deprecate e verrano rimosse nelle versioni successive:
 
-* ~WILDLFY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )~ **[DEPRECATA in favore di GOVWAY_AS_AJP_LISTENER]**
-* ~WILDLFY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_LISTENER]**
+* ~WILDFLY_AJP_LISTENER: Abilita o disabilita i listener AJP  (default: ajp-8009, valori ammissibili [true, false, ajp-8009] )~ **[DEPRECATA in favore di GOVWAY_AS_AJP_LISTENER]**
+* ~WILDFLY_HTTP_LISTENER: Abilita o disabilita i listener HTTP (default: true, valori ammissibili [true, false, http-8080] )~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_LISTENER]**
 
 * ~WILDFLY_HTTP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS]**
 * ~WILDFLY_HTTP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener HTTP per il traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS]**
@@ -391,39 +399,126 @@ Di seguito una lista di variabili usate in precedenza per la configurazione dei 
 * ~WILDFLY_AJP_IN_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS]**
 * ~WILDFLY_AJP_OUT_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il  traffico in fruizione, (default: 100)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS]**
 * ~WILDFLY_AJP_GEST_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico di gestione, (default: 20)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS]**
+* ~GOVWAY_AS_AJP_WORKER_MAX_THREADS: impostazione del numero massimo di thread, sul worker del listener AJP per il traffico in erogazione, (default: 50)~ **[DEPRECATA in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS]**
+
 * ~WILDFLY_MAX_POST_SIZE: Dimensione massima consentita per i messaggi. Si applica a tutti i listener abilitati (default: 10485760 bytes)~ **[DEPRECATA in favore di GOVWAY_AS_MAX_POST_SIZE]**
+
+#### Configurazione AJP
+
+Nella configurazione di default è attivo un unico listener AJP, sulla porta **8009**, dedicato al traffico in erogazione. Con `GOVWAY_AS_AJP_LISTENER=true` si aggiungono il listener di fruizione, sulla porta **8010**, e quello di gestione, sulla porta **8011**: queste due porte non sono esposte dall'immagine, quindi per raggiungerle vanno pubblicate esplicitamente all'avvio del container.
+
+##### Segreto condiviso e indirizzo di ascolto
+
+Il protocollo AJP presuppone che a dialogare con l'application server sia unicamente un reverse proxy fidato (mod_jk, mod_proxy_ajp) sulla stessa rete: chi apre una connessione AJP può impostare direttamente gli attributi interni della richiesta. Per questo motivo, dopo la vulnerabilità nota come Ghostcat (CVE-2020-1938), Tomcat per default fa ascoltare i connettori AJP solo sull'indirizzo di loopback e richiede la configurazione di un segreto condiviso. Le immagini mantengono questo comportamento; le variabili seguenti permettono di aprire l'ascolto e di configurare il segreto quando i connettori AJP devono essere raggiunti da un proxy esterno al container.
+
+Sono supportate **solo dalle immagini Tomcat**: il listener AJP di WildFly non prevede alcun segreto condiviso e il suo indirizzo di ascolto è quello dell'interfaccia public dell'application server. Se valorizzate su un'immagine WildFly vengono ignorate, segnalandolo nei log.
+
+* GOVWAY_AS_AJP_ADDRESS: Indirizzo su cui i connettori AJP accettano le connessioni. Col valore di default i connettori sono raggiungibili solo dall'interno del container: per utilizzare l'AJP da un proxy esterno indicare 0.0.0.0 (default: 127.0.0.1)
+* GOVWAY_AS_AJP_SECRET_VALUE: Segreto condiviso richiesto ai client AJP, da configurare con lo stesso valore anche sul proxy (worker.X.secret in mod_jk, secret= in mod_proxy_ajp). Valorizzarla attiva automaticamente la richiesta del segreto su tutti i connettori AJP abilitati (default: vuoto)
+* GOVWAY_AS_AJP_SECRET_VALUE_FILE: Path ad un file contenente il segreto condiviso, alternativa prioritaria a GOVWAY_AS_AJP_SECRET_VALUE (default: vuoto)
+* GOVWAY_AS_AJP_SECRET: Richiede il segreto condiviso sui connettori AJP (attributo secretRequired di Tomcat). Non è necessario impostarla se si valorizza il segreto, che la attiva implicitamente; valorizzata a true senza indicare il segreto interrompe l'avvio con un errore esplicito (default: false)
+
+Come per le altre modifiche ai connettori, la configurazione viene applicata una sola volta per container: cambiare il segreto o l'indirizzo di ascolto richiede di ricreare il container.
 
 #### Configurazione HTTPS/TLS
 
-Oltre alle porte HTTP (8080/8081/8082) è possibile esporre le stesse tre categorie di traffico (erogazione/fruizione/gestione) anche in HTTPS, rispettivamente sulle porte **8443**, **8444** e **8445**. Le porte HTTP restano attive: HTTPS si affianca, non le sostituisce.
+Oltre alle porte HTTP (8080/8081/8082) è possibile esporre le stesse tre categorie di traffico (erogazione, fruizione e gestione) anche in HTTPS, rispettivamente sulle porte **8443**, **8444** e **8445**. Le porte HTTP restano attive: i listener HTTPS si affiancano, non le sostituiscono.
 
-**Attivazione**: senza alcuna variabile `GOVWAY_AS_HTTPS_*` impostata, il comportamento è identico a prima (nessuna modifica alla configurazione, nessuna porta HTTPS in ascolto). HTTPS si attiva:
-- esplicitamente con `GOVWAY_AS_HTTPS_LISTENER=true` (o `https-8443` per abilitare solo la porta di erogazione);
-- oppure implicitamente, in automatico, non appena viene valorizzata una qualsiasi variabile di certificato/keystore (vedi sotto).
+Senza alcuna variabile `GOVWAY_AS_HTTPS_*` impostata il comportamento è identico alle versioni precedenti: nessuna modifica alla configurazione dell'application server e nessuna porta HTTPS in ascolto. I listener HTTPS si attivano:
 
-Se richiesto ma senza alcun materiale crittografico indicato, viene generato un certificato **self-signed di test** (loggato con un WARN esplicito: da non usare in produzione).
+- **esplicitamente**, con `GOVWAY_AS_HTTPS_LISTENER=true` (oppure `https-8443` per abilitare solo il listener di erogazione);
+- **implicitamente**, non appena viene valorizzata una delle variabili che indicano il certificato del server, ossia `GOVWAY_AS_HTTPS_CERTIFICATE` o `GOVWAY_AS_HTTPS_KEYSTORE` (anche nella forma con suffisso per singolo listener). Le variabili che riguardano la sola client authentication, `GOVWAY_AS_HTTPS_TRUSTSTORE` e `GOVWAY_AS_HTTPS_CA_CERTIFICATE`, non sono sufficienti ad attivare i listener.
 
-| Variabile | Default | Note |
+Il certificato del server può essere fornito in tre modalità alternative, alle quali si aggiunge la client authentication, combinabile con ognuna delle tre:
+
+* **(a) certificato self-signed**: nessuna variabile di certificato impostata; il container ne genera uno all'avvio, segnalandolo con un WARN esplicito. Da utilizzare esclusivamente per test.
+* **(b) certificato PEM montato**: certificato, chiave privata ed eventuale catena forniti come file PEM.
+* **(c) keystore montato**: certificato e chiave forniti all'interno di un keystore PKCS12 o JKS.
+* **(d) client authentication (mTLS)**: verifica del certificato presentato dal client, con le CA da riconoscere fornite come bundle PEM oppure come truststore.
+
+Le modalità (b) e (c) sono mutuamente esclusive: impostando entrambe le variabili il container si arresta all'avvio con un errore esplicito.
+
+Il dimensionamento dei thread pool dei tre listener HTTPS si effettua con le variabili `GOVWAY_AS_HTTPS_IN_WORKER_MAX_THREADS`, `GOVWAY_AS_HTTPS_OUT_WORKER_MAX_THREADS` e `GOVWAY_AS_HTTPS_GEST_WORKER_MAX_THREADS`, documentate insieme agli altri worker nel paragrafo [Configurazione Listener](#configurazione-listener).
+
+##### Attivazione e porte
+
+| Variabile | Default | Descrizione |
 |---|---|---|
-| `GOVWAY_AS_HTTPS_LISTENER` | `false` (`true` implicito se è presente materiale TLS) | `true` / `false` / `https-8443` |
-| `GOVWAY_AS_HTTPS_PORT_EROGAZIONI` / `_FRUIZIONI` / `_GESTIONE` | `8443` / `8444` / `8445` | |
-| `GOVWAY_AS_HTTPS_CERTIFICATE` (+ `_KEY`, `_CHAIN`) | — | modo PEM: certificato/chiave/catena montati |
-| `GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD` / `_FILE` | vuoto | solo se la chiave PEM è cifrata |
-| `GOVWAY_AS_HTTPS_KEYSTORE` (+ `_TYPE`, `_ALIAS`) | — | modo keystore: PKCS12/JKS montato |
-| `GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD` / `_FILE` | `govway` nel self-signed, obbligatoria col keystore montato | |
-| `GOVWAY_AS_HTTPS_KEY_PASSWORD` / `_FILE` | = password del keystore | solo se l'alias ha una password diversa da quella del keystore |
-| `GOVWAY_AS_HTTPS_CLIENT_AUTH` (+ per porta `_EROGAZIONI`/`_FRUIZIONI`/`_GESTIONE`) | `none` | `none` / `optional` / `required` — mTLS, tipicamente richiesto su erogazione/fruizione e `none` su gestione (altrimenti la console non è raggiungibile da browser) |
-| `GOVWAY_AS_HTTPS_TRUSTSTORE` (+ `_TYPE`, `_PASSWORD`/`_FILE`) | — | truststore già pronto, per client auth |
-| `GOVWAY_AS_HTTPS_CA_CERTIFICATE` | — | via consigliata per client auth: bundle PEM di CA (anche multi-CA), convertito automaticamente in truststore |
-| `GOVWAY_AS_HTTPS_PROTOCOLS` | `TLSv1.2,TLSv1.3` | |
-| `GOVWAY_AS_HTTPS_CIPHERS` | default dell'application server | sintassi non portabile fra Tomcat e WildFly |
-| `GOVWAY_AS_HTTPS_SELF_SIGNED_CN` / `_SAN` / `_VALIDITY` | `localhost` / `DNS:localhost,DNS:<hostname>,IP:127.0.0.1` / `825` | solo per il certificato self-signed |
+| `GOVWAY_AS_HTTPS_LISTENER` | false | Abilita o disabilita i listener HTTPS (valori ammissibili [true, false, https-8443]). Se non impostata, i listener vengono abilitati automaticamente quando viene fornito un certificato del server |
+| `GOVWAY_AS_HTTPS_PORT_EROGAZIONI` | 8443 | Porta del listener HTTPS dedicato al traffico in erogazione |
+| `GOVWAY_AS_HTTPS_PORT_FRUIZIONI` | 8444 | Porta del listener HTTPS dedicato al traffico in fruizione |
+| `GOVWAY_AS_HTTPS_PORT_GESTIONE` | 8445 | Porta del listener HTTPS dedicato al traffico di gestione |
 
-Ogni variabile senza suffisso vale globalmente per tutte e tre le porte; aggiungendo `_EROGAZIONI`, `_FRUIZIONI` o `_GESTIONE` si può fare un override per singola porta (utile soprattutto per `GOVWAY_AS_HTTPS_CLIENT_AUTH`).
+Le porte indicate non possono coincidere con quelle dei listener HTTP e AJP (8080, 8081, 8082, 8009), né tra di loro: in caso di collisione il container si arresta all'avvio con un errore esplicito.
 
-Le password seguono la convenzione **`X` / `X_FILE`**, con `X_FILE` (path a un file contenente la password) prioritario se entrambe sono impostate — coerente con le immagini Docker ufficiali (es. `GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD`).
+##### (a) Certificato self-signed
 
-Esempi:
+Variabili utilizzate soltanto quando i listener HTTPS sono attivi e non è stato indicato alcun certificato.
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_SELF_SIGNED_CN` | `localhost` | Common Name del certificato generato |
+| `GOVWAY_AS_HTTPS_SELF_SIGNED_SAN` | `DNS:localhost,DNS:<hostname>,IP:127.0.0.1` | Subject Alternative Name del certificato generato, nella sintassi dell'opzione `subjectAltName` di openssl |
+| `GOVWAY_AS_HTTPS_SELF_SIGNED_VALIDITY` | 825 | Giorni di validità del certificato generato |
+
+##### (b) Certificato PEM montato
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_CERTIFICATE` | vuoto | Path al file PEM contenente il certificato del server. Valorizzarla attiva i listener HTTPS e seleziona questa modalità |
+| `GOVWAY_AS_HTTPS_CERTIFICATE_KEY` | valore di `GOVWAY_AS_HTTPS_CERTIFICATE` | Path al file PEM contenente la chiave privata; se omessa si assume che chiave e certificato siano contenuti nello stesso file |
+| `GOVWAY_AS_HTTPS_CERTIFICATE_CHAIN` | vuoto | Path al file PEM contenente la catena dei certificati intermedi |
+| `GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD` | vuoto | Password della chiave privata, necessaria solo se la chiave è cifrata |
+| `GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD_FILE` | vuoto | Path ad un file contenente la password della chiave privata, alternativa prioritaria alla variabile precedente |
+
+##### (c) Keystore montato
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_KEYSTORE` | vuoto | Path al keystore contenente il certificato e la chiave del server. Valorizzarla attiva i listener HTTPS e seleziona questa modalità |
+| `GOVWAY_AS_HTTPS_KEYSTORE_TYPE` | dedotto dall'estensione del file: JKS per `.jks` e `.keystore`, PKCS12 negli altri casi | Tipo di keystore |
+| `GOVWAY_AS_HTTPS_KEYSTORE_ALIAS` | vuoto | Alias della entry da utilizzare, per keystore che contengono più certificati |
+| `GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD` | vuoto | Password del keystore; obbligatoria, in questa forma o in quella `_FILE`, quando è impostata `GOVWAY_AS_HTTPS_KEYSTORE` |
+| `GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD_FILE` | vuoto | Path ad un file contenente la password del keystore, alternativa prioritaria alla variabile precedente |
+| `GOVWAY_AS_HTTPS_KEY_PASSWORD` | password del keystore | Password della chiave privata, necessaria solo se la entry indicata ha una password diversa da quella del keystore |
+| `GOVWAY_AS_HTTPS_KEY_PASSWORD_FILE` | vuoto | Path ad un file contenente la password della chiave privata, alternativa prioritaria alla variabile precedente |
+
+##### (d) Client authentication (mTLS)
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_CLIENT_AUTH` | none | Modalità di verifica del certificato presentato dal client (valori ammissibili [none, optional, required]). Un valore diverso da none richiede `GOVWAY_AS_HTTPS_CA_CERTIFICATE` oppure `GOVWAY_AS_HTTPS_TRUSTSTORE` |
+| `GOVWAY_AS_HTTPS_CA_CERTIFICATE` | vuoto | Path ad un bundle PEM contenente una o più CA da riconoscere; viene convertito automaticamente in un truststore interno al container. È la modalità consigliata |
+| `GOVWAY_AS_HTTPS_TRUSTSTORE` | vuoto | Path ad un truststore già predisposto, in alternativa al bundle PEM |
+| `GOVWAY_AS_HTTPS_TRUSTSTORE_TYPE` | dedotto dall'estensione del file: JKS per `.jks` e `.keystore`, PKCS12 negli altri casi | Tipo di truststore |
+| `GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD` | `govway` | Password del truststore indicato con `GOVWAY_AS_HTTPS_TRUSTSTORE` |
+| `GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD_FILE` | vuoto | Path ad un file contenente la password del truststore, alternativa prioritaria alla variabile precedente |
+
+Tipicamente la client authentication va richiesta sul traffico in erogazione e fruizione, lasciando il valore none sul listener di gestione: diversamente le console web non risultano più raggiungibili da browser. Si ottiene con l'override per singolo listener descritto di seguito.
+
+##### Parametri del protocollo TLS
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `GOVWAY_AS_HTTPS_PROTOCOLS` | `TLSv1.2,TLSv1.3` | Elenco, separato da virgole, dei protocolli TLS accettati dai listener |
+| `GOVWAY_AS_HTTPS_CIPHERS` | default dell'application server | Elenco dei cifrari accettati dai listener. La sintassi del valore non è portabile tra Tomcat e WildFly |
+| `GOVWAY_AS_HTTPS_HTTP2` | false | Abilita HTTP/2 sui listener HTTPS |
+| `GOVWAY_AS_HTTPS_PROXY_FORWARDING` | false | Solo per le immagini Tomcat: allinea la porta riportata dall'application server alla prima porta HTTPS attiva, negli scenari in cui GovWay è posto dietro un reverse proxy che termina il TLS |
+
+##### Override per singolo listener
+
+Tutte le variabili elencate nei paragrafi precedenti, con l'eccezione di `GOVWAY_AS_HTTPS_LISTENER` e `GOVWAY_AS_HTTPS_PROXY_FORWARDING` che valgono sempre globalmente, accettano i suffissi `_EROGAZIONI`, `_FRUIZIONI` e `_GESTIONE`: la variabile senza suffisso vale per tutti e tre i listener, quella con suffisso ne effettua l'override sul singolo listener. Ad esempio `GOVWAY_AS_HTTPS_CLIENT_AUTH=required` insieme a `GOVWAY_AS_HTTPS_CLIENT_AUTH_GESTIONE=none` richiede il certificato client solo sul traffico in erogazione e fruizione.
+
+La variabile `GOVWAY_AS_HTTPS_PORT` senza suffisso assegnerebbe la stessa porta a tutti i listener attivi: va quindi utilizzata solo con `GOVWAY_AS_HTTPS_LISTENER=https-8443`, valorizzando negli altri casi le tre varianti con suffisso.
+
+##### Password su file
+
+Ognuna delle quattro password (`GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD`, `GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD`, `GOVWAY_AS_HTTPS_KEY_PASSWORD`, `GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD`) dispone di una variante con suffisso **_FILE**, che indica il path di un file contenente la password anziché la password stessa: è la forma da preferire negli ambienti orchestrati, dove il valore viene fornito come secret montato nel container. Se sono impostate entrambe le forme viene segnalato un WARN e prevale quella `_FILE`; se il file indicato non è leggibile dall'utente del container, l'avvio si interrompe con un errore esplicito.
+
+Le varianti `_FILE` vanno indicate in forma globale, valida per tutti i listener: il nome da utilizzare per l'override su un singolo listener non è attualmente uniforme tra le immagini Tomcat e WildFly.
+
+##### Esempi
+
 ```bash
 # (a) Solo attivazione, certificato self-signed generato automaticamente
 docker run ... -e GOVWAY_AS_HTTPS_LISTENER=true ...
@@ -445,7 +540,8 @@ docker run ... \
   -e GOVWAY_AS_HTTPS_CA_CERTIFICATE=/certs/ca-bundle.pem ...
 ```
 
-**Limiti noti**:
+##### Limiti noti
+
 - Su Tomcat, la verifica della catena CA (`GOVWAY_AS_HTTPS_CA_CERTIFICATE`) usa JSSE (non è disponibile `tomcat-native`/OpenSSL): un bundle PEM viene sempre convertito internamente in un truststore.
 - Il modo PEM (b) richiede una conversione a PKCS12 su WildFly (Elytron non ha un tipo key-store PEM); su Tomcat invece il PEM è supportato nativamente, nessuna conversione.
 - La riconfigurazione non è "a caldo": cambiare porte o materiale crittografico richiede di ricreare il container (i marker di inizializzazione rendono l'operazione one-shot per container, come per i datasource).

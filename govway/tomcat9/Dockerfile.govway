@@ -107,7 +107,7 @@ echo -e '# Rimuovi Resource UserDatabase \n\
 # Aggiungi Executor http-gest-worker\n\
 /Server/Service/Executor:top name=http-gest-worker, namePrefix=http-gest-worker-, maxThreads=${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS:-20}, minSpareThreads=5\n\
 # Aggiungi Executor ajp-worker\n\
-/Server/Service/Executor:top name=ajp-worker, namePrefix=ajp-worker-, maxThreads=${GOVWAY_AS_AJP_WORKER_MAX_THREADS:-50}\n\
+/Server/Service/Executor:top name=ajp-worker, namePrefix=ajp-worker-, maxThreads=${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS:-50}\n\
 # Aggiungi Executor https-in-worker\n\
 /Server/Service/Executor:top name=https-in-worker, namePrefix=https-in-worker-, maxThreads=${GOVWAY_AS_HTTPS_IN_WORKER_MAX_THREADS:-100}\n\
 # Aggiungi Executor https-out-worker\n\

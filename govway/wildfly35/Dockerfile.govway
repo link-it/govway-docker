@@ -104,7 +104,7 @@ echo "Aggiungo Workers http" \n\
 /socket-binding-group=standard-sockets/socket-binding=http-gest:add(port=${jboss.http.gest.port:8082}) \n\
 /subsystem=undertow/server=default-server/http-listener=gestione:add(socket-binding=http-gest, worker=http-gest-worker) \n\
 echo "Aggiungo Worker e Listener ajp" \n\
-/subsystem=io/worker=ajp-worker:add(task-max-threads=${env.GOVWAY_AS_AJP_WORKER_MAX_THREADS:50}) \n\
+/subsystem=io/worker=ajp-worker:add(task-max-threads=${env.GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS:50}) \n\
 /subsystem=undertow/server=default-server/ajp-listener=ajplistener:add(socket-binding=ajp, scheme=http, worker=ajp-worker) \n\
 echo "Abilito utilizzo degli header X-Forwarding" \n\
 /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true) \n\
