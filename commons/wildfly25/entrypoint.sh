@@ -22,6 +22,8 @@ declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govwa
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
 declare -r DATASOURCE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_datasource_init"
+declare -r HTTPS_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_https_init"
+declare -r HTTPS_CLI_FILE='/tmp/__standalone_fix_https.cli'
 
 
 if [[ ! "${GOVWAY_DEFAULT_ENTITY_NAME}" =~ ${GOVWAY_STARTUP_ENTITY_REGEX} ]]
@@ -310,9 +312,37 @@ esac
 
 # Settaggio Valori per i parametri dei datasource GOVWAY
 ## Prepared statement cache size (default 20)
-# [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
-# [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}" 
+# [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" ] || export GOVWAY_CONF_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
+# [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" ] || export GOVWAY_TRAC_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
 # [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" ] || export GOVWAY_STAT_DS_PSCACHESIZE="${GOVWAY_DS_PSCACHESIZE}"
+
+# Con hsql la cache dei prepared statement di IronJacamar interagisce male col Cached
+# Connection Manager (use-ccm=true): quest'ultimo chiude d'ufficio gli statement non
+# chiusi quando la connessione rientra nel pool, e il codice di bootstrap di GovWay
+# (OpenSPCoop2Startup, fuori da un contesto transazionale gestito) può poi riottenere
+# dalla cache lo stesso PreparedStatement già chiuso. HSQLDB segnala questo caso con lo
+# stesso messaggio generico usato per una connessione chiusa ("connection exception:
+# closed", X_08003), il che aveva inizialmente fatto sospettare un problema di ciclo di
+# vita della connessione/del database — la causa reale è invece il riuso di uno statement
+# in cache già chiuso. Su hsql va quindi sempre a 0 (nessuna cache, come il default di
+# Tomcat/DBCP2 - poolPreparedStatements=false), anche se l'utente ha impostato un valore
+# diverso: non è un tuning facoltativo, un valore >0 riproduce il bug in modo silenzioso.
+if [ "${GOVWAY_DB_TYPE}" == hsql ]
+then
+    [ -n "${GOVWAY_DS_PSCACHESIZE}" -a "${GOVWAY_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_DS_PSCACHESIZE=${GOVWAY_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_CONF_DS_PSCACHESIZE}" -a "${GOVWAY_CONF_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_CONF_DS_PSCACHESIZE=${GOVWAY_CONF_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_TRAC_DS_PSCACHESIZE}" -a "${GOVWAY_TRAC_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_TRAC_DS_PSCACHESIZE=${GOVWAY_TRAC_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    [ -n "${GOVWAY_STAT_DS_PSCACHESIZE}" -a "${GOVWAY_STAT_DS_PSCACHESIZE}" != 0 ] && echo "WARN: GOVWAY_STAT_DS_PSCACHESIZE=${GOVWAY_STAT_DS_PSCACHESIZE} ignorato: con hsql la cache dei prepared statement va sempre disabilitata (0)."
+    export GOVWAY_DS_PSCACHESIZE=0
+    export GOVWAY_CONF_DS_PSCACHESIZE=0
+    export GOVWAY_TRAC_DS_PSCACHESIZE=0
+    export GOVWAY_STAT_DS_PSCACHESIZE=0
+else
+    export GOVWAY_DS_PSCACHESIZE=${GOVWAY_DS_PSCACHESIZE:-20}
+    export GOVWAY_CONF_DS_PSCACHESIZE=${GOVWAY_CONF_DS_PSCACHESIZE:-20}
+    export GOVWAY_TRAC_DS_PSCACHESIZE=${GOVWAY_TRAC_DS_PSCACHESIZE:-20}
+    export GOVWAY_STAT_DS_PSCACHESIZE=${GOVWAY_STAT_DS_PSCACHESIZE:-20}
+fi
 
 ## parametri di connessione URL JDBC (default vuoto)
 if [ -n "${GOVWAY_DS_CONN_PARAM}" ]; then export DATASOURCE_CONN_PARAM="?${GOVWAY_DS_CONN_PARAM}"; else export DATASOURCE_CONN_PARAM=""; fi
@@ -459,22 +489,83 @@ EOCLI
 
     touch "${MODULE_INIT_FILE}"
 fi
+##########################################################################
+# Configurazione HTTPS: risoluzione password (_FILE con priorità) ed export.
+# A differenza di Tomcat (dove solo la password del truststore manca di un
+# attributo nativo *PasswordFile), le risorse elytron key-manager/trust-manager
+# di WildFly referenziano tutte le password via ${env.VAR}: vanno quindi
+# risolte ed esportate tutte qui, non solo quella del truststore.
+# Deve stare nell'entrypoint, non in config_https.sh: l'export deve essere
+# ereditato da standalone.sh, lanciato più avanti in questo stesso processo.
+# Ungated di proposito: un export bash non sopravvive a un riavvio del
+# container, quindi va rieseguito a ogni avvio.
+##########################################################################
+# Tutto il ciclo sta in una regione non tracciata: con 'set -x' attivo anche il solo
+# test [ -n "${!_govway_https_varname}" ] stamperebbe la password in chiaro in
+# /tmp/entrypoint_debug.log quando viene passata per valore anziche' con la forma _FILE.
+{ set +x; } 2>/dev/null
+for _govway_https_pass_base in GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD GOVWAY_AS_HTTPS_KEY_PASSWORD GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD
+do
+    for _govway_https_pass_suffix in '' _EROGAZIONI _FRUIZIONI _GESTIONE
+    do
+        _govway_https_varname="${_govway_https_pass_base}${_govway_https_pass_suffix}"
+        _govway_https_filevar="${_govway_https_varname}_FILE"
+        if [ -n "${!_govway_https_filevar}" ]
+        then
+            [ -n "${!_govway_https_varname}" ] && echo "WARN: Configurazione HTTPS ... sono state impostate sia ${_govway_https_varname} che ${_govway_https_filevar}; ha priorità ${_govway_https_filevar}."
+            if [ ! -r "${!_govway_https_filevar}" ]
+            then
+                echo "FATAL: Configurazione HTTPS ... il file indicato da ${_govway_https_filevar} non è leggibile dall'utente $(id -u -n): [${!_govway_https_filevar}]"
+                exit 1
+            fi
+            _govway_https_passval=
+            IFS= read -r _govway_https_passval < "${!_govway_https_filevar}"
+            printf -v "${_govway_https_varname}" '%s' "${_govway_https_passval}"
+            export "${_govway_https_varname}"
+        elif [ -n "${!_govway_https_varname}" ]
+        then
+            export "${_govway_https_varname}"
+        fi
+    done
+done
+set -x
+
+# Normalizzazione e compatibilita' delle variabili dei listener.
+# Fuori dal blocco one-shot piu' sotto: sono export che l'application server risolve
+# dall'ambiente ad ogni avvio (le espressioni ${...} restano nel server.xml/standalone.xml),
+# quindi vanno rieseguiti anche al riavvio di un container gia' inizializzato.
+# Riconversione variabili con il carattere '-' nel nome
+for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
+
+# Mantenimento delle variabili precedenti per compatibilita
+[ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
+[ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
+
+[ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}"; }
+[ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
+
+# GOVWAY_AS_AJP_WORKER_MAX_THREADS: nome storico del worker del connettore AJP di erogazione,
+# mantenuto per compatibilita'. Il nome documentato e' GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS,
+# coerente con gli analoghi dei listener HTTP e HTTPS ed e' quello letto dall'application server.
+[ -n "${GOVWAY_AS_AJP_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile GOVWAY_AS_AJP_WORKER_MAX_THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${GOVWAY_AS_AJP_WORKER_MAX_THREADS}"; }
+
+
+# Il listener AJP di Undertow non prevede alcun segreto condiviso (la mitigazione di
+# CVE-2020-1938 su WildFly e' 'allowed-request-attributes-pattern') e l'indirizzo di ascolto
+# e' quello dell'interfaccia public, non un attributo del listener: le variabili seguenti
+# sono supportate solo dalle immagini Tomcat.
+for _ajp_tomcat_only in GOVWAY_AS_AJP_SECRET GOVWAY_AS_AJP_SECRET_VALUE GOVWAY_AS_AJP_SECRET_VALUE_FILE GOVWAY_AS_AJP_ADDRESS
+do
+    [ -n "${!_ajp_tomcat_only}" ] && echo "WARN: Configurazione AJP ... la variabile ${_ajp_tomcat_only} è supportata solo dalle immagini Tomcat e viene ignorata."
+done
+
 if [ ! -f "${CONNETTORI_INIT_FILE}" ]
 then
-    # Riconversione variabili con il carattere '-' nel nome
-    for e in $(env | grep 'MAX-' ); do varname="${e%=*}"; varval="${e#*=}"; eval  "export ${varname//-/_}=\"${varval}\""; done
-
-    # Mantenimento delle variabili precedenti per compatibilita
-    [ -n "${WILDFLY_AJP_LISTENER^^}" -a -z "${GOVWAY_AS_AJP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_AJP_LISTENER è stata deprecata in favore di GOVWAY_AS_AJP_LISTENER."; export GOVWAY_AS_AJP_LISTENER="${WILDFLY_AJP_LISTENER}"; }
-    [ -n "${WILDFLY_HTTP_LISTENER^^}" -a -z "${GOVWAY_AS_HTTP_LISTENER}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_LISTENER è stata deprecata in favore di GOVWAY_AS_HTTP_LISTENER."; export GOVWAY_AS_HTTP_LISTENER="${WILDFLY_HTTP_LISTENER}"; }
-
-    [ -n "${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_IN_WORKER_MAX_THREADS="${WILDFLY_HTTP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_OUT_WORKER_MAX_THREADS="${WILDFLY_HTTP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_HTTP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_HTTP_GEST_WORKER_MAX_THREADS="${WILDFLY_HTTP_GEST_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_IN_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_IN_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS="${WILDFLY_AJP_IN_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_OUT_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS="${WILDFLY_AJP_OUT_WORKER_MAX_THREADS}"; }
-    [ -n "${WILDFLY_AJP_GEST_WORKER_MAX_THREADS}" -a -z "${GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS}" ] && { echo "WARN: LA variabile WILDFLY_AJP_GEST_WORKER-MAX-THREADS è stata deprecata in favore di GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS."; export GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS="${WILDFLY_AJP_GEST_WORKER_MAXTHREADS}"; }
-    [ -n "${WILDFLY_MAX_POST_SIZE}" -a -z "${GOVWAY_AS_MAX_POST_SIZE}" ] && { echo "WARN: LA variabile WILDFLY_MAX-POST-SIZE è stata deprecata in favore di GOVWAY_AS_MAX_POST_SIZE."; export GOVWAY_AS_MAX_POST_SIZE="${WILDFLY_MAX_POST_SIZE}"; }
 
     [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' -a "${GOVWAY_AS_HTTP_LISTENER^^}" == 'FALSE' ] && echo "WARN: Tutti i connettori verranno disabilitati. Non sarà più possibile accedere ai servizi"
 
@@ -483,12 +574,12 @@ then
         cat - << EOCLI > /tmp/__standalone_fix_connettori.cli
 embed-server --server-config=standalone.xml --std-out=echo
 echo "Aggiungo Worker e Listener ajp"
-/subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.WILDFLY_AJP_OUT_WORKER-MAX-THREADS:100})
+/subsystem=io/worker=ajp-out-worker:add(task-max-threads=\${env.GOVWAY_AS_AJP_OUT_WORKER_MAX_THREADS:100})
 /socket-binding-group=standard-sockets/socket-binding=ajp-out:add(port=\${jboss.ajp.out.port:8010})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
-/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.WILDFLY_AJP_GEST_WORKER-MAX-THREADS:20})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-fruizioni:add(socket-binding=ajp-out, scheme=http, worker=ajp-out-worker, max-post-size=\${env.GOVWAY_AS_MAX_POST_SIZE:10485760})
+/subsystem=io/worker=ajp-gest-worker:add(task-max-threads=\${env.GOVWAY_AS_AJP_GEST_WORKER_MAX_THREADS:20})
 /socket-binding-group=standard-sockets/socket-binding=ajp-gest:add(port=\${jboss.ajp.gest.port:8011})
-/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.WILDFLY_MAX-POST-SIZE:10485760})
+/subsystem=undertow/server=default-server/ajp-listener=ajp-gestione:add(socket-binding=ajp-gest, scheme=http, worker=ajp-gest-worker, max-post-size=\${env.GOVWAY_AS_MAX_POST_SIZE:10485760})
 EOCLI
     elif  [ "${GOVWAY_AS_AJP_LISTENER^^}" == 'FALSE' ]
     then
@@ -540,8 +631,44 @@ EOCLI
 
     fi
 
-    [ -f /tmp/__standalone_fix_connettori.cli ] && ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
+    if [ -f /tmp/__standalone_fix_connettori.cli ]
+    then
+        echo 'stop-embedded-server' >> /tmp/__standalone_fix_connettori.cli
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="/tmp/__standalone_fix_connettori.cli"
+        JBOSS_CLI_CONNETTORI_RC=$?
+        if [ ${JBOSS_CLI_CONNETTORI_RC} -ne 0 ]
+        then
+            echo "WARN: Configurazione connettori ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CONNETTORI_RC})."
+        fi
+    fi
     touch "${CONNETTORI_INIT_FILE}"
+fi
+
+##########################################################################
+# Configurazione HTTPS (erogazioni/fruizioni/gestione)
+# Logica in commons/wildfly*/config_https.sh: qui solo orchestrazione e gate.
+# Sessione embed-server dedicata (separata da quella dei connettori AJP/HTTP)
+# per restare strutturalmente comparabile con l'equivalente Tomcat.
+##########################################################################
+if [ ! -f "${HTTPS_INIT_FILE}" ]
+then
+    if /usr/local/bin/config_https.sh abilitato
+    then
+        echo "INFO: Configurazione HTTPS ... in corso"
+        /usr/local/bin/config_https.sh prepara
+        echo 'embed-server --server-config=standalone.xml --std-out=echo' > "${HTTPS_CLI_FILE}"
+        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}"
+        echo 'stop-embedded-server' >> "${HTTPS_CLI_FILE}"
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="${HTTPS_CLI_FILE}"
+        JBOSS_CLI_HTTPS_RC=$?
+        if [ ${JBOSS_CLI_HTTPS_RC} -ne 0 ]
+        then
+            echo "FATAL: Configurazione HTTPS ... jboss-cli.sh terminato con errore (${JBOSS_CLI_HTTPS_RC})."
+            exit 1
+        fi
+        echo "INFO: Configurazione HTTPS ... completata"
+    fi
+    touch "${HTTPS_INIT_FILE}"
 fi
 
 if [ -d "${ENTRYPOINT_D}" -o  -d "${ENTRYPOINT_D_DEPRECATO}" ]
@@ -601,6 +728,13 @@ GOVWAY_RESOLVED_UUID_ALG="${GOVWAY_UUID_ALG}"
 [ "${GOVWAY_UUID_ALG,,}" == 'v1' -o -z "${GOVWAY_UUID_ALG}" ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv1
 [ "${GOVWAY_UUID_ALG,,}" == 'v4' ] &&  GOVWAY_RESOLVED_UUID_ALG=UUIDv4sec
 export GOVWAY_RESOLVED_UUID_ALG
+
+# Le sessioni embed-server precedenti (fix datasource/modulo/connettori/https) lasciano
+# mount VFS temporanei sotto standalone/tmp/embedded-server ("WFLYVFS000002: Failed to
+# clean existing content for temp file provider" ad ogni sessione). Se non ripuliti,
+# l'avvio reale può risolvere le risorse di un modulo/jar in modo inconsistente (es.
+# ClassNotFoundException su una classe effettivamente presente nel jar deployato).
+rm -rf "${JBOSS_HOME}/standalone/tmp/embedded-server" "${JBOSS_HOME}/standalone/tmp/vfs" 2>/dev/null
 
 # Mi assicuro che i diritti della directory di log siano sufficienti
 /usr/local/bin/change_dir_perms ${GOVWAY_LOGDIR}
