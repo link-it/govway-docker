@@ -600,6 +600,10 @@ fi
 # Ungated di proposito: un export bash non sopravvive a un riavvio del
 # container, quindi va rieseguito a ogni avvio.
 ##########################################################################
+# Tutto il ciclo sta in una regione non tracciata: con 'set -x' attivo anche il solo
+# test [ -n "${!_govway_https_varname}" ] stamperebbe la password in chiaro in
+# /tmp/entrypoint_debug.log quando viene passata per valore anziche' con la forma _FILE.
+{ set +x; } 2>/dev/null
 for _govway_https_pass_suffix in '' _EROGAZIONI _FRUIZIONI _GESTIONE
 do
     _govway_https_varname="GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD${_govway_https_pass_suffix}"
@@ -612,17 +616,16 @@ do
             echo "FATAL: Configurazione HTTPS ... il file indicato da ${_govway_https_filevar} non è leggibile dall'utente $(id -u -n): [${!_govway_https_filevar}]"
             exit 1
         fi
-        { set +x; } 2>/dev/null
         _govway_https_passval=
         IFS= read -r _govway_https_passval < "${!_govway_https_filevar}"
         printf -v "${_govway_https_varname}" '%s' "${_govway_https_passval}"
         export "${_govway_https_varname}"
-        set -x
     elif [ -n "${!_govway_https_varname}" ]
     then
         export "${_govway_https_varname}"
     fi
 done
+set -x
 
 ##########################################################################
 # Configurazione HTTPS (erogazioni/fruizioni/gestione)

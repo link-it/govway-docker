@@ -500,6 +500,10 @@ fi
 # Ungated di proposito: un export bash non sopravvive a un riavvio del
 # container, quindi va rieseguito a ogni avvio.
 ##########################################################################
+# Tutto il ciclo sta in una regione non tracciata: con 'set -x' attivo anche il solo
+# test [ -n "${!_govway_https_varname}" ] stamperebbe la password in chiaro in
+# /tmp/entrypoint_debug.log quando viene passata per valore anziche' con la forma _FILE.
+{ set +x; } 2>/dev/null
 for _govway_https_pass_base in GOVWAY_AS_HTTPS_KEYSTORE_PASSWORD GOVWAY_AS_HTTPS_KEY_PASSWORD GOVWAY_AS_HTTPS_CERTIFICATE_KEY_PASSWORD GOVWAY_AS_HTTPS_TRUSTSTORE_PASSWORD
 do
     for _govway_https_pass_suffix in '' _EROGAZIONI _FRUIZIONI _GESTIONE
@@ -514,18 +518,17 @@ do
                 echo "FATAL: Configurazione HTTPS ... il file indicato da ${_govway_https_filevar} non è leggibile dall'utente $(id -u -n): [${!_govway_https_filevar}]"
                 exit 1
             fi
-            { set +x; } 2>/dev/null
             _govway_https_passval=
             IFS= read -r _govway_https_passval < "${!_govway_https_filevar}"
             printf -v "${_govway_https_varname}" '%s' "${_govway_https_passval}"
             export "${_govway_https_varname}"
-            set -x
         elif [ -n "${!_govway_https_varname}" ]
         then
             export "${_govway_https_varname}"
         fi
     done
 done
+set -x
 
 # Normalizzazione e compatibilita' delle variabili dei listener.
 # Fuori dal blocco one-shot piu' sotto: sono export che l'application server risolve
