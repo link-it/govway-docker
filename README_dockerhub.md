@@ -45,6 +45,11 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
+- *3.4.4* / *3.3.21*
+
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.13
+   - Introdotta l'immagine '_tools' che rende disponibili i tool a linea di comando prodotti dall'installer: govway-config-loader, govway-template-scan e govway-vault-cli.
+
 - *3.4.3* / *3.3.20*
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.11
@@ -103,6 +108,12 @@ Esistono ulteriori immagini che suddividono i componenti applicativi tra compone
 - **run**: contiene solamente il componente runtime di api gateway;
 
 - **manager**: contiene solamente le console e i servizi API di configurazione e monitoraggio.
+
+Sono infine disponibili due immagini che non istanziano alcun application server, ma eseguono un singolo task destinato a terminare in un tempo finito:
+
+- **batch**: esegue i batch di generazione delle statistiche e dei report PDND;
+
+- **tools**: esegue i tool a linea di comando prodotti dall'installer (govway-config-loader, govway-template-scan, govway-vault-cli).
 
 ### Versioni precedenti alla 3.4.2 / 3.3.19
 
@@ -525,19 +536,17 @@ $ docker-compose up
 
 ## Ambiente tools (CLI installer)
 
-> **_NOTA:_** A differenza delle varianti `_run`/`_manager`/`_batch`, l'immagine tools viene pubblicata in un **repository Docker Hub separato**: `linkitaly/govway-tools`, non un tag di `linkitaly/govway`.
-
-L'installer GovWay produce, oltre agli archivi applicativi, tre tool a linea di comando: **govway-config-loader** (caricamento di un export della console), **govway-template-scan** (verifica dei template presenti in configurazione) e **govway-vault-cli** (cifratura/decifratura/aggiornamento delle password gestite dal vault). L'immagine `linkitaly/govway-tools` li rende disponibili senza dover installare a mano GovWay: nessun application server, un solo tool eseguito per ogni avvio del container, adatta sia a un `docker run` singolo che a un Pod/Job Kubernetes ad esecuzione unica.
+L'installer GovWay produce, oltre agli archivi applicativi, tre tool a linea di comando: **govway-config-loader** (caricamento di un export della console), **govway-template-scan** (verifica dei template presenti in configurazione) e **govway-vault-cli** (cifratura/decifratura/aggiornamento delle password gestite dal vault). L'immagine `_tools` li rende disponibili senza dover installare a mano GovWay: come per l'ambiente batch non viene istanziato alcun application server, viene eseguito un solo tool per ogni avvio del container, ed è adatta sia a un `docker run` singolo che a un Pod/Job Kubernetes ad esecuzione unica.
 
 ```console
 $ docker run --rm \
   -e GOVWAY_DB_TYPE=postgresql \
   -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
-  -e GOVWAY_DS_JDBC_LIBS=/tmp \
-  -v ~/postgresql/jdbc-driver:/tmp \
-  -v ~/archivio.zip:/archivio.zip \
-  linkitaly/govway-tools:3.4.3 config-loader create /archivio.zip
+  -e GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver \
+  -v ~/postgresql/jdbc-driver:/tmp/jdbc-driver \
+  -v ~/archivio.zip:/tmp/archivio.zip \
+  linkitaly/govway:3.4.3_tools config-loader create /tmp/archivio.zip
 ```
 
 ```console
@@ -545,13 +554,13 @@ $ docker run --rm \
   -e GOVWAY_DB_TYPE=postgresql \
   -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
-  -e GOVWAY_DS_JDBC_LIBS=/tmp \
-  -v ~/postgresql/jdbc-driver:/tmp \
-  linkitaly/govway-tools:3.4.3 template-scan '.*'
+  -e GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver \
+  -v ~/postgresql/jdbc-driver:/tmp/jdbc-driver \
+  linkitaly/govway:3.4.3_tools template-scan '.*'
 ```
 
 ```console
-$ docker run --rm linkitaly/govway-tools:3.4.3 vault-cli encrypt -system_in=miosegreto -system_out
+$ docker run --rm linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
 ```
 
 I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>` e `vault-cli encrypt|decrypt|update [args...]`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale (database HSQL non supportato: i tool operano su un database esterno già popolato); se `GOVWAY_DB_TYPE` non viene impostata, il tool utilizza le properties già presenti in `/etc/govway`, montabile come volume per fornire una configurazione completa (comprese eventuali `byok.properties`/`hsm.properties`). I log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
@@ -568,6 +577,7 @@ Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfi
 
 * `master4`
 * `master4_batch`
+* `master4_tools`
 
 > **_ATTENZIONE:_** I tag precedenti (`master4_standalone`, `master4_postgres`, `master4_oracle`, `master4_batch_postgres`, `master4_batch_oracle`) non verranno più aggiornati e punteranno a versioni obsolete.
 
@@ -580,5 +590,6 @@ Vengono inoltre fornite le seguenti immagini per le versioni snapshot [(Dockerfi
 
 * `master`
 * `master_batch`
+* `master_tools`
 
 > **_ATTENZIONE:_** I tag precedenti (`master_standalone`, `master_postgres`, `master_oracle`, `master_batch_postgres`, `master_batch_oracle`) non verranno più aggiornati e punteranno a versioni obsolete.

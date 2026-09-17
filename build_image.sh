@@ -15,8 +15,9 @@ Installer Sorgente:
 
 Personalizzazioni:
 -a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, tools, all] , default: all)
-                 NOTA: 'tools' produce una immagine separata linkitaly/govway-tools:<VERSIONE> (non un tag dell'immagine linkitaly/govway)
-                 con i tool CLI dell'installer (govway-config-loader, govway-template-scan, govway-vault-cli); ignora -g.
+                 NOTA: 'tools' produce l'immagine <VERSIONE>_tools con i tool CLI dell'installer
+                 (govway-config-loader, govway-template-scan, govway-vault-cli). Come per 'batch' non viene
+                 istanziato un application server: -g incide solo sulla versione della JRE utilizzata.
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
 -g <TIPO>      : Prepara l'immagine per avere come base un particolare application server  (valori: [tomcat9, tomca10, wildfly25, wildfly35] , default: tomcat9)
@@ -207,30 +208,23 @@ RET=$?
 [ -n "${ARCHIVI}" ] && DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govway_archives_type=${ARCHIVI}")
 if [ -z "$TAG" ]
 then
-  if [ "${ARCHIVI}" == 'tools' ]
+  REPO=${REGISTRY_PREFIX}/govway
+  TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
+  [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
+
+  TAG="${REPO}:${TAGNAME}"
+
+  # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni precedenti 3.4.x)
+  if ! version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat9" ] && [ "${ARCHIVI}" != 'batch' ] && [ "${ARCHIVI}" != 'tools' ]
   then
-    # immagine rilasciata separatamente, non un tag di linkitaly/govway: nessun suffisso _tools/_<appserver>
-    REPO=${REGISTRY_PREFIX}/govway-tools
-    TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
-    TAG="${REPO}:${TAGNAME}"
-  else
-    REPO=${REGISTRY_PREFIX}/govway
-    TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}
-    [ -n "${ARCHIVI}" -a "${ARCHIVI}" != 'all' ] && TAGNAME=${VER:-${LATEST_GOVWAY_RELEASE}}_${ARCHIVI}
-
-    TAG="${REPO}:${TAGNAME}"
-
-    # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni precedenti 3.4.x)
-    if ! version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat9" ] && [ "${ARCHIVI}" != 'batch' ]
-    then
-      TAG="${TAG}_${APPSERV}"
-    fi
-    # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni >= 3.4.x)
-    if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat10" ] && [ "${ARCHIVI}" != 'batch' ]
-    then
-      TAG="${TAG}_${APPSERV}"
-    fi
+    TAG="${TAG}_${APPSERV}"
   fi
+  # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni >= 3.4.x)
+  if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat10" ] && [ "${ARCHIVI}" != 'batch' ] && [ "${ARCHIVI}" != 'tools' ]
+  then
+    TAG="${TAG}_${APPSERV}"
+  fi
+
 fi
 
 if [ -n "${CUSTOM_GOVWAY_AS_CLI}" ]

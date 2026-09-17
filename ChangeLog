@@ -1,6 +1,7 @@
 - *3.4.4* / *3.3.21*
 
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
+   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
 
 - *3.4.3* / *3.3.20*
 

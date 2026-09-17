@@ -85,6 +85,9 @@ A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i
 Se l'immagine è stata prodotta in modalità standalone: 
 - **/opt/hsqldb-2.7.4/hsqldb/database** database interno HSQL 
 
+Se l'immagine è stata prodotta con l'opzione "-a tools":
+- **/opt/govway-tools** path dove sono installati i tool a linea di comando dell'installer
+
 si possono rendere queste location persistenti, montando dei volumi su queste directory.
 
 ### Servizi attivi
@@ -536,13 +539,13 @@ Quando ci si connette ad un database esterno SQL Server è possibile configurare
 
 ## Informazioni sull'immagine tools
 
-Utilizzando lo switch "-a tools" dello script di build si ottiene un'immagine **rilasciata separatamente**, `linkitaly/govway-tools:<versione>` (un repository Docker diverso da `linkitaly/govway`, non un tag), che espone i tool a linea di comando prodotti dall'installer GovWay:
+Utilizzando lo switch "-a tools" dello script di build si ottiene l'immagine `linkitaly/govway:<versione>_tools`, che espone i tool a linea di comando prodotti dall'installer GovWay:
 
 * **govway-config-loader**: caricamento di un export della console tramite azioni `create`, `createOrUpdate`, `delete`
 * **govway-template-scan**: verifica dei template presenti nella configurazione
 * **govway-vault-cli**: cifratura/decifratura/aggiornamento delle password gestite dal vault di GovWay, tramite azioni `encrypt`, `decrypt`, `update`
 
-Come le immagini batch, non viene istanziato alcun application server: il container esegue un singolo tool e termina, adatto sia ad un `docker run` singolo che ad un Pod/Job Kubernetes ad esecuzione unica.
+Come le immagini batch, non viene istanziato alcun application server: il container esegue un singolo tool e termina, adatto sia ad un `docker run` singolo che ad un Pod/Job Kubernetes ad esecuzione unica. Per lo stesso motivo il tag non riporta l'indicazione dell'application server, ed il parametro "-g" incide solamente sulla versione della JRE utilizzata.
 
 ```bash
 ./build_image.sh -a tools -v 3.4.3
@@ -557,8 +560,8 @@ docker run --rm \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
   -e GOVWAY_DS_JDBC_LIBS=/tmp \
   -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
-  -v ./archivio.zip:/archivio.zip \
-  linkitaly/govway-tools:3.4.3 config-loader create /archivio.zip
+  -v ./archivio.zip:/tmp/archivio.zip \
+  linkitaly/govway:3.4.3_tools config-loader create /tmp/archivio.zip
 ```
 
 ```bash
@@ -568,11 +571,11 @@ docker run --rm \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
   -e GOVWAY_DS_JDBC_LIBS=/tmp \
   -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
-  linkitaly/govway-tools:3.4.3 template-scan '.*'
+  linkitaly/govway:3.4.3_tools template-scan '.*'
 ```
 
 ```bash
-docker run --rm linkitaly/govway-tools:3.4.3 vault-cli encrypt -system_in=miosegreto -system_out
+docker run --rm linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
 ```
 
 I comandi supportati sono:
@@ -584,7 +587,7 @@ I comandi supportati sono:
 * `vault-cli decrypt [args...]`
 * `vault-cli update [args...]`
 
-I file di configurazione dei tre tool (originariamente distinti per ciascun tool nell'installer) sono centralizzati in un'unica directory `/etc/govway`, montabile come volume per personalizzazioni persistenti (es. `byok.properties`, `hsm.properties`); i log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
+I file di configurazione dei tre tool sono centralizzati in un'unica directory `/etc/govway`, montabile come volume per personalizzazioni persistenti (es. `byok.properties`, `hsm.properties`); i log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
 
 ## Personalizzazioni Tools
 
@@ -611,10 +614,14 @@ Variabili per la modalità a variabili d'ambiente:
 
   **NOTA:** `GOVWAY_DS_JDBC_LIBS` viene collegata al classpath del tool **solo** quando `GOVWAY_DB_TYPE` è impostata. Nella modalità "file di configurazione" (nessuna `GOVWAY_DB_TYPE`), il driver va fornito esportando direttamente la variabile del tool interessato (`TOOL_JDBC` per template-scan, `BATCH_JDBC` per config-loader, `VAULT_JDBC` per vault-cli) oppure montandolo dentro la relativa directory `jdbc/` dell'immagine.
 
+* GOVWAY_DS_CONN_PARAM: parametri JDBC aggiuntivi da accodare alla url di connessione (default: vuoto)
+
+Allo stesso modo delle variabili `*_JDBC`, la directory da cui ciascun tool legge le proprie properties può essere ridefinita tramite `BATCH_CONFIG` (config-loader), `TOOL_CONFIG` (template-scan) e `VAULT_CONFIG` (vault-cli); per default tutte e tre valgono `/etc/govway`.
+
 #### Connessione a database Oracle ####
 Quando ci si connette ad un database esterno Oracle deve essere indicata anche la seguente variabile d'ambiente
 
-* GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle
+* GOVWAY_ORACLE_JDBC_URL_TYPE (SID/SERVICENAME): indica se connettersi ad un SID o ad un ServiceName Oracle (obbligatoria: a differenza dell'immagine principale e dell'immagine batch non viene assunto alcun valore di default)
 
 #### Connessione a database SQL Server ####
 Quando ci si connette ad un database esterno SQL Server è possibile configurare la cifratura a livello di trasporto tramite le stesse variabili d'ambiente descritte per l'immagine principale: GOVWAY_SQLSERVER_ENCRYPT, GOVWAY_SQLSERVER_TRUSTSTORE, GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD.
