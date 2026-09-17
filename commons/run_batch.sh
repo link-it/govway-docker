@@ -402,12 +402,21 @@ export JAVA_OPTS="${JAVA_OPTS:-} $JVM_MEMORY_OPTS"
 
 # Imposto Timezone
 [ -z "${TZ}" ] && export TZ="Europe/Rome"
-ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
+    if ! id -un > /dev/null 2>&1
+    then
+        echo "FATAL: L'utente corrente (uid=$(id -u)) non è risolvibile come nome utente (nessuna voce in /etc/passwd)."
+        echo "FATAL: crond richiede che il file di crontab sia nominato come uno username risolvibile e ignora silenziosamente le crontab di utenti non risolvibili."
+        echo "FATAL: Questo capita tipicamente quando l'orchestratore (es. una SCC OpenShift) assegna un UID arbitrario al container."
+        echo "FATAL: In questi casi utilizzare uno scheduler esterno (es. un CronJob Kubernetes/OpenShift) invece della modalità GOVWAY_BATCH_USA_CRON."
+        exit 1
+    fi
+    GOVWAY_BATCH_CRONTABS_DIR="${GOVWAY_BATCH_HOME}/crontabs"
+    mkdir -p "${GOVWAY_BATCH_CRONTABS_DIR}"
     env | sed -r -e 's/([^=]*)=(.*)/export \1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
-    cat - << EOCRONTAB > /etc/crontabs/root
+    cat - << EOCRONTAB > "${GOVWAY_BATCH_CRONTABS_DIR}/$(id -un)"
 SHELL=/bin/bash
 BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
 ${CRONTAB} >/proc/1/fd/1 2>&1
@@ -416,7 +425,7 @@ EOCRONTAB
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
     # FIX: l'utilizzo della bash previene l'errore
     #      setpgid: Operation not permitted
-    bash -c "crond -f"
+    bash -c "crond -f -c ${GOVWAY_BATCH_CRONTABS_DIR}"
 else
     echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false
