@@ -5,6 +5,7 @@
    - Aggiunto il supporto al segreto condiviso ed all'indirizzo di ascolto dei connettori AJP sulle immagini Tomcat (GOVWAY_AS_AJP_SECRET_VALUE, GOVWAY_AS_AJP_SECRET_VALUE_FILE, GOVWAY_AS_AJP_ADDRESS)
    - Il worker del listener AJP in erogazione si configura con GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS, coerentemente con i listener HTTP e HTTPS (GOVWAY_AS_AJP_WORKER_MAX_THREADS deprecata)
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
+   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
 
 - *3.4.4*
 

@@ -14,7 +14,10 @@ Installer Sorgente:
 -j             : Usa l'installer prodotto dalla pipeline jenkins di CI
 
 Personalizzazioni:
--a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, all] , default: all)
+-a <TIPO>      : Imposta quali archivi inserire nell'immmagine finale (valori: [runtime , manager, batch, tools, all] , default: all)
+                 NOTA: 'tools' produce l'immagine <VERSIONE>_tools con i tool CLI dell'installer
+                 (govway-config-loader, govway-template-scan, govway-vault-cli). Come per 'batch' non viene
+                 istanziato un application server: -g incide solo sulla versione della JRE utilizzata.
 -e <PATH>      : Imposta il path interno utilizzato per i file di configurazione di govway
 -f <PATH>      : Imposta il path interno utilizzato per i log di govway
 -g <TIPO>      : Prepara l'immagine per avere come base un particolare application server  (valori: [tomcat9, tomca10, wildfly25, wildfly35] , default: tomcat9)
@@ -103,7 +106,7 @@ while getopts "ht:v:jl:i:a:r:m:w:o:e:f:g:k:" opt; do
     i) TEMPLATE="${OPTARG}"
         [ ! -f "${TEMPLATE}" ] && { echo "Il file indicato non esiste o non e' raggiungibile [${TEMPLATE}]."; exit 3; } 
         ;;
-    a) ARCHIVI="${OPTARG}"; case "$ARCHIVI" in runtime);;manager);;batch);;all);;*) echo "Tipologia archivi da inserire non riconosciuta: ${ARCHIVI}"; exit 2;; esac ;;
+    a) ARCHIVI="${OPTARG}"; case "$ARCHIVI" in runtime);;manager);;batch);;tools);;all);;*) echo "Tipologia archivi da inserire non riconosciuta: ${ARCHIVI}"; exit 2;; esac ;;
     r) CUSTOM_RUNTIME="${OPTARG}"
         [ ! -d "${CUSTOM_RUNTIME}" ] && { echo "la directory indicata non esiste o non e' raggiungibile [${CUSTOM_RUNTIME}]."; exit 3; }
         [ -z "$(ls -A ${CUSTOM_RUNTIME})" ] && { echo "la directory [${CUSTOM_RUNTIME}] e' vuota.";  }
@@ -154,6 +157,10 @@ fi
 
 [  "${APPSERV:-tomcat9}" == "tomcat10" -o "${APPSERV:-tomcat9}" == "wildfly35" ] && JDKVER=25
 
+# I tool CLI dell'installer richiedono JRE >= 21: forzo un minimo di 21 anche quando
+# la versione di GovWay/app server selezionata non lo forzerebbe già (es. GovWay < 3.4, tomcat9)
+[ "${ARCHIVI}" == 'tools' ] && [ "${JDKVER:-11}" -lt 21 ] && JDKVER=21
+
 
 
 echo "Installazione emulatori QEMU"
@@ -173,6 +180,7 @@ do
   cp -f commons/* buildcontext/commons 2> /dev/null
   [ "${ARCHIVI}" == 'runtime' -o "${ARCHIVI}" == 'manager'  ] && cp -f commons/runmanager/ant.install.properties.template buildcontext/commons
   [ "${ARCHIVI}" == 'batch'  ] && cp -f commons/batch/ant.install.properties.template buildcontext/commons
+  [ "${ARCHIVI}" == 'tools'  ] && cp -r commons/tools buildcontext/commons/tools
 
   #export DOCKER_BUILDKIT=0
   DOCKERBUILD_OPTS=('--build-arg' "govway_appserver=${APPSERV:-tomcat9}" '--build-arg' "jdk_version=${JDKVER:-11}")
@@ -221,12 +229,12 @@ do
     TAG="${REPO}:${TAGNAME}"
 
     # il tag per tomcat9 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni precedenti 3.4.x)
-    if ! version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat9" ] && [ "${ARCHIVI}" != 'batch' ]
+    if ! version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat9" ] && [ "${ARCHIVI}" != 'batch' ] && [ "${ARCHIVI}" != 'tools' ]
     then
       TAG="${TAG}_${APPSERV}"
     fi
     # il tag per tomcat10 diventa quello di default. Tutti gli altri hanno l'indicazione dell AS usato (solo per versioni >= 3.4.x)
-    if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat10" ] && [ "${ARCHIVI}" != 'batch' ]
+    if version_ge "${EFFECTIVE_VERSION}" "3.4" && [ "${APPSERV:-tomcat9}" != "tomcat10" ] && [ "${ARCHIVI}" != 'batch' ] && [ "${ARCHIVI}" != 'tools' ]
     then
       TAG="${TAG}_${APPSERV}"
     fi
@@ -251,6 +259,9 @@ do
   if [ "${ARCHIVI}" == 'batch' ]
   then
     DOCKERFILE="govway/Dockerfile.govway_batch"
+  elif [ "${ARCHIVI}" == 'tools' ]
+  then
+    DOCKERFILE="govway/Dockerfile.govway_tools"
   else
     DOCKERFILE="govway/${APPSERV:-tomcat9}/Dockerfile.govway"
   fi
@@ -277,7 +288,7 @@ echo docker manifest push ${TAG}
 docker_server_platform="$(docker version -f '{{.Server.Os}}_{{.Server.Arch}}')"
 
 # Genera docker-compose di esempio per tutti i database supportati
-if [ "${ARCHIVI}" != 'batch' ]
+if [ "${ARCHIVI}" != 'batch' -a "${ARCHIVI}" != 'tools' ]
 then
   SHORT=${TAG#*:}
 
