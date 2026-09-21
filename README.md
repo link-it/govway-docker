@@ -561,6 +561,7 @@ docker run --rm \
   -e GOVWAY_DS_JDBC_LIBS=/tmp \
   -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
   -v ./archivio.zip:/tmp/archivio.zip \
+  -v ./govway_log:/var/log/govway \
   linkitaly/govway:3.4.3_tools config-loader create /tmp/archivio.zip
 ```
 
@@ -571,12 +572,20 @@ docker run --rm \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
   -e GOVWAY_DS_JDBC_LIBS=/tmp \
   -v ./postgresql-42.7.13.jar:/tmp/postgresql-42.7.13.jar \
+  -v ./govway_log:/var/log/govway \
   linkitaly/govway:3.4.3_tools template-scan '.*'
 ```
 
 ```bash
-docker run --rm linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
+docker run --rm \
+  -v ./byok.properties:/etc/govway/byok.properties \
+  -v ./govway_log:/var/log/govway \
+  linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
 ```
+
+> **_IMPORTANTE:_** tutte le azioni di `vault-cli` (`encrypt`, `decrypt` e `update`) richiedono che siano definiti i security engine BYOK. Il file `byok.properties` **non è incluso nell'immagine** e va fornito montandolo su `/etc/govway/byok.properties`, path a cui la configurazione del tool punta già di default. In sua assenza il comando termina con l'errore `Security policy default undefined (BYOK Disabled?)`. L'esempio sopra vale per `encrypt` e `decrypt`, che non accedono al database; l'azione `update` opera invece sulle informazioni confidenziali già presenti nella base dati e richiede quindi anche le variabili di connessione descritte nella sezione "Personalizzazioni Tools". Per la sintassi dei comandi e la configurazione dei security engine si rimanda alla [documentazione del Vault CLI](https://govway.org/documentazione/installazione/finalizzazione/byok/vaultCli/index.html).
+
+> **_IMPORTANTE:_** montare sempre `/var/log/govway` su un volume. I tool riportano nei file di log l'esito dettagliato dell'operazione, che sullo standard output non compare; inoltre terminano con exit code 0 anche quando uno o più elementi dell'archivio non vengono importati, quindi il solo exit code non è sufficiente a stabilire se l'operazione sia andata a buon fine. Con un container effimero (`docker run --rm`, Pod/Job Kubernetes) senza questo volume l'unica diagnostica disponibile viene persa insieme al container.
 
 I comandi supportati sono:
 * `config-loader create <archivePath>`
@@ -587,7 +596,11 @@ I comandi supportati sono:
 * `vault-cli decrypt [args...]`
 * `vault-cli update [args...]`
 
-I file di configurazione dei tre tool sono centralizzati in un'unica directory `/etc/govway`, montabile come volume per personalizzazioni persistenti (es. `byok.properties`, `hsm.properties`); i log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
+I file di configurazione dei tre tool sono centralizzati in un'unica directory `/etc/govway`. I tool vi cercano già di default anche i file che l'immagine non include, e che vanno quindi forniti se servono: `byok.properties`, `hsm.properties`, `govway.map.properties` e `govway.secrets.properties`.
+
+Per aggiungere o personalizzare uno di questi file conviene montare il **singolo file**, come negli esempi sopra: montando un volume sull'intera directory `/etc/govway` si nascondono tutte le properties di default presenti nell'immagine, che andrebbero a quel punto fornite per intero.
+
+I log sono centralizzati in `/var/log/govway`, come per l'immagine principale. Ogni tool scrive un proprio gruppo di file: `govway_cli_configLoader.log` (con `_sql` e `_auditing`), `govway_cli_templateScan.log` (con `_sql`) e `govway_cli_vault.log` (con `_output`).
 
 ## Personalizzazioni Tools
 

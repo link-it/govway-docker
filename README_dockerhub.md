@@ -546,6 +546,7 @@ $ docker run --rm \
   -e GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver \
   -v ~/postgresql/jdbc-driver:/tmp/jdbc-driver \
   -v ~/archivio.zip:/tmp/archivio.zip \
+  -v ~/govway_log:/var/log/govway \
   linkitaly/govway:3.4.3_tools config-loader create /tmp/archivio.zip
 ```
 
@@ -556,14 +557,22 @@ $ docker run --rm \
   -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
   -e GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver \
   -v ~/postgresql/jdbc-driver:/tmp/jdbc-driver \
+  -v ~/govway_log:/var/log/govway \
   linkitaly/govway:3.4.3_tools template-scan '.*'
 ```
 
 ```console
-$ docker run --rm linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
+$ docker run --rm \
+  -v ~/byok.properties:/etc/govway/byok.properties \
+  -v ~/govway_log:/var/log/govway \
+  linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
 ```
 
-I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>` e `vault-cli encrypt|decrypt|update [args...]`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale (database HSQL non supportato: i tool operano su un database esterno già popolato); se `GOVWAY_DB_TYPE` non viene impostata, il tool utilizza le properties già presenti in `/etc/govway`, montabile come volume per fornire una configurazione completa (comprese eventuali `byok.properties`/`hsm.properties`). I log sono centralizzati in `/var/log/govway`, come per l'immagine principale.
+> **_IMPORTANTE:_** montare sempre `/var/log/govway`: i tool riportano nei file di log l'esito dettagliato dell'operazione, che sullo standard output non compare, ed il solo exit code non è sufficiente a rilevare un caricamento non andato a buon fine.
+
+> **_NOTA:_** le azioni di `vault-cli` richiedono i security engine BYOK, definiti in un file `byok.properties` non incluso nell'immagine e da montare su `/etc/govway/byok.properties`. Per la sintassi dei comandi e la configurazione dei security engine fare riferimento alla [documentazione del Vault CLI](https://govway.org/documentazione/installazione/finalizzazione/byok/vaultCli/index.html).
+
+I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>` e `vault-cli encrypt|decrypt|update [args...]`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale; il database HSQL non è supportato, poiché i tool operano su un database esterno già popolato. Per l'elenco completo delle variabili, per la configurazione tramite i file presenti in `/etc/govway` e per i log prodotti da ciascun tool, fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
 
 
 ## Versione Snapshot
