@@ -204,8 +204,9 @@ Nessuna delle immagini prodotte viene eseguita come utente root. L'utente utiliz
 | tomcat9 / tomcat10 | tomcat | 100:101 |
 | wildfly25 / wildfly35 | wildfly | 100:101 |
 | batch | govway | 100:101 |
+| tools | govway | 100:101 |
 
-Le directory di lavoro interne all'immagine appartengono all'utente indicato e al gruppo '0', con permessi di scrittura per il gruppo. L'immagine batch aggiunge inoltre il gruppo '0' fra i gruppi secondari dell'utente: questo le consente di essere eseguita con uno UID arbitrario, come avviene negli ambienti che lo assegnano automaticamente (es. le SCC di OpenShift) o nei cluster Kubernetes con Pod Security Standard 'restricted'.
+Le directory di lavoro interne all'immagine appartengono all'utente indicato e al gruppo '0', con permessi di scrittura per il gruppo. Le immagini batch e tools aggiungono inoltre il gruppo '0' fra i gruppi secondari dell'utente: questo consente loro di essere eseguite con uno UID arbitrario, come avviene negli ambienti che lo assegnano automaticamente (es. le SCC di OpenShift) o nei cluster Kubernetes con Pod Security Standard 'restricted'.
 
 Le directory montate come volumi esterni devono quindi risultare scrivibili da tale utente. La modalità più portabile consiste nell'assegnarle al gruppo '0' rendendole scrivibili dal gruppo:
 
@@ -214,7 +215,7 @@ chown -R 100:0 ~/govway_conf ~/govway_log
 chmod -R g+rwX ~/govway_conf ~/govway_log
 ```
 
-> **_NOTA:_** l'immagine batch scrive esclusivamente sotto **/var/log/govway** e **/tmp**, dove genera a runtime le proprie properties; non utilizza invece **/etc/govway**. Per eseguirla con il filesystem di root in sola lettura è quindi sufficiente rendere scrivibili quei due path, ad esempio montandoli come `emptyDir` su Kubernetes o come `tmpfs` con docker.
+> **_NOTA:_** l'immagine batch non utilizza **/etc/govway**; l'unica directory in cui scrive è **/var/log/govway**.
 
 ## Aggiornamento di Versione
 
@@ -812,6 +813,8 @@ I comandi supportati sono:
 I file di configurazione dei tre tool sono centralizzati in un'unica directory `/etc/govway`. I tool vi cercano già di default anche i file che l'immagine non include, e che vanno quindi forniti se servono: `byok.properties`, `hsm.properties`, `govway.map.properties` e `govway.secrets.properties`.
 
 Per aggiungere o personalizzare uno di questi file conviene montare il **singolo file**, come negli esempi sopra: montando un volume sull'intera directory `/etc/govway` si nascondono tutte le properties di default presenti nell'immagine, che andrebbero a quel punto fornite per intero.
+
+> **_NOTA:_** i file presenti in `/etc/govway` non vengono mai modificati: la directory può quindi essere montata **in sola lettura**. L'unica directory in cui l'immagine scrive è `/var/log/govway`.
 
 I log sono centralizzati in `/var/log/govway`, come per l'immagine principale. Ogni tool scrive un proprio gruppo di file: `govway_cli_configLoader.log` (con `_sql` e `_auditing`), `govway_cli_templateScan.log` (con `_sql`) e `govway_cli_vault.log` (con `_output`).
 

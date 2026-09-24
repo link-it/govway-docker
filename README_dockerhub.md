@@ -47,46 +47,21 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 - *3.4.4* / *3.3.21*
 
+   - Aggiunto supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti e quattro gli application server, con quattro modalità di provisioning del certificato (self-signed, PEM montato, keystore montato, mTLS/client-auth).
+   - Corretta la configurazione dei listener AJP con GOVWAY_AS_AJP_LISTENER=true, che generava direttive non valide (sulle immagini Tomcat i listener di fruizione e gestione non venivano creati e GOVWAY_AS_AJP_LISTENER=false non disabilitava l'AJP); i due listener aggiuntivi sono ora sulle porte 8010 e 8011 come sulle immagini WildFly
+   - Aggiunto il supporto al segreto condiviso ed all'indirizzo di ascolto dei connettori AJP sulle immagini Tomcat (GOVWAY_AS_AJP_SECRET_VALUE, GOVWAY_AS_AJP_SECRET_VALUE_FILE, GOVWAY_AS_AJP_ADDRESS)
+   - Il worker del listener AJP in erogazione si configura con GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS, coerentemente con i listener HTTP e HTTPS (GOVWAY_AS_AJP_WORKER_MAX_THREADS deprecata)
+   - Cambiato utente di esecuzione dell'immagine batch da 'root' a 'govway', per consentirne l'utilizzo in ambienti che vietano l'esecuzione come root (es. Pod Security Standard 'restricted', SCC OpenShift)
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
-   - Introdotta l'immagine '_tools' che rende disponibili i tool a linea di comando prodotti dall'installer: govway-config-loader, govway-template-scan e govway-vault-cli.
+   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
 
-- *3.4.3* / *3.3.20*
+- *3.4.4*
 
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.11
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.25.
 
-- *3.4.3*
+- *3.3.21*
 
-   - Aggiornato application server di base (Tomcat) alla versione 11.0.22.
-   - Aggiornato il runtime Java alla versione 25 per le immagini basate su Tomcat 11 e WildFly 39 (in precedenza Java 21).
-
-- *3.3.20*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.118.
-
-- *3.4.2*
-
-   - Aggiornato application server di base (Tomcat) alla versione 11.0.18.
-
-- *3.3.19*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.115.
-
-- *3.4.2* / *3.3.19*
-
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.9
-   - Aggiunto supporto per il database mysql/mariadb e sqlserver
-   - Una singola immagine supporta ora tutti i database, semplificando build e deployment.
-     Introdotta la variabile obbligatoria GOVWAY_DB_TYPE a runtime per selezionare il database (hsql, postgresql, mysql, mariadb, oracle).
-
-- *3.4.1* / *3.3.18*
-
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.8
-   - Eliminata esposizione di informazioni sulla versione di Tomcat;
-   - Introdotte le variabili 'GOVWAY_SERVICE_PROTOCOL', 'GOVWAY_SERVICE_HOST' e 'GOVWAY_SERVICE_PORT' che consentono di definire l'indirizzamento dei nodi run senza dover definire il file '/etc/govway/govway.nodirun.properties';
-   - Introdotta la variabile 'GOVWAY_DB_MAPPING' che consente di definire la distribuzione delle diverse categorie di dati su database distinti;
-   - Aggiunta possibilità di modificare i parametri di gestione della memoria usata dalla JVM.
-   - Introdotto 'Health Check' per ambiente manager
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.111 per la 3.3.18 e alla versione 11.0.13 per la 3.4.1.
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.121.
 
 - Storico completo delle modifiche consultabile nel [ChangeLog](https://github.com/link-it/govway-docker/blob/master/ChangeLog) del progetto [Govway-Docker](https://github.com/link-it/govway-docker/).
 
@@ -559,7 +534,7 @@ $ docker run --rm \
   linkitaly/govway:3.4.3_tools vault-cli encrypt -system_in=miosegreto -system_out
 ```
 
-> **_IMPORTANTE:_** montare sempre `/var/log/govway`: i tool riportano nei file di log l'esito dettagliato dell'operazione, che sullo standard output non compare, ed il solo exit code non è sufficiente a rilevare un caricamento non andato a buon fine.
+> **_IMPORTANTE:_** montare sempre `/var/log/govway`: i tool riportano nei file di log l'esito dettagliato dell'operazione, che sullo standard output non compare, ed il solo exit code non è sufficiente a rilevare un caricamento non andato a buon fine. L'immagine non è eseguita come root: `/var/log/govway`, se montata, deve risultare scrivibile dall'utente '100' o dal gruppo '0'; `/etc/govway` è invece solo letta e può essere montata in sola lettura.
 
 > **_NOTA:_** le azioni di `vault-cli` richiedono i security engine BYOK, definiti in un file `byok.properties` non incluso nell'immagine e da montare su `/etc/govway/byok.properties`. Per la sintassi dei comandi e la configurazione dei security engine fare riferimento alla [documentazione del Vault CLI](https://govway.org/documentazione/installazione/finalizzazione/byok/vaultCli/index.html).
 

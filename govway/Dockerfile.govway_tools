@@ -36,9 +36,12 @@ apk upgrade; \
 apk add --no-cache curl openjdk${jdk_version}-jre bash; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
+addgroup -S govway; \
+adduser -S -G govway -h ${GOVWAY_TOOLS_HOME} -s /bin/false govway; \
+addgroup govway root; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar;
 
-COPY --from=source_image_full --chown=root:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/tools/ ${GOVWAY_TOOLS_HOME}/
+COPY --from=source_image_full --chown=govway:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/tools/ ${GOVWAY_TOOLS_HOME}/
 
 # Config centralizzata su ${GOVWAY_HOME}: i 9 file di properties dei tre tool hanno nomi
 # tutti distinti (nessuna sovrapposizione), possono quindi convivere in un'unica directory,
@@ -48,8 +51,9 @@ RUN set -eux; \
 mkdir -p ${GOVWAY_HOME}; \
 for d in ${GOVWAY_TOOLS_HOME}/*/properties; do cp "${d}"/* ${GOVWAY_HOME}/; done; \
 rm -rf ${GOVWAY_TOOLS_HOME}/*/properties; \
-chown -R root:0 ${GOVWAY_HOME}; \
-chmod -Rf g+rwX ${GOVWAY_HOME}
+chown -R govway:0 ${GOVWAY_HOME}; \
+chmod -Rf g+rwX ${GOVWAY_HOME}; \
+chmod g+s ${GOVWAY_HOME}
 
 # Log centralizzati su ${GOVWAY_LOGDIR}: i nomi dei file di log dei tre tool sono già univoci
 # (govway_cli_configLoader*, govway_cli_templateScan*, govway_cli_vault*), quindi la dir log/
@@ -57,8 +61,9 @@ chmod -Rf g+rwX ${GOVWAY_HOME}
 RUN set -eux; \
 mkdir -p ${GOVWAY_LOGDIR}; \
 for d in ${GOVWAY_TOOLS_HOME}/*/; do rm -rf "${d}log"; ln -s ${GOVWAY_LOGDIR} "${d}log"; done; \
-chown -R root:0 ${GOVWAY_LOGDIR}; \
-chmod -Rf g+rwX ${GOVWAY_LOGDIR}
+chown -R govway:0 ${GOVWAY_LOGDIR}; \
+chmod -Rf g+rwX ${GOVWAY_LOGDIR}; \
+chmod g+s ${GOVWAY_LOGDIR}
 
 # Rende overridabili via env var i path hardcoded negli script di lancio (stessa tecnica già
 # usata in Dockerfile.govway_batch) e cambia il default di *_CONFIG da "properties" (locale,
@@ -84,8 +89,9 @@ COPY commons/tools/dedupe_libs.sh /usr/local/bin/dedupe_libs.sh
 RUN chmod +x /usr/local/bin/dedupe_libs.sh && \
     /usr/local/bin/dedupe_libs.sh ${GOVWAY_TOOLS_HOME} && \
     rm -f /usr/local/bin/dedupe_libs.sh && \
-    chown -R root:0 ${GOVWAY_TOOLS_HOME} && \
-    chmod -Rf g+rwX ${GOVWAY_TOOLS_HOME}
+    chown -Rh govway:0 ${GOVWAY_TOOLS_HOME} && \
+    chmod -Rf g+rwX ${GOVWAY_TOOLS_HOME} && \
+    chmod g+s ${GOVWAY_TOOLS_HOME}
 
 RUN mkdir -p /usr/share/licenses/govway/third-party-licenses
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
@@ -95,6 +101,7 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 
 COPY commons/tools/entrypoint.sh /usr/local/bin/
-RUN chown root:0 /usr/local/bin/entrypoint.sh && chmod -Rf g+rwX /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+RUN chown govway:0 /usr/local/bin/entrypoint.sh && chmod -Rf g+rwX /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
 
+USER govway
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]

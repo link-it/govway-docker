@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# I file creati a runtime devono risultare scrivibili dal gruppo: negli ambienti che
+# assegnano al container uno UID arbitrario (es. le SCC di OpenShift) l'unica
+# appartenenza garantita e' quella al gruppo '0'.
+umask 002
+
 GOVWAY_TOOLS_HOME="${GOVWAY_TOOLS_HOME:-/opt/govway-tools}"
 GOVWAY_HOME="${GOVWAY_HOME:-/etc/govway}"
 
@@ -32,13 +37,15 @@ config-loader)
     *) echo "FATAL: azione non valida per config-loader: '${ACTION}'"; usage ;;
     esac
     JDBC_VAR=BATCH_JDBC
-    DB_PROPS_FILE="${GOVWAY_HOME}/config_loader.cli.database.properties"
+    CONFIG_VAR=BATCH_CONFIG
+    DB_PROPS_NAME=config_loader.cli.database.properties
     ;;
 template-scan)
     TOOL_DIR="${GOVWAY_TOOLS_HOME}/govway-template-scan"
     SCRIPT="template_scan.sh"
     JDBC_VAR=TOOL_JDBC
-    DB_PROPS_FILE="${GOVWAY_HOME}/template_scan.cli.properties"
+    CONFIG_VAR=TOOL_CONFIG
+    DB_PROPS_NAME=template_scan.cli.properties
     ;;
 vault-cli)
     TOOL_DIR="${GOVWAY_TOOLS_HOME}/govway-vault-cli"
@@ -50,7 +57,8 @@ vault-cli)
     *) echo "FATAL: azione non valida per vault-cli: '${ACTION}'"; usage ;;
     esac
     JDBC_VAR=VAULT_JDBC
-    DB_PROPS_FILE="${GOVWAY_HOME}/govway_vault.cli.database.properties"
+    CONFIG_VAR=VAULT_CONFIG
+    DB_PROPS_NAME=govway_vault.cli.database.properties
     ;;
 *)
     echo "FATAL: tool non valido: '${TOOL}'"
@@ -183,6 +191,23 @@ GOVWAY_DB_USER: ${GOVWAY_DB_USER}
             [ -n "${GOVWAY_DS_CONN_PARAM}" ] && JDBC_URL="${JDBC_URL};${GOVWAY_DS_CONN_PARAM}"
         ;;
         esac
+
+        #
+        # La configurazione effettiva viene composta in una directory scrivibile, senza
+        # modificare i file presenti in ${GOVWAY_HOME}: questo consente di montare
+        # ${GOVWAY_HOME} in sola lettura, evita che le proprieta' generate si accumulino
+        # ad ogni esecuzione su un volume persistente, e permette di eseguire l'immagine
+        # con il filesystem di root in sola lettura. Stesso schema dell'immagine batch.
+        #
+        GOVWAY_RUNTIME_CONFIG="${GOVWAY_RUNTIME_CONFIG:-/tmp/govway-config}"
+        rm -rf "${GOVWAY_RUNTIME_CONFIG}"
+        mkdir -p "${GOVWAY_RUNTIME_CONFIG}"
+        if [ -n "$(ls -A "${GOVWAY_HOME}" 2>/dev/null)" ]
+        then
+            cp -f "${GOVWAY_HOME}"/* "${GOVWAY_RUNTIME_CONFIG}/"
+        fi
+        DB_PROPS_FILE="${GOVWAY_RUNTIME_CONFIG}/${DB_PROPS_NAME}"
+        export "${CONFIG_VAR}=${GOVWAY_RUNTIME_CONFIG}"
 
         {
             echo ""
