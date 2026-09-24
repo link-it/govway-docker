@@ -30,14 +30,13 @@ TZ="Europe/Rome"
 RUN set -eux; \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk${jdk_version}-jre unzip dcron bash tzdata; \
+apk add --no-cache curl openjdk${jdk_version}-jre unzip bash tzdata; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
 ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime; \
 addgroup -S govway; \
 adduser -S -G govway -h ${GOVWAY_BATCH_HOME} -s /bin/false govway; \
 addgroup govway root; \
-chmod g+rx /usr/sbin/crond; \
 curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar;
 
 ARG oracle_custom_jdbc=commons/entrypoint.sh
@@ -52,7 +51,6 @@ sed -i -r -e 's/^BATCH_CLASSPATH=.*$/BATCH_CLASSPATH=${BATCH_CLASSPATH:-lib}/' \
 ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh; \
 sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
-rm -rf /etc/cron.*/*; \
 mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway /usr/share/licenses/govway/third-party-licenses ;  \
 chown -R govway:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
 chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};

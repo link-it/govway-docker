@@ -38,7 +38,6 @@ PubblicaReportPDND|pubblicareportpdnd|pubblicaReportPDND|PubblicaReportPdnd|pubb
 esac 
 [ ${INTERVALLO_SCHEDULAZIONE} -eq ${INTERVALLO_SCHEDULAZIONE} -a ${INTERVALLO_SCHEDULAZIONE} -gt 0 ] 2> /dev/null \
 || { echo "Non e' possibile schedulare il batch ad intervalli di '${INTERVALLO_SCHEDULAZIONE}' minuti."; exit 2; }
-CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false"
 
 
 case "${GOVWAY_DB_TYPE}" in
@@ -405,27 +404,25 @@ export JAVA_OPTS="${JAVA_OPTS:-} $JVM_MEMORY_OPTS"
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
-    if ! id -un > /dev/null 2>&1
-    then
-        echo "FATAL: L'utente corrente (uid=$(id -u)) non è risolvibile come nome utente (nessuna voce in /etc/passwd)."
-        echo "FATAL: crond richiede che il file di crontab sia nominato come uno username risolvibile e ignora silenziosamente le crontab di utenti non risolvibili."
-        echo "FATAL: Questo capita tipicamente quando l'orchestratore (es. una SCC OpenShift) assegna un UID arbitrario al container."
-        echo "FATAL: In questi casi utilizzare uno scheduler esterno (es. un CronJob Kubernetes/OpenShift) invece della modalità GOVWAY_BATCH_USA_CRON."
-        exit 1
-    fi
-    GOVWAY_BATCH_CRONTABS_DIR="${GOVWAY_BATCH_HOME}/crontabs"
-    mkdir -p "${GOVWAY_BATCH_CRONTABS_DIR}"
-    env | sed -r -e 's/([^=]*)=(.*)/export \1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
-    cat - << EOCRONTAB > "${GOVWAY_BATCH_CRONTABS_DIR}/$(id -un)"
-SHELL=/bin/bash
-BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
-${CRONTAB} >/proc/1/fd/1 2>&1
-EOCRONTAB
-
+    # NOTA: la schedulazione non usa più dcron: dcron esegue ogni job con una
+    # setuid/initgroups verso l'utente proprietario della crontab, operazione
+    # privilegiata che fallisce se il processo non gira come root (anche
+    # quando l'utente target coincide con quello già in esecuzione). Dato che
+    # qui serve solo rilanciare lo stesso comando ad intervallo fisso, un
+    # semplice loop nello stesso processo bash evita del tutto il problema.
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
-    # FIX: l'utilizzo della bash previene l'errore
-    #      setpgid: Operation not permitted
-    bash -c "crond -f -c ${GOVWAY_BATCH_CRONTABS_DIR}"
+    trap 'echo "INFO: Ricevuto segnale di stop, termino."; exit 0' TERM INT
+    INTERVALLO_SECONDI=$(( INTERVALLO_SCHEDULAZIONE * 60 ))
+    while true
+    do
+        ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false
+        # Allineo la prossima esecuzione al prossimo multiplo dell'intervallo
+        # dall'epoch (equivalente a "*/N * * * *" di cron), cosi' la
+        # schedulazione non deriva nel tempo in base alla durata del job.
+        SLEEP_SECONDI=$(( INTERVALLO_SECONDI - ( $(date +%s) % INTERVALLO_SECONDI ) ))
+        sleep "${SLEEP_SECONDI}" &
+        wait $!
+    done
 else
     echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false
