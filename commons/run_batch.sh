@@ -1,4 +1,8 @@
 #!/bin/bash
+# I file e le directory creati a runtime devono risultare scrivibili dal gruppo:
+# negli ambienti che assegnano al container uno UID arbitrario (es. le SCC di
+# OpenShift) l'unica appartenenza garantita e' quella al gruppo '0'.
+umask 002
 exec 6<> /tmp/run_batch.log
 exec 2>&6
 set -x
@@ -411,17 +415,38 @@ then
     # qui serve solo rilanciare lo stesso comando ad intervallo fisso, un
     # semplice loop nello stesso processo bash evita del tutto il problema.
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
-    trap 'echo "INFO: Ricevuto segnale di stop, termino."; exit 0' TERM INT
     INTERVALLO_SECONDI=$(( INTERVALLO_SCHEDULAZIONE * 60 ))
+
+    # Abilito il job control: ogni comando avviato in background ottiene un
+    # proprio process group, cosi' il segnale di stop puo' essere propagato
+    # all'intero albero del job (script + java) e non al solo wrapper.
+    set -m
+    CHILD_PID=""
+    termina() {
+        echo "INFO: Ricevuto segnale di stop, termino."
+        if [ -n "${CHILD_PID}" ]
+        then
+            kill -TERM -"${CHILD_PID}" 2>/dev/null || kill -TERM "${CHILD_PID}" 2>/dev/null
+            wait "${CHILD_PID}" 2>/dev/null
+        fi
+        exit 0
+    }
+    trap termina TERM INT
+
     while true
     do
-        ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false
+        ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false &
+        CHILD_PID=$!
+        wait "${CHILD_PID}"
+        CHILD_PID=""
         # Allineo la prossima esecuzione al prossimo multiplo dell'intervallo
         # dall'epoch (equivalente a "*/N * * * *" di cron), cosi' la
         # schedulazione non deriva nel tempo in base alla durata del job.
         SLEEP_SECONDI=$(( INTERVALLO_SECONDI - ( $(date +%s) % INTERVALLO_SECONDI ) ))
         sleep "${SLEEP_SECONDI}" &
-        wait $!
+        CHILD_PID=$!
+        wait "${CHILD_PID}"
+        CHILD_PID=""
     done
 else
     echo "INFO: Generazione ${TIPO} avviata..."

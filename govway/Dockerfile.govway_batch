@@ -53,7 +53,8 @@ sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govwa
 chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway /usr/share/licenses/govway/third-party-licenses ;  \
 chown -R govway:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
-chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};
+chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; \
+chmod g+s ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};
 
 
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \

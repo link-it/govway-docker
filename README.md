@@ -85,7 +85,7 @@ A prescindere dalla modalità di costruzione dell'immagine, vengono utilizzati i
 Se l'immagine è stata prodotta in modalità standalone: 
 - **/opt/hsqldb-2.7.4/hsqldb/database** database interno HSQL 
 
-si possono rendere queste location persistenti, montando dei volumi su queste directory.
+si possono rendere queste location persistenti, montando dei volumi su queste directory; in tal caso i diritti delle directory sull'host devono essere compatibili con l'utente di esecuzione dell'immagine, come descritto nella sezione "Utente di esecuzione".
 
 ### Servizi attivi
 
@@ -191,6 +191,64 @@ Tutti i files trovati sotto quella directory vengono valutati in ordine alfabeti
 La valutazione dei comandi di inizializzazione viene fatta dopo le verifiche e l'eventuale inizializzazione del database, ma prima dell'avvio dell'application server; inoltre la valutazione avviene solamente al primo avvio del container. 
 
 Qualsiasi errore generato da uno qualsiasi dei comandi eseguiti viene ignorato, ed il processo di valutazione avanza al file successivo.
+
+### Utente di esecuzione
+
+Nessuna delle immagini prodotte viene eseguita come utente root. L'utente utilizzato a runtime dipende dal tipo di immagine:
+
+| Immagine | Utente | uid:gid |
+| --- | --- | --- |
+| tomcat9 / tomcat10 | tomcat | 100:101 |
+| wildfly25 / wildfly35 | wildfly | 100:101 |
+| batch | govway | 100:101 |
+
+Le directory di lavoro interne all'immagine appartengono all'utente indicato e al gruppo '0', con permessi di scrittura per il gruppo. L'immagine batch aggiunge inoltre il gruppo '0' fra i gruppi secondari dell'utente: questo le consente di essere eseguita con uno UID arbitrario, come avviene negli ambienti che lo assegnano automaticamente (es. le SCC di OpenShift) o nei cluster Kubernetes con Pod Security Standard 'restricted'.
+
+Le directory montate come volumi esterni devono quindi risultare scrivibili da tale utente. La modalità più portabile consiste nell'assegnarle al gruppo '0' rendendole scrivibili dal gruppo:
+
+```shell
+chown -R 100:0 ~/govway_conf ~/govway_log
+chmod -R g+rwX ~/govway_conf ~/govway_log
+```
+
+> **_NOTA:_** l'immagine batch scrive esclusivamente sotto **/var/log/govway** e **/tmp**, dove genera a runtime le proprie properties; non utilizza invece **/etc/govway**. Per eseguirla con il filesystem di root in sola lettura è quindi sufficiente rendere scrivibili quei due path, ad esempio montandoli come `emptyDir` su Kubernetes o come `tmpfs` con docker.
+
+## Aggiornamento di Versione
+
+Oltre all'eventuale aggiornamento della base dati, un upgrade può richiedere di adeguare i diritti delle directory montate come volumi esterni, nei casi in cui sia cambiato l'utente di esecuzione dell'immagine.
+
+### Upgrade dell'immagine batch da una versione precedente alla v3.4.4 / v3.3.21
+
+L'immagine batch non viene più eseguita come utente root, allineandosi alle immagini basate su application server. Nel caso sia stato utilizzato un volume esterno per i log è necessario aggiornarne i diritti:
+
+```shell
+chown -R 100:0 ~/govway_log
+chmod -R g+rwX ~/govway_log
+```
+
+L'assegnazione al gruppo '0' con permessi di scrittura per il gruppo, anziché all'id-gruppo '101' dell'utente, non è casuale: è ciò che rende l'immagine utilizzabile anche negli ambienti che assegnano al container uno UID arbitrario, non presente in `/etc/passwd`. In questi casi l'unica appartenenza garantita è quella al gruppo '0', ed è il motivo per cui l'utente 'govway' vi viene aggiunto come gruppo secondario.
+
+Rientrano in questa casistica i cluster Kubernetes con Pod Security Standard 'restricted' (che impongono `runAsNonRoot=true`) e le Security Context Constraints di OpenShift, che assegnano a ciascun namespace un intervallo di UID proprio. In tali ambienti non è necessario indicare alcun utente nel deployment: è sufficiente che le directory montate appartengano al gruppo '0' e siano scrivibili dal gruppo.
+
+### Upgrade di una versione precedente alla v3.3.16.b1
+
+Cambio di utente dovuto alla modifica del sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine; l'utente diventa 'tomcat' con id-utente '100' e id-gruppo '101':
+
+```shell
+chown -R 100:101 ~/govway_conf
+chown -R 100:101 ~/govway_log
+chown -R 100:101 ~/govway_db
+```
+
+### Upgrade di una versione precedente alla v3.3.15 fino alla v3.3.16
+
+Cambio di utente dovuto alla modifica dell'application server di base da wildfly 26.1.3 a tomcat 9.0.x; va utilizzato l'id-utente '999' di tomcat:
+
+```shell
+chown -R 999:999 ~/govway_conf
+chown -R 999:999 ~/govway_log
+chown -R 999:999 ~/govway_db
+```
 
 ## Informazioni sulle immagini batch
 Utilizzando lo switch "-a" dello script di build è possibile costruire una immmagine contenente solamente il software necessario all'esecuzione dei batch di generazione statistiche.
