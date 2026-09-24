@@ -45,25 +45,15 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 ## Release Notes
 
-- *3.4.4* / *3.3.21*
+**3.4.4 / 3.3.21**
 
-   - Aggiunto supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti e quattro gli application server, con quattro modalità di provisioning del certificato (self-signed, PEM montato, keystore montato, mTLS/client-auth).
-   - Corretta la configurazione dei listener AJP con GOVWAY_AS_AJP_LISTENER=true, che generava direttive non valide (sulle immagini Tomcat i listener di fruizione e gestione non venivano creati e GOVWAY_AS_AJP_LISTENER=false non disabilitava l'AJP); i due listener aggiuntivi sono ora sulle porte 8010 e 8011 come sulle immagini WildFly
-   - Aggiunto il supporto al segreto condiviso ed all'indirizzo di ascolto dei connettori AJP sulle immagini Tomcat (GOVWAY_AS_AJP_SECRET_VALUE, GOVWAY_AS_AJP_SECRET_VALUE_FILE, GOVWAY_AS_AJP_ADDRESS)
-   - Il worker del listener AJP in erogazione si configura con GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS, coerentemente con i listener HTTP e HTTPS (GOVWAY_AS_AJP_WORKER_MAX_THREADS deprecata)
-   - Cambiato utente di esecuzione dell'immagine batch da 'root' a 'govway', per consentirne l'utilizzo in ambienti che vietano l'esecuzione come root (es. Pod Security Standard 'restricted', SCC OpenShift)
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.13
-   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
+- Supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti gli application server
+- Correzioni e nuove opzioni di configurazione per i connettori AJP sulle immagini Tomcat
+- Introdotta l'immagine `_tools`, con i tool a linea di comando dell'installer (config-loader, template-scan, vault-cli)
+- L'immagine batch non viene più eseguita come utente root
+- Aggiornati gli application server di base ed il driver jdbc di postgresql
 
-- *3.4.4*
-
-   - Aggiornato application server di base (Tomcat) alla versione 11.0.25.
-
-- *3.3.21*
-
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.121.
-
-- Storico completo delle modifiche consultabile nel [ChangeLog](https://github.com/link-it/govway-docker/blob/master/ChangeLog) del progetto [Govway-Docker](https://github.com/link-it/govway-docker/).
+Il dettaglio di queste modifiche e lo storico delle versioni precedenti sono consultabili nel [ChangeLog](https://github.com/link-it/govway-docker/blob/master/ChangeLog) del progetto [Govway-Docker](https://github.com/link-it/govway-docker/).
 
 
 ## Nomenclatura delle immagini fornite
@@ -233,69 +223,16 @@ services:
         - GOVWAY_POP_DB_SKIP=true
 ```
 
-Un esempio di docker-compose per oracle è invece il seguente (nella dir ~/oracle11g/jdbc-driver deve essere presente il driver jdbc):
+Per gli altri database supportati la struttura del file è la stessa: cambiano la directory del driver jdbc da montare, il tipo di database, l'indirizzo del server e le eventuali variabili aggiuntive.
 
-```yaml
-version: '2'
-services:
-  govway:
-    container_name: govway
-    image: linkitaly/govway:3.4.3
-    ports:
-        - 8080:8080
-        - 8081:8081
-        - 8082:8082
-        - 8009:8009
-    volumes:
-        - ~/govway_conf:/etc/govway
-        - ~/govway_log:/var/log/govway
-        - ~/oracle11g/jdbc-driver:/tmp/jdbc-driver
-    environment:
-        - TZ=Europe/Rome
-        - GOVWAY_DB_TYPE=oracle
-        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
-        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-        - GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME
-        - GOVWAY_DB_SERVER=oracle_hostname:1521
-        - GOVWAY_DB_NAME=govwaydb
-        - GOVWAY_DB_USER=govway
-        - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_POP_DB_SKIP=true
-```
+| Database | GOVWAY_DB_TYPE | GOVWAY_DB_SERVER | Variabili aggiuntive | Volume |
+| --- | --- | --- | --- |
+| PostgreSQL | postgresql | postgres_hostname:5432 | | |
+| Oracle | oracle | oracle_hostname:1521 | GOVWAY_ORACLE_JDBC_URL_TYPE=SERVICENAME | |
+| MySQL | mysql | mysql_hostname:3306 | | |
+| SQL Server | sqlserver | sqlserver_hostname:1433 | GOVWAY_SQLSERVER_TRUSTSTORE=/tmp/truststore.jks, GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD=changeit | ~/sqlserver/truststore.jks:/tmp/truststore.jks |
 
-Un esempio di docker-compose per SQL Server è invece il seguente (nella dir ~/sqlserver/jdbc-driver deve essere presente il driver jdbc):
-
-```yaml
-version: '2'
-services:
-  govway:
-    container_name: govway
-    image: linkitaly/govway:3.4.2
-    ports:
-        - 8080:8080
-        - 8081:8081
-        - 8082:8082
-        - 8009:8009
-    volumes:
-        - ~/govway_conf:/etc/govway
-        - ~/govway_log:/var/log/govway
-        - ~/sqlserver/jdbc-driver:/tmp/jdbc-driver
-        - ~/sqlserver/truststore.jks:/tmp/truststore.jks
-    environment:
-        - TZ=Europe/Rome
-        - GOVWAY_DB_TYPE=sqlserver
-        - GOVWAY_DEFAULT_ENTITY_NAME=Ente
-        - GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver
-        - GOVWAY_SQLSERVER_TRUSTSTORE=/tmp/truststore.jks
-        - GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD=changeit
-        - GOVWAY_DB_SERVER=sqlserver_hostname:1433
-        - GOVWAY_DB_NAME=govwaydb
-        - GOVWAY_DB_USER=govway
-        - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_POP_DB_SKIP=true
-```
-
-Per maggiori informazioni sulla configurazione della cifratura a livello di trasporto per SQL Server (`GOVWAY_SQLSERVER_ENCRYPT`, `GOVWAY_SQLSERVER_TRUSTSTORE`, `GOVWAY_SQLSERVER_TRUSTSTORE_PASSWORD`), fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+Per maggiori informazioni sulle variabili aggiuntive (es. configurazione della cifratura a livello di trasporto per SQL Server) fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
 
 
 I containers vengono avviati con i seguenti comandi:
@@ -426,16 +363,10 @@ Sia i dati statistici che la pubblicazione dei report PDND vengono gestiti per d
 In ambienti di produzione è consigliato spostare l'attività di generazione delle statistiche su un componente dedicato in modo da non gravare il costo sui nodi run. La disattivazione della generazione delle statistiche sui nodi run deve essere effettuata nel file '/etc/govway/govway_local.properties' come segue:
 
 ```
-# ================================================
-# Generazione Report
-...
-# Tipo di campionamenti abilitati
 org.openspcoop2.pdd.statistiche.generazione.baseOraria.enabled=false
 org.openspcoop2.pdd.statistiche.generazione.baseGiornaliera.enabled=false
 org.openspcoop2.pdd.statistiche.pdnd.tracciamento.generazione.enabled=false
 org.openspcoop2.pdd.statistiche.pdnd.tracciamento.pubblicazione.enabled=false
-...
-# ================================================
 
 ```
 
@@ -447,7 +378,7 @@ services:
 
   batch_stat_orarie:
     container_name: govway_batch_statistiche_orarie
-    image: linkitaly/govway:3.3.17_batch
+    image: linkitaly/govway:3.4.3_batch
     volumes:
        - ~/govway_log:/var/log/govway
        - ~/postgresql/jdbc-driver:/tmp/jdbc-driver
@@ -464,30 +395,16 @@ services:
       - GOVWAY_BATCH_INTERVALLO_CRON=5
       - TZ=Europe/Rome
 
-  batch_stat_giornaliere:
-    container_name: govway_batch_statistiche_giornaliere
-    image: linkitaly/govway:3.4.3_batch
-    command:
-      - giornaliere
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
-
-  batch_generazione_report_pdnd:
-    container_name: govway_batch_generazione_report_pdnd
-    image: linkitaly/govway:3.4.3_batch
-    command:
-      - generaReportPDND
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
-
-  batch_pubblicazione_report_pdnd:
-    container_name: govway_batch_pubblicazione_report_pdnd
-    image: linkitaly/govway:3.4.3_batch
-    command:
-      - pubblicaReportPDND
-    environment:
-      - ... come esempio 'batch_stat_orarie' ...
 ```
+
+Gli altri tre servizi sono identici a quello riportato, e differiscono solo per il nome e per il `command`:
+
+| Servizio | container_name | command |
+| --- | --- | --- |
+| batch_stat_giornaliere | govway_batch_statistiche_giornaliere | giornaliere |
+| batch_generazione_report_pdnd | govway_batch_generazione_report_pdnd | generaReportPDND |
+| batch_pubblicazione_report_pdnd | govway_batch_pubblicazione_report_pdnd | pubblicaReportPDND |
+
 
 I containers vengono avviati con i seguenti comandi:
 
@@ -497,12 +414,12 @@ $ chmod 777 ~/govway_{conf,log}
 $ docker-compose up
 ```
 
-> **_NOTA:_** Negli esempi forniti per l'ambiente docker-compose, non essendo possibile schedulare jobs in maniera orchestrata, è stata abilitata la modalità 'cron' tramite l'abilitazione della variabile 'GOVWAY_BATCH_USA_CRON' e la definizione dell'intervallo di schedulazione del batch in minuti tramite la variabile 'GOVWAY_BATCH_INTERVALLO_CRON'. Su ambienti dove esiste la possibilità di schedulare jobs (es. Cronjobs kubernetes) deve essere disabilitata la variabile 'GOVWAY_BATCH_USA_CRON' o in alternativa non deve essere dichiarata (assume per default il valore false).
+> **_NOTA:_** negli esempi è abilitata la modalità 'cron' (`GOVWAY_BATCH_USA_CRON`, `GOVWAY_BATCH_INTERVALLO_CRON` in minuti) perché docker-compose non permette di schedulare job. Dove la schedulazione è disponibile (es. CronJob Kubernetes) la variabile va lasciata non dichiarata o dichiarata 'false'.
 
 
 ## Ambiente tools (CLI installer)
 
-L'installer GovWay produce, oltre agli archivi applicativi, tre tool a linea di comando: **govway-config-loader** (caricamento di un export della console), **govway-template-scan** (verifica dei template presenti in configurazione) e **govway-vault-cli** (cifratura/decifratura/aggiornamento delle password gestite dal vault). L'immagine `_tools` li rende disponibili senza dover installare a mano GovWay: come per l'ambiente batch non viene istanziato alcun application server, viene eseguito un solo tool per ogni avvio del container, ed è adatta sia a un `docker run` singolo che a un Pod/Job Kubernetes ad esecuzione unica.
+L'installer GovWay produce, oltre agli archivi applicativi, tre tool a linea di comando: **govway-config-loader** (caricamento di un export della console), **govway-template-scan** (verifica dei template in configurazione) e **govway-vault-cli** (cifratura/decifratura delle password gestite dal vault). L'immagine `_tools` li rende disponibili senza installare GovWay: come per l'ambiente batch non viene istanziato alcun application server e viene eseguito un solo tool per ogni avvio del container.
 
 ```console
 $ docker run --rm \
@@ -516,16 +433,7 @@ $ docker run --rm \
   linkitaly/govway:3.4.3_tools config-loader create /tmp/archivio.zip
 ```
 
-```console
-$ docker run --rm \
-  -e GOVWAY_DB_TYPE=postgresql \
-  -e GOVWAY_DB_SERVER=pg-server -e GOVWAY_DB_NAME=govwaydb \
-  -e GOVWAY_DB_USER=govway -e GOVWAY_DB_PASSWORD=govway \
-  -e GOVWAY_DS_JDBC_LIBS=/tmp/jdbc-driver \
-  -v ~/postgresql/jdbc-driver:/tmp/jdbc-driver \
-  -v ~/govway_log:/var/log/govway \
-  linkitaly/govway:3.4.3_tools template-scan '.*'
-```
+Il comando per `template-scan` è analogo, senza il volume dell'archivio: `... linkitaly/govway:3.4.3_tools template-scan '.*'`
 
 ```console
 $ docker run --rm \

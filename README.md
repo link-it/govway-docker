@@ -681,6 +681,33 @@ environment:
   - GOVWAY_JVM_MAX_METASPACE_SIZE=256m
 ```
 
+#### Proprietà JVM aggiuntive (keystore e truststore di rete)
+
+La variabile **JAVA_OPTS** consente di passare alla JVM proprietà arbitrarie: il suo contenuto viene preservato dall'entrypoint, che vi accoda le opzioni di memoria descritte sopra. È la modalità con cui si configurano il keystore ed il truststore utilizzati dalla JVM per le connessioni TLS in uscita, ad esempio verso la PDND, un Identity Provider o un servizio erogato in HTTPS.
+
+**NOTA:** queste proprietà riguardano le connessioni che GovWay apre verso l'esterno. Per abilitare il TLS sulle porte in ascolto (erogazione, fruizione, gestione) si utilizzano invece le variabili descritte nella sezione "Configurazione Listener".
+
+* javax.net.ssl.trustStore: path del truststore utilizzato per validare i certificati dei server contattati
+* javax.net.ssl.trustStoreType: tipo di truststore (es. JKS, PKCS12)
+* javax.net.ssl.trustStorePassword: password del truststore
+* javax.net.ssl.keyStore: path del keystore contenente il certificato client, per le connessioni in mutua autenticazione
+* javax.net.ssl.keyStoreType: tipo di keystore (es. JKS, PKCS12)
+* javax.net.ssl.keyStorePassword: password del keystore
+
+**Esempio:**
+```yaml
+volumes:
+  - ~/govway_keys:/etc/govway/keys:ro
+environment:
+  - JAVA_OPTS=-Djavax.net.ssl.trustStore=/etc/govway/keys/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=secret -Djavax.net.ssl.keyStore=/etc/govway/keys/keystore.p12 -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.keyStorePassword=secret
+```
+
+I file di keystore e truststore non sono presenti nell'immagine e devono essere resi disponibili al container montando un volume, come nell'esempio; il path indicato nelle proprietà è quello interno al container.
+
+**NOTA:** impostando un truststore si sostituisce quello di default della JVM, che contiene le Certification Authority pubbliche: i certificati di queste ultime, se ancora necessari, vanno importati nel truststore fornito.
+
+**NOTA:** le password indicate in JAVA_OPTS compaiono nella riga di comando del processo java. In alternativa alle proprietà di sistema, GovWay consente di configurare keystore e truststore sui singoli connettori, dove le password sono gestite tramite il vault.
+
 #### Avviso variabili deprecate
 Di seguito una lista di variabili usate in precedenza per la configurazione avanzata. Queste variabili sono state deprecate e verrano rimosse nelle versioni successive:
 
