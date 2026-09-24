@@ -1,4 +1,8 @@
 #!/bin/bash
+# I file e le directory creati a runtime devono risultare scrivibili dal gruppo:
+# negli ambienti che assegnano al container uno UID arbitrario (es. le SCC di
+# OpenShift) l'unica appartenenza garantita e' quella al gruppo '0'.
+umask 002
 exec 6<> /tmp/run_batch.log
 exec 2>&6
 set -x
@@ -38,7 +42,6 @@ PubblicaReportPDND|pubblicareportpdnd|pubblicaReportPDND|PubblicaReportPdnd|pubb
 esac 
 [ ${INTERVALLO_SCHEDULAZIONE} -eq ${INTERVALLO_SCHEDULAZIONE} -a ${INTERVALLO_SCHEDULAZIONE} -gt 0 ] 2> /dev/null \
 || { echo "Non e' possibile schedulare il batch ad intervalli di '${INTERVALLO_SCHEDULAZIONE}' minuti."; exit 2; }
-CRONTAB="*/${INTERVALLO_SCHEDULAZIONE} * * * * ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false"
 
 
 case "${GOVWAY_DB_TYPE}" in
@@ -402,21 +405,49 @@ export JAVA_OPTS="${JAVA_OPTS:-} $JVM_MEMORY_OPTS"
 
 # Imposto Timezone
 [ -z "${TZ}" ] && export TZ="Europe/Rome"
-ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
 
 if [ "${GOVWAY_BATCH_USA_CRON,,}" == 'yes' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'si' -o "${GOVWAY_BATCH_USA_CRON,,}" == '1' -o "${GOVWAY_BATCH_USA_CRON,,}" == 'true' ]
 then
-    env | sed -r -e 's/([^=]*)=(.*)/export \1="\2"/' >> ${GOVWAY_BATCH_HOME}/batch_env
-    cat - << EOCRONTAB > /etc/crontabs/root
-SHELL=/bin/bash
-BASH_ENV=${GOVWAY_BATCH_HOME}/batch_env
-${CRONTAB} >/proc/1/fd/1 2>&1
-EOCRONTAB
-
+    # NOTA: la schedulazione non usa più dcron: dcron esegue ogni job con una
+    # setuid/initgroups verso l'utente proprietario della crontab, operazione
+    # privilegiata che fallisce se il processo non gira come root (anche
+    # quando l'utente target coincide con quello già in esecuzione). Dato che
+    # qui serve solo rilanciare lo stesso comando ad intervallo fisso, un
+    # semplice loop nello stesso processo bash evita del tutto il problema.
     echo "INFO: Schedulo generazione  ${TIPO} ogni ${INTERVALLO_SCHEDULAZIONE} minuti."
-    # FIX: l'utilizzo della bash previene l'errore
-    #      setpgid: Operation not permitted
-    bash -c "crond -f"
+    INTERVALLO_SECONDI=$(( INTERVALLO_SCHEDULAZIONE * 60 ))
+
+    # Abilito il job control: ogni comando avviato in background ottiene un
+    # proprio process group, cosi' il segnale di stop puo' essere propagato
+    # all'intero albero del job (script + java) e non al solo wrapper.
+    set -m
+    CHILD_PID=""
+    termina() {
+        echo "INFO: Ricevuto segnale di stop, termino."
+        if [ -n "${CHILD_PID}" ]
+        then
+            kill -TERM -"${CHILD_PID}" 2>/dev/null || kill -TERM "${CHILD_PID}" 2>/dev/null
+            wait "${CHILD_PID}" 2>/dev/null
+        fi
+        exit 0
+    }
+    trap termina TERM INT
+
+    while true
+    do
+        ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false &
+        CHILD_PID=$!
+        wait "${CHILD_PID}"
+        CHILD_PID=""
+        # Allineo la prossima esecuzione al prossimo multiplo dell'intervallo
+        # dall'epoch (equivalente a "*/N * * * *" di cron), cosi' la
+        # schedulazione non deriva nel tempo in base alla durata del job.
+        SLEEP_SECONDI=$(( INTERVALLO_SECONDI - ( $(date +%s) % INTERVALLO_SECONDI ) ))
+        sleep "${SLEEP_SECONDI}" &
+        CHILD_PID=$!
+        wait "${CHILD_PID}"
+        CHILD_PID=""
+    done
 else
     echo "INFO: Generazione ${TIPO} avviata..."
     ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh ${GOVWAY_BATCH_HOME}/generatoreStatistiche ${COMANDO} false

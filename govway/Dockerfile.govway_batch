@@ -30,16 +30,20 @@ TZ="Europe/Rome"
 RUN set -eux; \
 apk update; \
 apk upgrade; \
-apk add --no-cache curl openjdk${jdk_version}-jre unzip dcron bash; \
+apk add --no-cache curl openjdk${jdk_version}-jre unzip bash tzdata; \
 rm -rf /var/cache/apk/*; \
 echo "${TZ}" > /etc/timezone; \
-curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar; 
+ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime; \
+addgroup -S govway; \
+adduser -S -G govway -h ${GOVWAY_BATCH_HOME} -s /bin/false govway; \
+addgroup govway root; \
+curl -kL -sS -q -o /opt/postgresql-${POSTGRES_JDBC_VERSION}.jar https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar;
 
 ARG oracle_custom_jdbc=commons/entrypoint.sh
 COPY ${oracle_custom_jdbc}* /var/tmp/oracle_custom_jdbc
 RUN [ -d /var/tmp/oracle_custom_jdbc ] || echo "Driver jdbc Oracle non presente"
 
-COPY --from=source_image_full  --chown=root:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/batch/ ${GOVWAY_BATCH_HOME}/
+COPY --from=source_image_full  --chown=govway:0 /opt/govway-installer-${GOVWAY_FULLVERSION}/dist/batch/ ${GOVWAY_BATCH_HOME}/
 RUN set -eux; \
 sed -i -r -e 's/^BATCH_CLASSPATH=.*$/BATCH_CLASSPATH=${BATCH_CLASSPATH:-lib}/' \
 -e 's/^BATCH_CONFIG=.*$/BATCH_CONFIG=${BATCH_CONFIG:-lib}/' \
@@ -47,10 +51,10 @@ sed -i -r -e 's/^BATCH_CLASSPATH=.*$/BATCH_CLASSPATH=${BATCH_CLASSPATH:-lib}/' \
 ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh; \
 sed -i -e 's#$BATCH_COMMAND .*#$BATCH_COMMAND#' ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
 chmod +x ${GOVWAY_BATCH_HOME}/generatoreStatistiche/*.sh ${GOVWAY_BATCH_HOME}/crond/govway_batch.sh; \
-rm -rf /etc/cron.*/*; \
 mkdir -p ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR} /etc/govway /usr/share/licenses/govway/third-party-licenses ;  \
-chown -R root:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
-chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; 
+chown -R govway:0 ${GOVWAY_BATCH_HOME}  ${GOVWAY_LOGDIR}; \
+chmod -Rf g+rwX  ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR}; \
+chmod g+s ${GOVWAY_BATCH_HOME} ${GOVWAY_LOGDIR};
 
 
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt \
@@ -60,6 +64,7 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 
 COPY commons/run_batch.sh /usr/local/bin
-RUN chown -R root:0 /usr/local/bin/run_batch.sh /etc/crontabs/root && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh /etc/crontabs/root
+RUN chown govway:0 /usr/local/bin/run_batch.sh && chmod -Rf g+rwX  /usr/local/bin/run_batch.sh
+USER govway
 ENTRYPOINT [ "/usr/local/bin/run_batch.sh" ]
 CMD [ "Orarie" ]

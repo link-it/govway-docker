@@ -396,30 +396,19 @@ docker rm ${CONTAINER_ID}
 
 ## Aggiornamento di Versione
 
-Un upgrade richiede l'aggiornamento della base dati. 
+Un upgrade richiede l'aggiornamento della base dati e, sui volumi esterni eventualmente utilizzati, una verifica dei diritti utente.
 
-Serve inoltre una verifica dei diritti utente se si proviene da una versione precedente alla 3.3.16.b1, come descritto nella successiva sezione.
+### Diritti dei volumi esterni
 
-### Upgrade di una versione precedente alla v3.3.16.b1
+Ad ogni cambio dell'utente di esecuzione vanno aggiornati i diritti delle directory montate (`~/govway_conf`, `~/govway_log`, `~/govway_db`):
 
-Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica del sistema operativo di base da Ubuntu 22 LTS (Jammy) a Alpine 3.21.3. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '100' e l'id-gruppo '101' di tomcat; ad esempio:
+| Provenendo da | Cambio | Comando |
+| --- | --- | --- |
+| immagine batch precedente alla v3.4.4 / v3.3.21 | non più eseguita come root | `chown -R 100:0 <dir>` e `chmod -R g+rwX <dir>` (solo `~/govway_log`) |
+| versione precedente alla v3.3.16.b1 | s.o. di base da Ubuntu 22 LTS ad Alpine | `chown -R 100:101 <dir>` |
+| versione dalla v3.3.15 alla v3.3.16 | application server di base da wildfly 26.1.3 a tomcat 9.0.x | `chown -R 999:999 <dir>` |
 
-  ```
-    chown -R 100:101 ~/govway_conf
-    chown -R 100:101 ~/govway_log
-    chown -R 100:101 ~/govway_db
-  ```
-
-### Upgrade di una versione precedente alla v3.3.15 fino alla v3.3.16
-
-Nel caso siano stati utilizzati dei volumi esterni è necessario gestire il cambio di utente che è avvenuto in seguito alla modifica di application server di base da wildfly 26.1.3 a tomcat 9.0.x. Questo comporta aggiornare i diritti associati alle directory montate utilizzando l'id-utente '999' di tomcat; ad esempio:
-
-
-  ```
-    chown -R 999:999 ~/govway_conf
-    chown -R 999:999 ~/govway_log
-    chown -R 999:999 ~/govway_db
-  ```
+> **_NOTA:_** per l'immagine batch l'assegnazione al gruppo '0', anziché all'id-gruppo '101' dell'utente, è ciò che la rende utilizzabile anche dove al container viene assegnato uno UID arbitrario (es. le SCC di OpenShift).
 
 ### Ambiente orchestrato
 
