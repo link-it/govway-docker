@@ -96,6 +96,7 @@ public class TomcatConfigCli {
         } catch (Exception e) {
             System.out.println("Errore durante la modifica della configurazione: " + e.getMessage());
             e.printStackTrace();
+            System.exit(1);
         }
     }
 

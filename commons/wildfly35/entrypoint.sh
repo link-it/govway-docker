@@ -655,9 +655,9 @@ then
     if /usr/local/bin/config_https.sh abilitato
     then
         echo "INFO: Configurazione HTTPS ... in corso"
-        /usr/local/bin/config_https.sh prepara
+        /usr/local/bin/config_https.sh prepara || exit 1
         echo 'embed-server --server-config=standalone.xml --std-out=echo' > "${HTTPS_CLI_FILE}"
-        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}"
+        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}" || exit 1
         echo 'stop-embedded-server' >> "${HTTPS_CLI_FILE}"
         ${JBOSS_HOME}/bin/jboss-cli.sh --file="${HTTPS_CLI_FILE}"
         JBOSS_CLI_HTTPS_RC=$?

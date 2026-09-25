@@ -36,10 +36,18 @@ govway_https_emit() {
 
 govway_https_check_file() {
     # $1 = path da verificare in lettura, $2 = nome variabile per il messaggio di errore
-    if [ -n "$1" ] && [ ! -r "$1" ]
+    if [ -n "$1" ]
     then
-        echo "FATAL: Configurazione HTTPS ... il file indicato da $2 non è leggibile dall'utente $(id -u -n): [$1]"
-        exit 1
+        if [ ! -e "$1" ]
+        then
+            echo "FATAL: Configurazione HTTPS ... il file indicato da $2 non esiste: [$1]"
+            exit 1
+        fi
+        if [ ! -r "$1" ]
+        then
+            echo "FATAL: Configurazione HTTPS ... il file indicato da $2 non è leggibile dall'utente $(id -u -n): [$1]"
+            exit 1
+        fi
     fi
 }
 

@@ -636,9 +636,9 @@ then
     if /usr/local/bin/config_https.sh abilitato
     then
         echo "INFO: Configurazione HTTPS ... in corso"
-        /usr/local/bin/config_https.sh prepara
-        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}"
-        /usr/local/bin/tomcat-cli.sh "${HTTPS_CLI_FILE}"
+        /usr/local/bin/config_https.sh prepara || exit 1
+        /usr/local/bin/config_https.sh cli "${HTTPS_CLI_FILE}" || exit 1
+        /usr/local/bin/tomcat-cli.sh "${HTTPS_CLI_FILE}" || exit 1
         /usr/local/bin/config_https.sh verifica || exit 1
         echo "INFO: Configurazione HTTPS ... completata"
     fi
