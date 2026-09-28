@@ -20,6 +20,7 @@ declare -r ENTRYPOINT_D='/docker-entrypoint-govway.d/'
 declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${JBOSS_HOME}/standalone/configuration/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_module_init"
+declare -r CUSTOM_LIBS_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_custom_libs_init"
 declare -r CONNETTORI_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_connettori_init"
 declare -r DATASOURCE_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_datasource_init"
 declare -r HTTPS_INIT_FILE="${JBOSS_HOME}/standalone/configuration/fix_https_init"
@@ -488,6 +489,118 @@ EOCLI
     fi
 
     touch "${MODULE_INIT_FILE}"
+fi
+
+# Librerie custom (GOVWAY_CUSTOM_LIBS_DIR / GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE>)
+# Su WildFly ogni funzione diventa il modulo 'govway.custom.<funzione>', registrato tra i
+# global-modules del subsystem ee per renderlo visibile ai deployment di GovWay.
+if [ ! -f "${CUSTOM_LIBS_INIT_FILE}" ]
+then
+    declare -A CUSTOM_LIBS_VARS=()
+    for v in $(compgen -e | grep '^GOVWAY_CUSTOM_LIBS_DIR_')
+    do
+        [ -z "${!v}" ] && continue
+        f="${v#GOVWAY_CUSTOM_LIBS_DIR_}"
+        if [[ ! "${f}" =~ ^[A-Za-z0-9_]+$ ]]
+        then
+            echo "FATAL: Sanity check librerie custom ... fallito"
+            echo "FATAL: Il nome della funzione nella variabile ${v} può contenere solo caratteri, cifre e '_'"
+            exit 1
+        fi
+        CUSTOM_LIBS_VARS[${f}]="${v}"
+    done
+    if [ -n "${GOVWAY_CUSTOM_LIBS_DIR}" ]
+    then
+        if [ ${#CUSTOM_LIBS_VARS[@]} -gt 0 ]
+        then
+            echo "FATAL: Sanity check librerie custom ... fallito"
+            echo "FATAL: La variabile GOVWAY_CUSTOM_LIBS_DIR non può essere utilizzata insieme alle variabili GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE>: [${CUSTOM_LIBS_VARS[*]}]"
+            exit 1
+        fi
+        CUSTOM_LIBS_VARS[LIBS]="GOVWAY_CUSTOM_LIBS_DIR"
+    fi
+
+    if [ ${#CUSTOM_LIBS_VARS[@]} -gt 0 ]
+    then
+        CUSTOM_LIBS_CLI_FILE=/tmp/__standalone_custom_libs.cli
+        echo 'embed-server --server-config=standalone.xml --std-out=echo' > "${CUSTOM_LIBS_CLI_FILE}"
+        declare -A CUSTOM_LIBS_MODULI=()
+        for f in $(printf '%s\n' "${!CUSTOM_LIBS_VARS[@]}" | sort)
+        do
+            v="${CUSTOM_LIBS_VARS[${f}]}"
+            d="${!v}"
+            MODULO="govway.custom.${f,,}"
+            if [ -n "${CUSTOM_LIBS_MODULI[${MODULO}]}" ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Le variabili ${CUSTOM_LIBS_MODULI[${MODULO}]} e ${v} producono lo stesso modulo ${MODULO}: i nomi delle funzioni devono differire non solo per maiuscole/minuscole"
+                exit 1
+            fi
+            CUSTOM_LIBS_MODULI[${MODULO}]="${v}"
+            if [ ! -d "${d}" -o ! -r "${d}" ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Il path alla directory che contiene le librerie custom, non è leggibile o non è una directory: [${v}=${d}]"
+                exit 1
+            fi
+            declare -a lista_jar=( "${d}"/*.jar )
+            if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${d}/*.jar" ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Nessuna libreria è presente in ${d} [${v}]."
+                exit 1
+            fi
+            # concateno i path separandoli con ':'
+            LIBRERIE="${lista_jar[0]}"
+            for j in "${lista_jar[@]:1}"
+            do
+                LIBRERIE="${LIBRERIE}:${j}"
+            done
+            # GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE> -> GOVWAY_CUSTOM_LIBS_DEPS_<FUNZIONE> (GOVWAY_CUSTOM_LIBS_DIR -> GOVWAY_CUSTOM_LIBS_DEPS)
+            # Le dipendenze con suffisso ':export' vengono esportate e diventano visibili anche ai deployment
+            # che vedono il modulo (es. jakarta.jms.api, non visibile a GovWay senza subsystem messaging)
+            DEPS_VAR="${v/_DIR/_DEPS}"
+            DIPENDENZE=
+            DIPENDENZE_EXPORT=
+            IFS=',' read -r -a CUSTOM_LIBS_DEPS <<< "${!DEPS_VAR:-javax.api}"
+            for dep in "${CUSTOM_LIBS_DEPS[@]}"
+            do
+                if [[ ! "${dep}" =~ ^[A-Za-z0-9_.-]+(:export)?$ ]]
+                then
+                    echo "FATAL: Sanity check librerie custom ... fallito"
+                    echo "FATAL: Dipendenza non valida nella variabile ${DEPS_VAR}: [${dep}] (formato atteso: <modulo> oppure <modulo>:export)"
+                    exit 1
+                fi
+                if [ "${dep%:export}" != "${dep}" ]
+                then
+                    DIPENDENZE_EXPORT="${DIPENDENZE_EXPORT:+${DIPENDENZE_EXPORT},}${dep%:export}"
+                else
+                    DIPENDENZE="${DIPENDENZE:+${DIPENDENZE},}${dep}"
+                fi
+            done
+            echo "INFO: Librerie custom ... funzione ${f}: ${#lista_jar[@]} jar da ${d} nel modulo ${MODULO} [dipendenze: ${DIPENDENZE:-nessuna}; esportate: ${DIPENDENZE_EXPORT:-nessuna}]"
+
+            # Il modulo potrebbe essere rimasto da un avvio precedente non completato
+            rm -rf "${JBOSS_HOME}/modules/${MODULO//.//}"
+            cat - << EOCLI >> "${CUSTOM_LIBS_CLI_FILE}"
+echo "Creo modulo ${MODULO}"
+module add --name=${MODULO} --resources="${LIBRERIE}"${DIPENDENZE:+ --dependencies=${DIPENDENZE}}${DIPENDENZE_EXPORT:+ --export-dependencies=${DIPENDENZE_EXPORT}}
+/subsystem=ee:list-add(name=global-modules, value={name=${MODULO}, slot=main})
+EOCLI
+        done
+        echo 'stop-embedded-server' >> "${CUSTOM_LIBS_CLI_FILE}"
+
+        ${JBOSS_HOME}/bin/jboss-cli.sh --file="${CUSTOM_LIBS_CLI_FILE}"
+        JBOSS_CLI_CUSTOM_LIBS_RC=$?
+        if [ ${JBOSS_CLI_CUSTOM_LIBS_RC} -ne 0 ]
+        then
+            echo "FATAL: Configurazione librerie custom ... jboss-cli.sh terminato con errore (${JBOSS_CLI_CUSTOM_LIBS_RC})."
+            exit 1
+        fi
+        echo "INFO: Librerie custom ... completata"
+    fi
+
+    touch "${CUSTOM_LIBS_INIT_FILE}"
 fi
 ##########################################################################
 # Configurazione HTTPS: risoluzione password (_FILE con priorità) ed export.

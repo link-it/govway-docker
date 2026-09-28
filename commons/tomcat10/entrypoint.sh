@@ -20,6 +20,7 @@ declare -r ENTRYPOINT_D='/docker-entrypoint-govway.d/'
 declare -r ENTRYPOINT_D_DEPRECATO='/docker-entrypoint-widlflycli.d/'
 declare -r CUSTOM_INIT_FILE="${CATALINA_HOME}/conf/custom_govway_as_init"
 declare -r MODULE_INIT_FILE="${CATALINA_HOME}/conf/fix_module_init"
+declare -r CUSTOM_LIBS_INIT_FILE="${CATALINA_HOME}/conf/fix_custom_libs_init"
 declare -r CONNETTORI_INIT_FILE="${CATALINA_HOME}/conf/fix_connettori_init"
 declare -r DATASOURCE_INIT_FILE="${CATALINA_HOME}/conf/fix_datasource_init"
 declare -r HTTPS_INIT_FILE="${CATALINA_HOME}/conf/fix_https_init"
@@ -437,6 +438,153 @@ then
     fi
 
     touch "${MODULE_INIT_FILE}"
+fi
+
+# Librerie custom (GOVWAY_CUSTOM_LIBS_DIR / GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE>)
+# Il target di ogni funzione (GOVWAY_CUSTOM_LIBS_TARGET_<FUNZIONE>) indica dove agganciare le librerie:
+# - webapp (default): la directory viene montata nel WEB-INF/lib di ogni webapp tramite un PostResources
+#   nel context.xml di default; le librerie sono caricate dal classloader della webapp e condividono con
+#   GovWay le API gia' incluse nei war (es. jakarta.jms-api)
+# - lib: i jar vengono copiati sotto ${CATALINA_HOME}/lib e sono visibili anche a Tomcat (es. Realm,
+#   Valve, risorse in GlobalNamingResources)
+if [ ! -f "${CUSTOM_LIBS_INIT_FILE}" ]
+then
+    declare -A CUSTOM_LIBS_VARS=()
+    for v in $(compgen -e | grep '^GOVWAY_CUSTOM_LIBS_DIR_')
+    do
+        [ -z "${!v}" ] && continue
+        f="${v#GOVWAY_CUSTOM_LIBS_DIR_}"
+        if [[ ! "${f}" =~ ^[A-Za-z0-9_]+$ ]]
+        then
+            echo "FATAL: Sanity check librerie custom ... fallito"
+            echo "FATAL: Il nome della funzione nella variabile ${v} può contenere solo caratteri, cifre e '_'"
+            exit 1
+        fi
+        CUSTOM_LIBS_VARS[${f}]="${v}"
+    done
+    if [ -n "${GOVWAY_CUSTOM_LIBS_DIR}" ]
+    then
+        if [ ${#CUSTOM_LIBS_VARS[@]} -gt 0 ]
+        then
+            echo "FATAL: Sanity check librerie custom ... fallito"
+            echo "FATAL: La variabile GOVWAY_CUSTOM_LIBS_DIR non può essere utilizzata insieme alle variabili GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE>: [${CUSTOM_LIBS_VARS[*]}]"
+            exit 1
+        fi
+        CUSTOM_LIBS_VARS[LIBS]="GOVWAY_CUSTOM_LIBS_DIR"
+    fi
+
+    if [ ${#CUSTOM_LIBS_VARS[@]} -gt 0 ]
+    then
+        # Elenco "tipo<TAB>classloader<TAB>jar<TAB>origine": prima le librerie gia' presenti (E),
+        # poi quelle custom (C); classloader L = ${CATALINA_HOME}/lib, W = webapp
+        CUSTOM_LIBS_ELENCO=/tmp/__custom_libs_elenco.txt
+        : > "${CUSTOM_LIBS_ELENCO}"
+        for j in ${CATALINA_HOME}/lib/*.jar
+        do
+            [ -f "${j}" ] && echo -e "E\tL\t$(basename "${j}")\t${CATALINA_HOME}/lib" >> "${CUSTOM_LIBS_ELENCO}"
+        done
+        for w in ${CATALINA_HOME}/webapps/*.war
+        do
+            [ -f "${w}" ] || continue
+            unzip -Z1 "${w}" 'WEB-INF/lib/*.jar' 2>/dev/null | while read -r j
+            do
+                echo -e "E\tW\t$(basename "${j}")\t${w}" >> "${CUSTOM_LIBS_ELENCO}"
+            done
+        done
+        for d in ${CATALINA_HOME}/webapps/*/WEB-INF/lib
+        do
+            # Webapp gia' esplosa: considerata solo se non e' presente anche il war corrispondente
+            [ -d "${d}" -a ! -f "${d%/WEB-INF/lib}.war" ] || continue
+            for j in "${d}"/*.jar
+            do
+                [ -f "${j}" ] && echo -e "E\tW\t$(basename "${j}")\t${d}" >> "${CUSTOM_LIBS_ELENCO}"
+            done
+        done
+
+        declare -a CUSTOM_LIBS_JAR=()
+        CUSTOM_LIBS_CLI_FILE=/tmp/__custom_libs.cli
+        : > "${CUSTOM_LIBS_CLI_FILE}"
+        for f in $(printf '%s\n' "${!CUSTOM_LIBS_VARS[@]}" | sort)
+        do
+            v="${CUSTOM_LIBS_VARS[${f}]}"
+            d="${!v}"
+            # GOVWAY_CUSTOM_LIBS_DIR_<FUNZIONE> -> GOVWAY_CUSTOM_LIBS_TARGET_<FUNZIONE> (GOVWAY_CUSTOM_LIBS_DIR -> GOVWAY_CUSTOM_LIBS_TARGET)
+            TARGET_VAR="${v/_DIR/_TARGET}"
+            TARGET="${!TARGET_VAR:-webapp}"
+            TARGET="${TARGET,,}"
+            if [ "${TARGET}" != 'webapp' -a "${TARGET}" != 'lib' ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Valore non ammesso per la variabile ${TARGET_VAR}: [${!TARGET_VAR}] (valori ammessi: webapp, lib)"
+                exit 1
+            fi
+            if [ ! -d "${d}" -o ! -r "${d}" ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Il path alla directory che contiene le librerie custom, non è leggibile o non è una directory: [${v}=${d}]"
+                exit 1
+            fi
+            declare -a lista_jar=( "${d}"/*.jar )
+            if [ ${#lista_jar[@]} -eq 1 -a "${lista_jar[0]}" == "${d}/*.jar" ]
+            then
+                echo "FATAL: Sanity check librerie custom ... fallito"
+                echo "FATAL: Nessuna libreria è presente in ${d} [${v}]."
+                exit 1
+            fi
+            echo "INFO: Librerie custom ... funzione ${f}: ${#lista_jar[@]} jar da ${d} [target: ${TARGET}]"
+            if [ "${TARGET}" == 'lib' ]
+            then
+                CL=L
+                CUSTOM_LIBS_JAR+=( "${lista_jar[@]}" )
+            else
+                CL=W
+                echo "/Context/Resources/PostResources:add className=org.apache.catalina.webresources.DirResourceSet, base=${d}, webAppMount=/WEB-INF/lib" >> "${CUSTOM_LIBS_CLI_FILE}"
+            fi
+            for j in "${lista_jar[@]}"
+            do
+                echo -e "C\t${CL}\t$(basename "${j}")\t${v}" >> "${CUSTOM_LIBS_ELENCO}"
+            done
+        done
+
+        # Controllo semplice, basato sul solo nome del jar privato della versione (tutto cio' che segue '-<cifra>').
+        # Una libreria custom agganciata alle webapp viene confrontata con i war e con le altre librerie custom
+        # agganciate alle webapp; una libreria copiata sotto lib/ viene confrontata con tutte.
+        awk -F'\t' -v lib="${CATALINA_HOME}/lib" '
+        {
+            n = $3; b = n; sub(/\.jar$/, "", b); sub(/-[0-9].*$/, "", b)
+            if ($1 == "C") {
+                for (i = 1; i <= cnt[b]; i++) {
+                    if ($2 == "W" && cl[b, i] == "L")
+                        continue
+                    if (nome[b, i] != n)
+                        printf "WARN: Librerie custom ... la libreria %s [%s] ha una versione differente dalla libreria %s già presente in %s\n", n, $4, nome[b, i], orig[b, i]
+                    else if (orig[b, i] == lib)
+                        printf "WARN: Librerie custom ... la libreria %s [%s] è già presente in %s e verrà sovrascritta\n", n, $4, orig[b, i]
+                    else if ($2 == "W" && tipo[b, i] == "E")
+                        printf "WARN: Librerie custom ... la libreria %s [%s] è già presente in %s: verrà utilizzata quella della webapp\n", n, $4, orig[b, i]
+                    else
+                        printf "WARN: Librerie custom ... la libreria %s [%s] è già presente in %s\n", n, $4, orig[b, i]
+                }
+            }
+            cnt[b]++; tipo[b, cnt[b]] = $1; cl[b, cnt[b]] = $2; nome[b, cnt[b]] = n; orig[b, cnt[b]] = $4
+        }' "${CUSTOM_LIBS_ELENCO}"
+        rm -f "${CUSTOM_LIBS_ELENCO}"
+
+        [ ${#CUSTOM_LIBS_JAR[@]} -gt 0 ] && /bin/cp -f "${CUSTOM_LIBS_JAR[@]}" ${CATALINA_HOME}/lib
+        if [ -s "${CUSTOM_LIBS_CLI_FILE}" ]
+        then
+            # Il context.xml di default ammette un solo elemento Resources
+            if [ "$(xmlstarlet sel -t -v 'count(/Context/Resources)' ${CATALINA_HOME}/conf/context.xml)" == "0" ]
+            then
+                sed -i '1i /Context/Resources:add' "${CUSTOM_LIBS_CLI_FILE}"
+            fi
+            /usr/local/bin/tomcat-cli.sh "${CUSTOM_LIBS_CLI_FILE}"
+        fi
+        rm -f "${CUSTOM_LIBS_CLI_FILE}"
+        echo "INFO: Librerie custom ... completata"
+    fi
+
+    touch "${CUSTOM_LIBS_INIT_FILE}"
 fi
 # Normalizzazione e compatibilita' delle variabili dei listener.
 # Fuori dal blocco one-shot piu' sotto: sono export che l'application server risolve
