@@ -578,7 +578,7 @@ then
             then
                 sed -i '1i /Context/Resources:add' "${CUSTOM_LIBS_CLI_FILE}"
             fi
-            /usr/local/bin/tomcat-cli.sh "${CUSTOM_LIBS_CLI_FILE}"
+            /usr/local/bin/tomcat-cli.sh "${CUSTOM_LIBS_CLI_FILE}" || exit 1
         fi
         rm -f "${CUSTOM_LIBS_CLI_FILE}"
         echo "INFO: Librerie custom ... completata"
