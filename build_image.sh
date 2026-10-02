@@ -266,7 +266,7 @@ then
   SHORT=${TAG#*:}
 
   # PostgreSQL
-  mkdir -p compose/postgresql/govway_{conf,log}
+  mkdir -p compose/postgresql/{govway_{conf,log},jdbc}
   chmod 777 compose/postgresql/govway_{conf,log}
   cat - << EOYAML > compose/postgresql/docker-compose.yaml
 version: '2'
@@ -281,8 +281,8 @@ services:
     volumes:
         - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
         - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
-        # Il driver deve essere copiato manualmente nella directory corrente
-        - ./postgresql-42.7.5.jar:/tmp/postgresql-42.7.5.jar
+        # Il driver deve essere copiato manualmente nella directory jdbc
+        - ./jdbc:/jdbc
     environment:
         - GOVWAY_DB_TYPE=postgresql
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -290,7 +290,7 @@ services:
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/jdbc
         - GOVWAY_POP_DB_SKIP=false
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
@@ -301,10 +301,11 @@ services:
 #    depends_on:
 #        - database
 #    volumes:
-#        - ./postgresql-42.7.5.jar:/tmp/postgresql-42.7.5.jar
+#        # Il driver deve essere copiato manualmente nella directory jdbc
+#        - ./jdbc:/jdbc
 #    environment:
 #        - GOVWAY_DB_TYPE=postgresql
-#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_DS_JDBC_LIBS=/jdbc
 #        - GOVWAY_STAT_DB_SERVER=pg_govway_${SHORT}
 #        - GOVWAY_STAT_DB_NAME=govwaydb
 #        - GOVWAY_STAT_DB_USER=govway
@@ -318,10 +319,13 @@ services:
         - POSTGRES_USER=govway
         - POSTGRES_PASSWORD=govway
 EOYAML
-  echo "ATTENZIONE: Copiare il driver jdbc PostgreSQL 'postgresql-42.7.5.jar' dentro la directory './compose/postgresql/'" > compose/postgresql/README.first
+  cat - << EOREADME > compose/postgresql/README.first
+ATTENZIONE: Copiare il driver jdbc PostgreSQL 'postgresql-*.jar' e le eventuali altre librerie necessarie
+            dentro la directory './compose/postgresql/jdbc'
+EOREADME
 
   # MariaDB
-  mkdir -p compose/mariadb/govway_{conf,log}
+  mkdir -p compose/mariadb/{govway_{conf,log},jdbc}
   chmod 777 compose/mariadb/govway_{conf,log}
   cat - << EOYAML > compose/mariadb/docker-compose.yaml
 version: '2'
@@ -336,8 +340,8 @@ services:
     volumes:
         - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
         - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
-        # Il driver deve essere copiato manualmente nella directory corrente
-        - ./mariadb-java-client-3.0.6.jar:/tmp/mariadb-java-client-3.0.6.jar
+        # Il driver deve essere copiato manualmente nella directory jdbc
+        - ./jdbc:/jdbc
     environment:
         - GOVWAY_DB_TYPE=mariadb
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -345,7 +349,7 @@ services:
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/jdbc
         - GOVWAY_POP_DB_SKIP=false
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
@@ -356,10 +360,11 @@ services:
 #    depends_on:
 #        - database
 #    volumes:
-#        - ./mariadb-java-client-3.0.6.jar:/tmp/mariadb-java-client-3.0.6.jar
+#        # Il driver deve essere copiato manualmente nella directory jdbc
+#        - ./jdbc:/jdbc
 #    environment:
 #        - GOVWAY_DB_TYPE=mariadb
-#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_DS_JDBC_LIBS=/jdbc
 #        - GOVWAY_STAT_DB_SERVER=my_govway_${SHORT}
 #        - GOVWAY_STAT_DB_NAME=govwaydb
 #        - GOVWAY_STAT_DB_USER=govway
@@ -382,13 +387,15 @@ services:
        - 3306:3306
 EOYAML
   cat - << EOREADME > compose/mariadb/README.first
-ATTENZIONE: Copiare il driver jdbc Mariadb 'mariadb-java-client-3.0.6.jar' dentro la directory './compose/mariadb/'
+ATTENZIONE: Copiare il driver jdbc Mariadb 'mariadb-java-client-*.jar' e le eventuali altre librerie necessarie
+            dentro la directory './compose/mariadb/jdbc'
+
 ATTENZIONE: Verificare il che il parametro innodb_page_size di MariaDB sia impostato 64K per evitare problemi
             Row size too large (> 8126)
 EOREADME
 
   # MySQL
-  mkdir -p compose/mysql/govway_{conf,log}
+  mkdir -p compose/mysql/{govway_{conf,log},jdbc}
   chmod 777 compose/mysql/govway_{conf,log}
   cat - << EOYAML > compose/mysql/docker-compose.yaml
 version: '2'
@@ -403,8 +410,8 @@ services:
     volumes:
         - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
         - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
-        # Il driver deve essere copiato manualmente nella directory corrente
-        - ./mysql-connector-java-8.0.29.jar:/tmp/mysql-connector-java-8.0.29.jar
+        # Il driver deve essere copiato manualmente nella directory jdbc
+        - ./jdbc:/jdbc
     environment:
         - GOVWAY_DB_TYPE=mysql
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -412,7 +419,7 @@ services:
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=govway
-        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/jdbc
         - GOVWAY_POP_DB_SKIP=false
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
@@ -423,10 +430,11 @@ services:
 #    depends_on:
 #        - database
 #    volumes:
-#        - ./mysql-connector-java-8.0.29.jar:/tmp/mysql-connector-java-8.0.29.jar
+#        # Il driver deve essere copiato manualmente nella directory jdbc
+#        - ./jdbc:/jdbc
 #    environment:
 #        - GOVWAY_DB_TYPE=mysql
-#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_DS_JDBC_LIBS=/jdbc
 #        - GOVWAY_STAT_DB_SERVER=my_govway_${SHORT}
 #        - GOVWAY_STAT_DB_NAME=govwaydb
 #        - GOVWAY_STAT_DB_USER=govway
@@ -443,10 +451,13 @@ services:
     ports:
        - 3306:3306
 EOYAML
-  echo "ATTENZIONE: Copiare il driver jdbc Mysql 'mysql-connector-java-8.0.29.jar' dentro la directory './compose/mysql/'" > compose/mysql/README.first
+ cat - << EOREADME > compose/mysql/README.first
+ATTENZIONE: Copiare il driver jdbc Mysql 'mysql-connector-java-*.jar' e le eventuali altre librerie necessarie
+            dentro la directory './compose/mysql/jdbc'
+EOREADME
 
   # Oracle
-  mkdir -p compose/oracle/govway_{conf,log}
+  mkdir -p compose/oracle/{govway_{conf,log},jdbc}
   mkdir -p compose/oracle/oracle_startup
   mkdir -p compose/oracle/ORADATA
   chmod 777 compose/oracle/govway_{conf,log}
@@ -475,8 +486,8 @@ services:
     volumes:
         - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
         - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
-        # Il driver deve essere copiato manualmente nella directory corrente
-        - ./ojdbc10.jar:/tmp/ojdbc10.jar
+        # Il driver deve essere copiato manualmente nella directory jdbc
+        - ./jdbc:/jdbc
     environment:
         - GOVWAY_DB_TYPE=oracle
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -484,7 +495,7 @@ services:
         - GOVWAY_DB_NAME=GOVWAYPDB
         - GOVWAY_DB_USER=GOVWAY
         - GOVWAY_DB_PASSWORD=GOVWAY
-        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/jdbc
         - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
         - GOVWAY_POP_DB_SKIP=false
         # il container oracle puo impiegare anche 20 minuti ad avviarsi
@@ -500,14 +511,14 @@ services:
 #        - database
 #    volumes:
 #        # Il driver deve essere copiato manualmente nella directory corrente
-#        - ./ojdbc10.jar:/tmp/ojdbc10.jar
+#        - ./jdbc:/jdbc
 #    environment:
 #        - GOVWAY_DB_TYPE=oracle
 #        - GOVWAY_STAT_DB_SERVER=or_govway_${SHORT}
 #        - GOVWAY_STAT_DB_NAME=GOVWAYPDB
 #        - GOVWAY_STAT_DB_USER=GOVWAY
 #        - GOVWAY_STAT_DB_PASSWORD=GOVWAY
-#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_DS_JDBC_LIBS=/jdbc
 #        - GOVWAY_ORACLE_JDBC_URL_TYPE=servicename
 #        - GOVWAY_BATCH_USA_CRON=yes
   database:
@@ -527,10 +538,13 @@ services:
     ports:
        - 1521:1521
 EOYAML
-  echo "ATTENZIONE: Copiare il driver jdbc Oracle 'ojdbc10.jar' dentro la directory './compose/oracle/'" > compose/oracle/README.first
+cat -  << EOREADME > compose/oracle/README.first
+ATTENZIONE: Copiare il driver jdbc Oracle 'ojdbc*.jar' e le eventuali altre librerie necessarie
+            dentro la directory './compose/oracle/jdbc'
+EOREADME
 
   # SQL Server
-  mkdir -p compose/sqlserver/govway_{conf,log}
+  mkdir -p compose/sqlserver/{govway_{conf,log},jdbc}
   mkdir -p compose/sqlserver/mssql_startup
   chmod 777 compose/sqlserver/govway_{conf,log}
   cat - << 'EOENTRYPOINT' > compose/sqlserver/mssql_startup/entrypoint.sh
@@ -608,7 +622,7 @@ services:
         - ./govway_conf:${CUSTOM_GOVWAY_HOME:-/etc/govway}
         - ./govway_log:${CUSTOM_GOVWAY_LOG:-/var/log/govway}
         # Il driver deve essere copiato manualmente nella directory corrente
-        - ./mssql-jdbc.jar:/tmp/mssql-jdbc.jar
+        - ./jdbc:/jdbc
     environment:
         - GOVWAY_DB_TYPE=sqlserver
         - GOVWAY_DEFAULT_ENTITY_NAME=Ente
@@ -616,7 +630,7 @@ services:
         - GOVWAY_DB_NAME=govwaydb
         - GOVWAY_DB_USER=govway
         - GOVWAY_DB_PASSWORD=GovWay@123
-        - GOVWAY_DS_JDBC_LIBS=/tmp
+        - GOVWAY_DS_JDBC_LIBS=/jdbc
         - GOVWAY_POP_DB_SKIP=false
 # Decommentare dopo il build dell'immagine batch (usando l'opzione "-a batch")
 #  batch_stat_orarie:
@@ -627,10 +641,11 @@ services:
 #    depends_on:
 #        - database
 #    volumes:
-#        - ./mssql-jdbc.jar:/tmp/mssql-jdbc.jar
+#        # Il driver deve essere copiato manualmente nella directory corrente
+#        - ./jdbc:/jdbc
 #    environment:
 #        - GOVWAY_DB_TYPE=sqlserver
-#        - GOVWAY_DS_JDBC_LIBS=/tmp
+#        - GOVWAY_DS_JDBC_LIBS=/jdbc
 #        - GOVWAY_STAT_DB_SERVER=mssql_govway_${SHORT}:1433
 #        - GOVWAY_STAT_DB_NAME=govwaydb
 #        - GOVWAY_STAT_DB_USER=govway
@@ -649,8 +664,8 @@ services:
         - 1433:1433
 EOYAML
   cat - << EOREADME > compose/sqlserver/README.first
-ATTENZIONE: Copiare il driver jdbc SQL Server 'mssql-jdbc-*.jar' dentro la directory './compose/sqlserver/'
-            e rinominarlo in 'mssql-jdbc.jar'
+ATTENZIONE: Copiare il driver jdbc SQL Server 'mssql-jdbc-*.jar' e le eventuali altre librerie necessarie
+            dentro la directory './compose/sqlserver/jdbc'
 
 Il database e l'utente vengono creati automaticamente all'avvio del container SQL Server
 tramite lo script in mssql_startup/.
