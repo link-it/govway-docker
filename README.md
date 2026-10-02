@@ -376,6 +376,42 @@ Quando ci si connette ad un database esterno SQL Server è possibile configurare
 - **Con truststore** (`GOVWAY_SQLSERVER_TRUSTSTORE` valorizzato): cifratura abilitata con verifica del certificato server (`encrypt=true;trustServerCertificate=false;trustStore=<path>;trustStorePassword=<pass>`)
 - **Disabilitata** (`GOVWAY_SQLSERVER_ENCRYPT=FALSE`): nessuna cifratura (`encrypt=false`)
 
+### Librerie custom
+È possibile aggiungere all'application server delle librerie custom (ad esempio le librerie client di un broker JMS esterno), montandole in una directory del container ed indicandone il path tramite le seguenti variabili:
+
+* GOVWAY_CUSTOM_LIBS_DIR: path ad una directory contenente uno o più file jar da agganciare all'application server
+* GOVWAY_CUSTOM_LIBS_TARGET: solo su Tomcat, indica a quale classloader agganciare le librerie (valori ammessi: webapp, lib; default: webapp). Con **webapp** le librerie sono visibili alle sole applicazioni GovWay, con **lib** anche a Tomcat stesso. La scelta determina anche dove vanno configurate le risorse che le utilizzano, ed è descritta in dettaglio più sotto
+* GOVWAY_CUSTOM_LIBS_DEPS: solo su WildFly, elenco separato da ',' dei moduli da cui dipendono le librerie; il suffisso **:export** (es. jakarta.jms.api:export) indica una dipendenza da esportare, resa quindi visibile anche alle applicazioni GovWay (default: javax.api)
+
+In alternativa è possibile indicare più directory, ciascuna identificata da un nome di funzione, utilizzando le varianti **GOVWAY_CUSTOM_LIBS_DIR_\<FUNZIONE\>**, **GOVWAY_CUSTOM_LIBS_TARGET_\<FUNZIONE\>** e **GOVWAY_CUSTOM_LIBS_DEPS_\<FUNZIONE\>**. Il nome della funzione può contenere solo caratteri, cifre e '_', e le due forme sono alternative: utilizzando GOVWAY_CUSTOM_LIBS_DIR insieme ad una variante per funzione il container si arresta.
+
+L'utilità delle funzioni dipende dall'application server:
+- **WildFly**: ogni funzione diventa un modulo distinto, con le proprie dipendenze ed i propri export. Consente quindi di agganciare librerie che richiedono dipendenze differenti, o fra loro incompatibili, mantenendole isolate.
+- **Tomcat**: le librerie di tutte le funzioni con target *webapp* vengono caricate dallo stesso classloader, e quelle con target *lib* finiscono nella stessa directory. Suddividerle in più funzioni è quindi equivalente ad indicare un'unica directory contenente tutti i jar, e l'unico caso in cui serve davvero è l'utilizzo contemporaneo dei due target.
+
+Una directory inesistente, non leggibile o che non contiene file jar causa l'arresto del container. Le librerie vengono agganciate solamente al primo avvio del container; la directory deve comunque restare montata, poiché l'application server vi accede ad ogni avvio.
+
+Il comportamento dipende dall'application server:
+- **Tomcat**: in base a GOVWAY_CUSTOM_LIBS_TARGET:
+  - **webapp** (default): la directory viene aggiunta, tramite un elemento *PostResources*, al *context.xml* di default ed i jar risultano presenti nella directory WEB-INF/lib di ogni applicazione. Le librerie vengono caricate dal classloader dell'applicazione, condividendo con GovWay le API già incluse negli archivi (ad esempio *jakarta.jms-api*); le risorse che le utilizzano vanno quindi definite nel *Context* (`/Context/Resource`) e non tra le *GlobalNamingResources*.
+  - **lib**: i jar vengono copiati sotto *${CATALINA_HOME}/lib* e sono visibili anche a Tomcat (ad esempio per Realm, Valve o risorse definite tra le *GlobalNamingResources*). Non va utilizzato per librerie che implementano API già incluse negli archivi di GovWay: gli oggetti creati da Tomcat non sarebbero compatibili con le classi viste dall'applicazione (ClassCastException).
+
+  Viene emesso un messaggio di WARN per ogni libreria già presente, con la stessa o con una versione differente, nello stesso classloader: per il target webapp nella directory WEB-INF/lib delle applicazioni GovWay, per il target lib anche tra le librerie dell'application server (driver JDBC compresi). Il controllo si basa sul solo nome del file jar privato della versione e non rileva quindi le classi incluse all'interno di jar *shaded* (ad esempio *artemis-jakarta-client-all*).
+- **WildFly**: le librerie di ciascuna funzione diventano il modulo **govway.custom.\<funzione\>** (quindi **govway.custom.libs** utilizzando GOVWAY_CUSTOM_LIBS_DIR), registrato tra i *global-modules* del subsystem *ee* così da essere visibile alle applicazioni GovWay. Il modulo vede solo i moduli indicati in GOVWAY_CUSTOM_LIBS_DEPS, mentre le applicazioni GovWay vedono le classi del modulo e le sole dipendenze esportate. Ad esempio per un client JMS l'API `jakarta.jms.api` (`javax.jms.api` sulle immagini wildfly25) va esportata, poiché la configurazione standalone di GovWay non include il subsystem di messaging e le applicazioni non la vedrebbero altrimenti (`NoClassDefFoundError: jakarta/jms/Destination`): `GOVWAY_CUSTOM_LIBS_DEPS=javax.api,jakarta.jms.api:export`. Le altre dipendenze vanno esportate solo se necessario, poiché un modulo esportato prevale sulle librerie incluse negli archivi di GovWay (ad esempio `org.slf4j`).
+
+Le risorse che utilizzano le librerie (ad esempio le connection factory JMS) possono essere configurate con i [comandi di inizializzazione aggiuntiva](#comandi-di-inizializzazione-aggiuntiva), valutati dopo l'aggancio delle librerie. Un esempio per un broker Artemis ActiveMQ su Tomcat, con le librerie client montate in */opt/custom-libs* e la variabile `GOVWAY_CUSTOM_LIBS_DIR=/opt/custom-libs` (target webapp), è il seguente file */docker-entrypoint-govway.d/jms.cli*, che rende disponibili a GovWay le risorse JNDI *java:comp/env/jms/ConnectionFactory* e *java:comp/env/jms/GovWayQueue*:
+```
+/Context/Resource:add name=jms/ConnectionFactory, auth=Container, type=org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory, factory=org.apache.activemq.artemis.jndi.JNDIReferenceFactory, brokerURL=tcp://artemis:61616
+/Context/Resource:add name=jms/GovWayQueue, auth=Container, type=org.apache.activemq.artemis.jms.client.ActiveMQQueue, factory=org.apache.activemq.artemis.jndi.JNDIReferenceFactory, address=GovWayQueue
+```
+Sulle immagini tomcat9 le interfacce JMS appartengono al package `javax.jms` e vanno utilizzate le librerie client Artemis non jakarta (artemis-jms-client).
+
+Su WildFly le stesse risorse possono essere registrate come binding *object-factory* del subsystem *naming*, indicando il modulo delle librerie custom. Un esempio per un broker RabbitMQ, con le librerie *rabbitmq-jms* e *amqp-client* montate in */opt/custom-libs*, `GOVWAY_CUSTOM_LIBS_DIR=/opt/custom-libs` e `GOVWAY_CUSTOM_LIBS_DEPS=javax.api,jakarta.jms.api:export,org.slf4j`, è il seguente file */docker-entrypoint-govway.d/jms.cli*, che rende disponibili a GovWay le risorse JNDI *java:global/jms/ConnectionFactory* e *java:global/jms/GovWayQueue*:
+```
+/subsystem=naming/binding="java:global/jms/ConnectionFactory":add(binding-type=object-factory, module=govway.custom.libs, class=com.rabbitmq.jms.admin.RMQObjectFactory, environment={className=jakarta.jms.ConnectionFactory, host=rabbitmq, port=5672, virtualHost="/", username=govway, password=changeme})
+/subsystem=naming/binding="java:global/jms/GovWayQueue":add(binding-type=object-factory, module=govway.custom.libs, class=com.rabbitmq.jms.admin.RMQObjectFactory, environment={className=jakarta.jms.Queue, destinationName=GovWayQueue, amqp=true, amqpQueueName=GovWayQueue, amqpExchangeName="", amqpRoutingKey=GovWayQueue})
+```
+
 ### Pooling connessioni database
 
 E' possibile personalizzare alcuni aspetti relativi ai datasource utilizzati da GovWay per accedere al database; per farlo si possono impostare i valori delle variabili d'ambiente elencate di seguito:

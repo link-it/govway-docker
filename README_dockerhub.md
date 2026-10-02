@@ -50,6 +50,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 - Supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti gli application server
 - Correzioni e nuove opzioni di configurazione per i connettori AJP sulle immagini Tomcat
 - Introdotta l'immagine `_tools`, con i tool a linea di comando dell'installer (config-loader, template-scan, vault-cli)
+- Possibilità di agganciare librerie custom all'application server (GOVWAY_CUSTOM_LIBS_DIR)
 - L'immagine batch non viene più eseguita come utente root
 - Aggiornati gli application server di base ed il driver jdbc di postgresql
 
@@ -82,15 +83,7 @@ Sono infine disponibili due immagini che non istanziano alcun application server
 
 ### Versioni precedenti alla 3.4.2 / 3.3.19
 
-Nelle versioni precedenti, venivano fornite immagini separate per ogni tipo di database:
-
-- **standalone**: ambiente con database HSQL interno al container;
-
-- **postgres** o **oracle**: immagine specifica per database postgresql o oracle esterno;
-
-- **run_postgres** o **run_oracle**: componente runtime per database postgresql o oracle;
-
-- **manager_postgres** o **manager_oracle**: console e servizi API per database postgresql o oracle.
+Venivano fornite immagini separate per ogni tipo di database (standalone, postgres, oracle, run_postgres, manager_oracle, ...).
 
 ### Ambienti run e manager
 
