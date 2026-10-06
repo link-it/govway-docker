@@ -124,6 +124,10 @@ I seguenti contesti possono essere utilizzati come health check:
 - run: /govway/check
 - manager: /govwayMonitor/check
 
+### Metriche
+
+Dalla 3.4.4 le metriche (`/govway/metrics` o OTLP), disabilitate per default, si abilitano in `/etc/govway/govway_local.observability.properties` ([documentazione](https://govway.org/documentazione/installazione/finalizzazione/osservabilita/index.html)).
+
 ## Avviare l'immagine standalone
 
 Eseguire il _run_ dell'immagine:
