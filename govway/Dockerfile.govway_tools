@@ -100,8 +100,26 @@ COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/RE
 /usr/share/licenses/govway/
 COPY --from=source_image_full /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/README.txt /opt/govway-installer-${GOVWAY_FULLVERSION}/doc/third-party-licenses* /usr/share/licenses/govway/third-party-licenses/
 
-COPY commons/tools/entrypoint.sh /usr/local/bin/
-RUN chown govway:0 /usr/local/bin/entrypoint.sh && chmod -Rf g+rwX /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+# Sottoinsieme dell'installer necessario al comando 'upgrade-sql', che esegue i soli target
+# SQL (setup_sql, _distrib_sql_by_db_type) in modalita' aggiornamento: build ant, sorgenti SQL
+# e le librerie usate dal generatore SQLScriptBuilder e dal calcolo degli hash delle password.
+ENV GOVWAY_INSTALLER_HOME=/opt/govway-installer \
+GOVWAY_SQL_OUTPUT_DIR=/var/govway/sql
+ARG installer_src=/opt/govway-installer-${govway_fullversion}/installer
+COPY --from=source_image_full ${installer_src}/commons/ ${GOVWAY_INSTALLER_HOME}/installer/commons/
+COPY --from=source_image_full ${installer_src}/lib/ant/ ${GOVWAY_INSTALLER_HOME}/installer/lib/ant/
+COPY --from=source_image_full ${installer_src}/lib/antinstaller/ant-[0-9]*.jar ${installer_src}/lib/antinstaller/ant-launcher-*.jar ${GOVWAY_INSTALLER_HOME}/installer/lib/antinstaller/
+COPY --from=source_image_full ${installer_src}/setup/build.xml ${installer_src}/setup/local_env.xml ${installer_src}/setup/antinstall-config.xml ${installer_src}/setup/ant.install.properties.template ${GOVWAY_INSTALLER_HOME}/installer/setup/
+COPY --from=source_image_full ${installer_src}/setup/ant/ ${GOVWAY_INSTALLER_HOME}/installer/setup/ant/
+COPY --from=source_image_full ${installer_src}/setup/deploy/sql/ ${GOVWAY_INSTALLER_HOME}/installer/setup/deploy/sql/
+COPY --from=source_image_full ${installer_src}/setup/deploy/sw/jars/openspcoop2_utils_*.jar ${installer_src}/setup/deploy/sw/jars/openspcoop2_core_*.jar ${installer_src}/setup/deploy/sw/jars/commons-codec-*.jar ${installer_src}/setup/deploy/sw/jars/jasypt-*.jar ${GOVWAY_INSTALLER_HOME}/installer/setup/deploy/sw/jars/
+RUN set -eux; \
+mkdir -p ${GOVWAY_SQL_OUTPUT_DIR}; \
+chown -R govway:0 ${GOVWAY_SQL_OUTPUT_DIR}; \
+chmod -Rf g+rwX ${GOVWAY_SQL_OUTPUT_DIR}
+
+COPY commons/tools/entrypoint.sh commons/tools/upgrade_sql.sh /usr/local/bin/
+RUN chown govway:0 /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh && chmod -f g+rwX /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh && chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh
 
 USER govway
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]

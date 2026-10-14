@@ -181,6 +181,8 @@ GOVWAY_DB_MAPPING="T,S,C"
 
 **ATTENZIONE:** quando il container viene avviato bisogna assicurarsi di aver configurato le variabili di **Connessione ai database esterni** coerentemente con quanto dichiarato nella fase di generazione degli scripts nella variabile **GOVWAY_DB_MAPPING**
 
+Gli script di aggiornamento della base dati tra due versioni di GovWay si ottengono dall'immagine tools con il comando `upgrade-sql`, indicando lo stesso valore di **GOVWAY_DB_MAPPING** (vedi [Generazione degli script SQL di aggiornamento](#generazione-degli-script-sql-di-aggiornamento)).
+
 ### Comandi di inizializzazione aggiuntiva
 
 La sequenza di avvio avvio del container, sia in modalità standalone che con immagini orchestrate, consente di valutare dei comandi di inizializzazione aggiuntiva, inserendoli sotto la directory **/docker-entrypoint-govway.d/**
@@ -872,14 +874,40 @@ I comandi supportati sono:
 * `vault-cli encrypt [args...]`
 * `vault-cli decrypt [args...]`
 * `vault-cli update [args...]`
+* `upgrade-sql <versionePrecedente>` (vedi [Generazione degli script SQL di aggiornamento](#generazione-degli-script-sql-di-aggiornamento))
 
 I file di configurazione dei tre tool sono centralizzati in un'unica directory `/etc/govway`. I tool vi cercano già di default anche i file che l'immagine non include, e che vanno quindi forniti se servono: `byok.properties`, `hsm.properties`, `govway.map.properties` e `govway.secrets.properties`.
 
 Per aggiungere o personalizzare uno di questi file conviene montare il **singolo file**, come negli esempi sopra: montando un volume sull'intera directory `/etc/govway` si nascondono tutte le properties di default presenti nell'immagine, che andrebbero a quel punto fornite per intero.
 
-> **_NOTA:_** i file presenti in `/etc/govway` non vengono mai modificati: la directory può quindi essere montata **in sola lettura**. L'unica directory in cui l'immagine scrive è `/var/log/govway`.
+> **_NOTA:_** i file presenti in `/etc/govway` non vengono mai modificati: la directory può quindi essere montata **in sola lettura**. Le uniche directory in cui l'immagine scrive sono `/var/log/govway` e, per il solo comando `upgrade-sql`, `/var/govway/sql`.
 
 I log sono centralizzati in `/var/log/govway`, come per l'immagine principale. Ogni tool scrive un proprio gruppo di file: `govway_cli_configLoader.log` (con `_sql` e `_auditing`), `govway_cli_templateScan.log` (con `_sql`) e `govway_cli_vault.log` (con `_output`).
+
+### Generazione degli script SQL di aggiornamento
+
+Il comando `upgrade-sql` produce gli script SQL per aggiornare la base dati dalla versione indicata come argomento alla versione dell'immagine. Gli script sono generati dall'installer GovWay in modalità aggiornamento, e sono quindi identici a quelli che si otterrebbero eseguendo l'installer con la stessa versione di partenza e la stessa suddivisione dei database. Il comando non accede al database.
+
+```bash
+docker run --rm \
+  -e GOVWAY_DB_TYPE=postgresql \
+  -e GOVWAY_DB_MAPPING="T,S" \
+  -v ./sql_upgrade:/var/govway/sql \
+  linkitaly/govway:3.4.4_tools upgrade-sql 3.3.18
+```
+
+* `<versionePrecedente>` (obbligatorio): la versione di GovWay da cui si parte. Sono accettate solo le versioni che l'installer supporta come versione precedente: con una versione mancante o non supportata il comando termina con errore e mostra l'elenco delle versioni ammesse.
+* GOVWAY_DB_TYPE (obbligatoria): il tipo di database per cui generare gli script (valori ammessi: postgresql, mysql, mariadb, oracle, sqlserver). Per mariadb vengono prodotti gli script MySQL, come per gli script di nuova installazione.
+* GOVWAY_DB_MAPPING: le categorie che condividono il database con il Runtime, con la stessa sintassi descritta in [Condivisione Database tra Categorie](#condivisione-database-tra-categorie) (`T` = Tracciamento, `S` = Statistiche, `C` = Configurazione).
+* GOVWAY_DEFAULT_ENTITY_NAME (opzionale): se impostata, sostituisce il placeholder del soggetto nelle informazioni di installazione registrate dallo script, come avviene per `initsql`.
+
+Gli script vengono scritti in `/var/govway/sql`, che va montata su un volume scrivibile dall'utente del container. Il comando termina con errore se la directory contiene già degli script di aggiornamento, per non mescolarli con quelli di una generazione precedente.
+
+Senza `GOVWAY_DB_MAPPING` ogni categoria ha il proprio database e si ottengono quattro script, uno per database: `GovWay_upgrade_<versione>.sql`, `GovWayConfigurazione_upgrade_<versione>.sql`, `GovWayTracciamento_upgrade_<versione>.sql` e `GovWayStatistiche_upgrade_<versione>.sql`, dove `<versione>` è la versione dell'immagine. Le categorie indicate in `GOVWAY_DB_MAPPING` confluiscono nello script del Runtime e il loro script separato non viene prodotto: con `T,S,C` si ottiene il solo `GovWay_upgrade_<versione>.sql`.
+
+> **_IMPORTANTE:_** il valore di `GOVWAY_DB_MAPPING` deve coincidere con quello usato per generare gli script di nuova installazione con `initsql`, e con la connessione ai database configurata a runtime (variabili `GOVWAY_CONF_DB_*`, `GOVWAY_TRAC_DB_*`, `GOVWAY_STAT_DB_*`). Con un valore diverso gli script aggiornerebbero tabelle in un database che non le contiene.
+
+> **_NOTA:_** per SQL Server gli script contengono in testa le istruzioni `ALTER DATABASE @DATABASE@ ...` che impostano il livello di isolamento. Prima dell'esecuzione va sostituito `@DATABASE@` con il nome del database; le istruzioni vanno eseguite fuori transazione e, se già applicate in fase di installazione, possono essere omesse.
 
 ## Personalizzazioni Tools
 

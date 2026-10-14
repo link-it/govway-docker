@@ -8,6 +8,7 @@
    - Aggiunta la possibilità di agganciare librerie custom all'application server (GOVWAY_CUSTOM_LIBS_DIR), ad esempio le librerie client di un broker JMS esterno
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
    - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
+   - Aggiunto all'immagine '_tools' il comando 'upgrade-sql', che genera gli script SQL di aggiornamento della base dati a partire dalla versione indicata, rispettando la suddivisione dei database dichiarata con GOVWAY_DB_MAPPING
 
 - *3.4.4*
 
