@@ -53,16 +53,16 @@ fi
 
 # L'installer non distingue mariadb da mysql
 case "${GOVWAY_DB_TYPE}" in
-postgresql|mysql|oracle|sqlserver) TIPO_DATABASE="${GOVWAY_DB_TYPE}" ;;
+postgresql|mysql|oracle|sqlserver|hsql) TIPO_DATABASE="${GOVWAY_DB_TYPE}" ;;
 mariadb) TIPO_DATABASE='mysql' ;;
 '')
     echo "FATAL: la variabile GOVWAY_DB_TYPE è obbligatoria."
-    echo "       Valori consentiti: [ postgresql, mysql, mariadb, oracle, sqlserver ]"
+    echo "       Valori consentiti: [ postgresql, mysql, mariadb, oracle, sqlserver, hsql ]"
     exit 1
     ;;
 *)
     echo "FATAL: la variabile GOVWAY_DB_TYPE non è valida: '${GOVWAY_DB_TYPE}'"
-    echo "       Valori consentiti: [ postgresql, mysql, mariadb, oracle, sqlserver ]"
+    echo "       Valori consentiti: [ postgresql, mysql, mariadb, oracle, sqlserver, hsql ]"
     exit 1
     ;;
 esac

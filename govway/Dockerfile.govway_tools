@@ -116,7 +116,8 @@ COPY --from=source_image_full ${installer_src}/setup/deploy/sw/jars/openspcoop2_
 RUN set -eux; \
 mkdir -p ${GOVWAY_SQL_OUTPUT_DIR}; \
 chown -R govway:0 ${GOVWAY_SQL_OUTPUT_DIR}; \
-chmod -Rf g+rwX ${GOVWAY_SQL_OUTPUT_DIR}
+chmod -Rf g+rwX ${GOVWAY_SQL_OUTPUT_DIR}; \
+chmod g+s ${GOVWAY_SQL_OUTPUT_DIR}
 
 COPY commons/tools/entrypoint.sh commons/tools/upgrade_sql.sh /usr/local/bin/
 RUN chown govway:0 /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh && chmod -f g+rwX /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh && chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/upgrade_sql.sh

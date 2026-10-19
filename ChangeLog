@@ -7,8 +7,7 @@
    - Cambiato utente di esecuzione dell'immagine batch da 'root' a 'govway', per consentirne l'utilizzo in ambienti che vietano l'esecuzione come root (es. Pod Security Standard 'restricted', SCC OpenShift)
    - Aggiunta la possibilità di agganciare librerie custom all'application server (GOVWAY_CUSTOM_LIBS_DIR), ad esempio le librerie client di un broker JMS esterno
    - Aggiornato driver jdbc di postgresql alla versione 42.7.13
-   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer: govway-config-loader, govway-template-scan e govway-vault-cli
-   - Aggiunto all'immagine '_tools' il comando 'upgrade-sql', che genera gli script SQL di aggiornamento della base dati a partire dalla versione indicata, rispettando la suddivisione dei database dichiarata con GOVWAY_DB_MAPPING
+   - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer (govway-config-loader, govway-template-scan, govway-vault-cli) e con la generazione degli script SQL di aggiornamento della base dati
 
 - *3.4.4*
 

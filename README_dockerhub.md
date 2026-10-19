@@ -49,7 +49,7 @@ Dall’esperienza della Porta di Dominio italiana, l’API Gateway conforme alle
 
 - Supporto HTTPS/TLS sui connettori di erogazione, fruizione e gestione (porte 8443/8444/8445), su tutti gli application server
 - Correzioni e nuove opzioni di configurazione per i connettori AJP sulle immagini Tomcat
-- Introdotta l'immagine `_tools`, con i tool a linea di comando dell'installer (config-loader, template-scan, vault-cli)
+- Introdotta l'immagine `_tools`, con i tool a linea di comando dell'installer (config-loader, template-scan, vault-cli) e la generazione degli script SQL di aggiornamento
 - Possibilità di agganciare librerie custom all'application server (GOVWAY_CUSTOM_LIBS_DIR)
 - L'immagine batch non viene più eseguita come utente root
 - Aggiornati gli application server di base ed il driver jdbc di postgresql
@@ -439,7 +439,7 @@ $ docker run --rm \
 
 > **_NOTA:_** le azioni di `vault-cli` richiedono i security engine BYOK, definiti in un file `byok.properties` non incluso nell'immagine e da montare su `/etc/govway/byok.properties`. Per la sintassi dei comandi e la configurazione dei security engine fare riferimento alla [documentazione del Vault CLI](https://govway.org/documentazione/installazione/finalizzazione/byok/vaultCli/index.html).
 
-I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>` e `vault-cli encrypt|decrypt|update [args...]`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale; il database HSQL non è supportato, poiché i tool operano su un database esterno già popolato. Per l'elenco completo delle variabili, per la configurazione tramite i file presenti in `/etc/govway` e per i log prodotti da ciascun tool, fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
+I comandi supportati sono `config-loader create|createOrUpdate|delete <archivePath>`, `template-scan <regex>`, `vault-cli encrypt|decrypt|update [args...]` e `upgrade-sql <versionePrecedente>`. Le variabili `GOVWAY_DB_*` seguono la stessa convenzione dell'immagine principale; config-loader, template-scan e vault-cli operano su un database esterno già popolato e non supportano quindi HSQL. Per l'elenco completo delle variabili, per la configurazione tramite i file presenti in `/etc/govway` e per i log prodotti da ciascun tool, fare riferimento alla documentazione del progetto [Govway-Docker](https://github.com/link-it/govway-docker).
 
 
 ## Versione Snapshot

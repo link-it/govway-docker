@@ -897,7 +897,7 @@ docker run --rm \
 ```
 
 * `<versionePrecedente>` (obbligatorio): la versione di GovWay da cui si parte. Sono accettate solo le versioni che l'installer supporta come versione precedente: con una versione mancante o non supportata il comando termina con errore e mostra l'elenco delle versioni ammesse.
-* GOVWAY_DB_TYPE (obbligatoria): il tipo di database per cui generare gli script (valori ammessi: postgresql, mysql, mariadb, oracle, sqlserver). Per mariadb vengono prodotti gli script MySQL, come per gli script di nuova installazione.
+* GOVWAY_DB_TYPE (obbligatoria): il tipo di database per cui generare gli script (valori ammessi: postgresql, mysql, mariadb, oracle, sqlserver, hsql). Per mariadb vengono prodotti gli script MySQL, come per gli script di nuova installazione. Il comando non accede al database, quindi è ammesso anche hsql, utilizzato dalle immagini in modalità standalone.
 * GOVWAY_DB_MAPPING: le categorie che condividono il database con il Runtime, con la stessa sintassi descritta in [Condivisione Database tra Categorie](#condivisione-database-tra-categorie) (`T` = Tracciamento, `S` = Statistiche, `C` = Configurazione).
 * GOVWAY_DEFAULT_ENTITY_NAME (opzionale): se impostata, sostituisce il placeholder del soggetto nelle informazioni di installazione registrate dallo script, come avviene per `initsql`.
 
