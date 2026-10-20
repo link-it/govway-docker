@@ -19,6 +19,7 @@ usage() {
     echo "  vault-cli encrypt [args...]"
     echo "  vault-cli decrypt [args...]"
     echo "  vault-cli update [args...]"
+    echo "  upgrade-sql <versionePrecedente>"
     exit 2
 }
 
@@ -27,6 +28,10 @@ usage() {
 TOOL="$1"; shift
 
 case "${TOOL}" in
+upgrade-sql)
+    # Non accede al database: GOVWAY_DB_TYPE indica solo il dialetto degli script da generare
+    exec /usr/local/bin/upgrade_sql.sh "$@"
+    ;;
 config-loader)
     TOOL_DIR="${GOVWAY_TOOLS_HOME}/govway-config-loader"
     ACTION="$1"; shift || true
