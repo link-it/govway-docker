@@ -95,7 +95,7 @@ fi
 if ! mkdir -p "${GOVWAY_SQL_OUTPUT_DIR}" 2>/dev/null || [ ! -w "${GOVWAY_SQL_OUTPUT_DIR}" ]
 then
     echo "FATAL: la directory di output non è scrivibile: ${GOVWAY_SQL_OUTPUT_DIR}"
-    echo "       Montare un volume scrivibile dall'utente del container (UID $(id -u), gruppo 0)."
+    echo "       Montare un volume scrivibile dall'utente del container (UID $(id -u), GID $(id -g))."
     exit 1
 fi
 # Script di una precedente generazione, magari con un mapping diverso, verrebbero confusi con i nuovi

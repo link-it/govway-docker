@@ -889,7 +889,8 @@ I log sono centralizzati in `/var/log/govway`, come per l'immagine principale. O
 Il comando `upgrade-sql` produce gli script SQL per aggiornare la base dati dalla versione indicata come argomento alla versione dell'immagine. Gli script sono generati dall'installer GovWay in modalità aggiornamento, e sono quindi identici a quelli che si otterrebbero eseguendo l'installer con la stessa versione di partenza e la stessa suddivisione dei database. Il comando non accede al database.
 
 ```bash
-docker run --rm \
+mkdir -p sql_upgrade
+docker run --rm --user $(id -u):$(id -g) \
   -e GOVWAY_DB_TYPE=postgresql \
   -e GOVWAY_DB_MAPPING="T,S" \
   -v ./sql_upgrade:/var/govway/sql \
@@ -901,7 +902,23 @@ docker run --rm \
 * GOVWAY_DB_MAPPING: le categorie che condividono il database con il Runtime, con la stessa sintassi descritta in [Condivisione Database tra Categorie](#condivisione-database-tra-categorie) (`T` = Tracciamento, `S` = Statistiche, `C` = Configurazione).
 * GOVWAY_DEFAULT_ENTITY_NAME (opzionale): se impostata, sostituisce il placeholder del soggetto nelle informazioni di installazione registrate dallo script, come avviene per `initsql`.
 
-Gli script vengono scritti in `/var/govway/sql`, che va montata su un volume scrivibile dall'utente del container. Il comando termina con errore se la directory contiene già degli script di aggiornamento, per non mescolarli con quelli di una generazione precedente.
+Gli script vengono scritti in `/var/govway/sql`, che va montata su un volume scrivibile dall'utente con cui viene eseguito il container. La directory va creata prima di avviare il container: se non esiste viene creata da docker con utente root, e non risulta scrivibile in nessuna delle due modalità seguenti.
+
+* **Eseguire il container con l'utente dell'host**, come nell'esempio sopra, aggiungendo `--user $(id -u):$(id -g)`. I file prodotti risultano già accessibili ed è sufficiente creare la directory prima di eseguire il comando docker:
+
+```shell
+mkdir -p ./sql_upgrade
+```
+
+* **Assegnare preventivamente i diritti** alla directory, se il container deve girare con il proprio utente (ad esempio su un orchestratore, dove l'opzione `--user` non è disponibile):
+
+```shell
+mkdir -p ./sql_upgrade
+chown -R 100:0 ./sql_upgrade
+chmod -R g+rwX ./sql_upgrade
+```
+
+Il comando termina con errore se la directory contiene già degli script di aggiornamento, per non mescolarli con quelli di una generazione precedente.
 
 Senza `GOVWAY_DB_MAPPING` ogni categoria ha il proprio database e si ottengono quattro script, uno per database: `GovWay_upgrade_<versione>.sql`, `GovWayConfigurazione_upgrade_<versione>.sql`, `GovWayTracciamento_upgrade_<versione>.sql` e `GovWayStatistiche_upgrade_<versione>.sql`, dove `<versione>` è la versione dell'immagine. Le categorie indicate in `GOVWAY_DB_MAPPING` confluiscono nello script del Runtime e il loro script separato non viene prodotto: con `T,S,C` si ottiene il solo `GovWay_upgrade_<versione>.sql`.
 
