@@ -6,16 +6,16 @@
    - Il worker del listener AJP in erogazione si configura con GOVWAY_AS_AJP_IN_WORKER_MAX_THREADS, coerentemente con i listener HTTP e HTTPS (GOVWAY_AS_AJP_WORKER_MAX_THREADS deprecata)
    - Cambiato utente di esecuzione dell'immagine batch da 'root' a 'govway', per consentirne l'utilizzo in ambienti che vietano l'esecuzione come root (es. Pod Security Standard 'restricted', SCC OpenShift)
    - Aggiunta la possibilità di agganciare librerie custom all'application server (GOVWAY_CUSTOM_LIBS_DIR), ad esempio le librerie client di un broker JMS esterno
-   - Aggiornato driver jdbc di postgresql alla versione 42.7.13
+   - Aggiornato driver jdbc di postgresql alla versione 42.7.14
    - Introdotta l'immagine '_tools' con i tool a linea di comando dell'installer (govway-config-loader, govway-template-scan, govway-vault-cli) e con la generazione degli script SQL di aggiornamento della base dati
 
 - *3.4.4*
 
-   - Aggiornato application server di base (Tomcat) alla versione 11.0.25.
+   - Aggiornato application server di base (Tomcat) alla versione 11.0.27.
 
 - *3.3.21*
 
-   - Aggiornato application server di base (Tomcat) alla versione 9.0.121.
+   - Aggiornato application server di base (Tomcat) alla versione 9.0.123.
 
 - *3.4.3* / *3.3.20*
 
