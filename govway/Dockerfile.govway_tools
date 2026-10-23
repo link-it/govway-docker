@@ -68,19 +68,27 @@ chmod g+s ${GOVWAY_LOGDIR}
 # Rende overridabili via env var i path hardcoded negli script di lancio (stessa tecnica già
 # usata in Dockerfile.govway_batch) e cambia il default di *_CONFIG da "properties" (locale,
 # rimossa al passo precedente) a ${GOVWAY_HOME}.
+# Non tutte le versioni dell'installer producono tutti e tre i tool (es. template-scan assente
+# nell'installer 3.3.21): il sed viene applicato solo ai tool effettivamente presenti.
 RUN set -eux; \
+if [ -d ${GOVWAY_TOOLS_HOME}/govway-config-loader ]; then \
 sed -i -r \
   -e "s%^BATCH_CONFIG=.*\$%BATCH_CONFIG=\${BATCH_CONFIG:-${GOVWAY_HOME}}%" \
   -e 's%^BATCH_JDBC=.*$%BATCH_JDBC=${BATCH_JDBC:-jdbc}%' \
   ${GOVWAY_TOOLS_HOME}/govway-config-loader/*.sh; \
+fi; \
+if [ -d ${GOVWAY_TOOLS_HOME}/govway-template-scan ]; then \
 sed -i -r \
   -e "s%^TOOL_CONFIG=.*\$%TOOL_CONFIG=\${TOOL_CONFIG:-${GOVWAY_HOME}}%" \
   -e 's%^TOOL_JDBC=.*$%TOOL_JDBC=${TOOL_JDBC:-jdbc}%' \
   ${GOVWAY_TOOLS_HOME}/govway-template-scan/*.sh; \
+fi; \
+if [ -d ${GOVWAY_TOOLS_HOME}/govway-vault-cli ]; then \
 sed -i -r \
   -e "s%^VAULT_CONFIG=.*\$%VAULT_CONFIG=\${VAULT_CONFIG:-${GOVWAY_HOME}}%" \
   -e 's%^VAULT_JDBC=.*$%VAULT_JDBC=${VAULT_JDBC:-jdbc}%' \
   ${GOVWAY_TOOLS_HOME}/govway-vault-cli/*.sh; \
+fi; \
 chmod +x ${GOVWAY_TOOLS_HOME}/*/*.sh
 
 # Deduplica automatica delle librerie lib/ dei tre tool (identiche per larghissima parte,
